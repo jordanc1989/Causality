@@ -6,3 +6,4 @@ __pycache__
 .vscode/
 .agents/
 .ruff_cache/
+.claude/
