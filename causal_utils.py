@@ -10,17 +10,17 @@ import pickle
 import warnings
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 warnings.filterwarnings("ignore")
 
 CACHE_DIR = ".cache"
 CACHE_FILE = os.path.join(CACHE_DIR, "results.pkl")
-RANDOM_SEED = 42
+RANDOM_SEED = 10
 
 # ---------------------------------------------------------------------------
 # Data Loading
 # ---------------------------------------------------------------------------
+
 
 def load_data():
     """Load and preprocess the Hillstrom dataset."""
@@ -38,14 +38,14 @@ def load_data():
     # we drop one reference level manually to avoid perfect multicollinearity)
     # zip_code: reference = Urban
     df["zip_suburban"] = (df["zip_code"] == "Surburban").astype(int)
-    df["zip_rural"]    = (df["zip_code"] == "Rural").astype(int)
+    df["zip_rural"] = (df["zip_code"] == "Rural").astype(int)
     # channel: reference = Phone
-    df["channel_web"]          = (df["channel"] == "Web").astype(int)
+    df["channel_web"] = (df["channel"] == "Web").astype(int)
     df["channel_multichannel"] = (df["channel"] == "Multichannel").astype(int)
 
     # Keep ordinal encodings too — used only for OLS interaction display
     df["zip_code_enc"] = df["zip_code"].map({"Urban": 0, "Surburban": 1, "Rural": 2})
-    df["channel_enc"]  = df["channel"].map({"Phone": 0, "Web": 1, "Multichannel": 2})
+    df["channel_enc"] = df["channel"].map({"Phone": 0, "Web": 1, "Multichannel": 2})
 
     # Binary treatment indicators
     df["is_mens"] = (df["segment"] == "Mens E-Mail").astype(int)
@@ -60,10 +60,15 @@ def load_data():
 # ---------------------------------------------------------------------------
 
 COVARIATES = [
-    "recency", "history", "mens", "womens",
-    "zip_suburban", "zip_rural",
-    "channel_web", "channel_multichannel",
-    "newbie",
+    "recency",
+    "history",
+    "mens",
+    "womens",
+    "zip_suburban",
+    "zip_rural",
+    "channel_web",
+    "channel_multichannel",
+    "newbie"
 ]
 
 
@@ -94,7 +99,11 @@ def _compute_psm_for_arm(df, arm):
     treated = sub[sub[arm_col] == 1].copy()
     control = sub[sub[arm_col] == 0].copy()
 
-    # 1:1 nearest-neighbour matching (with replacement=False)
+    # 1:1 nearest-neighbour matching WITH replacement. Each treated unit is
+    # paired with its nearest control by propensity score independently, so a
+    # given control may serve as the match for more than one treated unit.
+    # Trade-off: minimises matching bias at the cost of slightly inflated
+    # variance (quantified by the bootstrap CI below).
     nn = NearestNeighbors(n_neighbors=1)
     nn.fit(control[["propensity"]].values)
     distances, indices = nn.kneighbors(treated[["propensity"]].values)
@@ -137,10 +146,12 @@ def _compute_psm_for_arm(df, arm):
         idx = np.random.choice(n_pairs, size=n_pairs, replace=True)
         att_boot.append(np.mean(t_spend_arr[idx]) - np.mean(c_spend_arr[idx]))
 
-    att_point = np.mean(matched_treated["spend"].values) - np.mean(matched_control["spend"].values)
+    att_point = np.mean(matched_treated["spend"].values) - np.mean(
+        matched_control["spend"].values
+    )
     att_ci_lo = np.percentile(att_boot, 2.5)
     att_ci_hi = np.percentile(att_boot, 97.5)
-
+    avg_ps_distance = float(np.mean(distances.flatten()))
     pct_matched = len(matched_treated) / len(treated) * 100
 
     return {
@@ -155,8 +166,9 @@ def _compute_psm_for_arm(df, arm):
         "n_matched": len(matched_treated),
         "n_treated_total": len(treated),
         "pct_matched": pct_matched,
+        "avg_ps_distance": avg_ps_distance,
         "cs_lower": cs_lower,
-        "cs_upper": cs_upper,
+        "cs_upper": cs_upper
     }
 
 
@@ -164,7 +176,7 @@ def run_psm(df):
     """Run PSM for both Men's and Women's arms."""
     return {
         "mens": _compute_psm_for_arm(df, "mens"),
-        "womens": _compute_psm_for_arm(df, "womens"),
+        "womens": _compute_psm_for_arm(df, "womens")
     }
 
 
@@ -175,11 +187,11 @@ def run_psm(df):
 ARM_PAIRS = {
     "mens_vs_control": ("Mens E-Mail", "No E-Mail"),
     "womens_vs_control": ("Womens E-Mail", "No E-Mail"),
-    "mens_vs_womens": ("Mens E-Mail", "Womens E-Mail"),
+    "mens_vs_womens": ("Mens E-Mail", "Womens E-Mail")
 }
 
 
-BAYES_SAMPLE_N = 5000  # subsample per arm for PyMC speed; still statistically sound
+BAYES_SAMPLE_N = 5000  # subsample per arm for PyMC speed, still statistically sound
 
 
 def _run_bayesian_pair(df, pair_key):
@@ -228,6 +240,29 @@ def _run_bayesian_pair(df, pair_key):
     mu_a_samples = idata.posterior["mu_a"].values.flatten()
     mu_b_samples = idata.posterior["mu_b"].values.flatten()
 
+    # MCMC diagnostics for all parameters
+    diagnostics = az.summary(
+        idata, var_names=["delta", "mu_a", "mu_b", "sigma_a", "sigma_b"], round_to=3
+    )
+    rhat_delta = float(diagnostics.loc["delta", "r_hat"])
+    bulk_ess_delta = float(diagnostics.loc["delta", "ess_bulk"])
+    tail_ess_delta = float(diagnostics.loc["delta", "ess_tail"])
+
+    # Build diagnostics table
+    diag_rows = []
+    for var in ["delta", "mu_a", "mu_b", "sigma_a", "sigma_b"]:
+        if var in diagnostics.index:
+            diag_rows.append(
+                {
+                    "parameter": var,
+                    "r_hat": diagnostics.loc[var, "r_hat"],
+                    "ess_bulk": diagnostics.loc[var, "ess_bulk"],
+                    "ess_tail": diagnostics.loc[var, "ess_tail"],
+                    "mean": diagnostics.loc[var, "mean"],
+                    "sd": diagnostics.loc[var, "sd"],
+                }
+            )
+
     # Per-chain samples for trace plot (shape: chains x draws)
     delta_chains = idata.posterior["delta"].values  # (chains, draws)
 
@@ -244,6 +279,10 @@ def _run_bayesian_pair(df, pair_key):
         "p_positive": float(np.mean(delta_samples > 0)),
         "mean_a": float(np.mean(a_spend)),
         "mean_b": float(np.mean(b_spend)),
+        "rhat_delta": rhat_delta,
+        "bulk_ess_delta": bulk_ess_delta,
+        "tail_ess_delta": tail_ess_delta,
+        "diagnostics_table": diag_rows,
     }
 
 
@@ -259,6 +298,7 @@ def run_bayesian_ab(df):
 # ---------------------------------------------------------------------------
 # Uplift Modelling / HTE
 # ---------------------------------------------------------------------------
+
 
 def _run_uplift_arm(df, arm):
     """
@@ -294,8 +334,12 @@ def _run_uplift_arm(df, arm):
 
         # T-Learner
         t_model = TwoModels(
-            estimator_trmnt=RandomForestRegressor(n_estimators=100, random_state=RANDOM_SEED),
-            estimator_ctrl=RandomForestRegressor(n_estimators=100, random_state=RANDOM_SEED),
+            estimator_trmnt=RandomForestRegressor(
+                n_estimators=100, random_state=RANDOM_SEED
+            ),
+            estimator_ctrl=RandomForestRegressor(
+                n_estimators=100, random_state=RANDOM_SEED
+            ),
             method="vanilla",
         )
         t_model.fit(X_train_df, y_train, t_train)
@@ -330,26 +374,41 @@ def _run_uplift_arm(df, arm):
         lift = t_mean - c_mean if not (np.isnan(t_mean) or np.isnan(c_mean)) else 0.0
         decile_lift.append({"decile": d + 1, "lift": lift})
 
-    # Qini curve — vectorised computation
-    # Sort by predicted uplift descending
-    n = len(sub_sorted)
-    is_treated = sub_sorted[arm_col].values
-    spend_vals = sub_sorted["spend"].values
-    n_treated_total = is_treated.sum()
-    n_control_total = (1 - is_treated).sum()
+    def _qini_curve(sorted_df):
+        """Compute modified Qini curve for a DataFrame already sorted by predicted uplift."""
+        n_rows = len(sorted_df)
+        is_t = sorted_df[arm_col].values
+        y_vals = sorted_df["spend"].values
+        n_t_total = is_t.sum()
+        n_c_total = (1 - is_t).sum()
+        cum_t = np.cumsum(y_vals * is_t)
+        cum_c = np.cumsum(y_vals * (1 - is_t))
+        n_t_cum = np.cumsum(is_t)
+        n_c_cum = np.cumsum(1 - is_t)
+        valid = (n_t_cum > 0) & (n_c_cum > 0)
+        xs = (np.arange(1, n_rows + 1) / n_rows)[valid].tolist()
+        ys = (
+            cum_t[valid] / n_t_total
+            - cum_c[valid] / n_c_total * (n_t_cum[valid] / n_t_total)
+        ).tolist()
+        return xs, ys
 
-    cum_treated_outcome = np.cumsum(spend_vals * is_treated)
-    cum_control_outcome = np.cumsum(spend_vals * (1 - is_treated))
-    n_treated_cum = np.cumsum(is_treated)
-    n_control_cum = np.cumsum(1 - is_treated)
+    # T-Learner ranking — decile lift and Qini
+    qini_x, qini_y = _qini_curve(sub_sorted)
 
-    # Only compute where both groups have at least one observation
-    valid = (n_treated_cum > 0) & (n_control_cum > 0)
-    qini_x = (np.arange(1, n + 1) / n)[valid].tolist()
-    qini_y = (
-        cum_treated_outcome[valid] / n_treated_total
-        - cum_control_outcome[valid] / n_control_total * (n_treated_cum[valid] / n_treated_total)
-    ).tolist()
+    # S-Learner ranking — decile lift and Qini
+    sub_sorted_s = sub.sort_values("cate_s", ascending=False).reset_index(drop=True)
+    sub_sorted_s["decile"] = pd.qcut(sub_sorted_s.index, q=10, labels=False)
+
+    decile_lift_s = []
+    for d in range(10):
+        dec = sub_sorted_s[sub_sorted_s["decile"] == d]
+        t_mean = dec[dec[arm_col] == 1]["spend"].mean()
+        c_mean = dec[dec[arm_col] == 0]["spend"].mean()
+        lift = t_mean - c_mean if not (np.isnan(t_mean) or np.isnan(c_mean)) else 0.0
+        decile_lift_s.append({"decile": d + 1, "lift": lift})
+
+    qini_x_s, qini_y_s = _qini_curve(sub_sorted_s)
 
     return {
         "arm": arm,
@@ -357,10 +416,13 @@ def _run_uplift_arm(df, arm):
         "cate_s": cate_s,
         "feat_imp": dict(zip(feat_names, feat_imp)),
         "decile_lift": decile_lift,
+        "decile_lift_s": decile_lift_s,
         "qini_x": qini_x,
         "qini_y": qini_y,
+        "qini_x_s": qini_x_s,
+        "qini_y_s": qini_y_s,
         "avg_cate_t": float(np.mean(cate_t)),
-        "avg_cate_s": float(np.mean(cate_s)),
+        "avg_cate_s": float(np.mean(cate_s))
     }
 
 
@@ -368,13 +430,14 @@ def run_uplift(df):
     """Run uplift modelling for both arms."""
     return {
         "mens": _run_uplift_arm(df, "mens"),
-        "womens": _run_uplift_arm(df, "womens"),
+        "womens": _run_uplift_arm(df, "womens")
     }
 
 
 # ---------------------------------------------------------------------------
 # Multi-Arm OLS
 # ---------------------------------------------------------------------------
+
 
 def run_ols(df):
     """
@@ -385,7 +448,7 @@ def run_ols(df):
     import statsmodels.formula.api as smf
 
     model_df = df.copy()
-    model_df["mens_email"]   = (model_df["segment"] == "Mens E-Mail").astype(int)
+    model_df["mens_email"] = (model_df["segment"] == "Mens E-Mail").astype(int)
     model_df["womens_email"] = (model_df["segment"] == "Womens E-Mail").astype(int)
 
     # Main effects + interactions with OHE categoricals
@@ -404,60 +467,76 @@ def run_ols(df):
     result = smf.ols(formula, data=model_df).fit()
 
     # Coefficient table
-    coef_df = pd.DataFrame({
-        "coef":   result.params,
-        "ci_lo":  result.conf_int()[0],
-        "ci_hi":  result.conf_int()[1],
-        "pvalue": result.pvalues,
-    }).reset_index().rename(columns={"index": "term"})
+    _ci = result.conf_int()
+    coef_df = (
+        pd.DataFrame(
+            {
+                "coef": result.params,
+                "ci_lo": _ci[0],
+                "ci_hi": _ci[1],
+                "pvalue": result.pvalues
+            }
+        )
+        .reset_index()
+        .rename(columns={"index": "term"})
+    )
 
     # Marginal effects by subgroup
     subgroups = []
     for newbie_val, newbie_label in [(0, "Existing"), (1, "New")]:
         for channel_web, channel_mc, channel_label in [
-            (0, 0, "Phone"), (1, 0, "Web"), (0, 1, "Multichannel")
+            (0, 0, "Phone"),
+            (1, 0, "Web"),
+            (0, 1, "Multichannel")
         ]:
             for zip_sub, zip_rural_val, zip_label in [
-                (0, 0, "Urban"), (1, 0, "Suburban"), (0, 1, "Rural")
+                (0, 0, "Urban"),
+                (1, 0, "Suburban"),
+                (0, 1, "Rural")
             ]:
                 me_mens = (
                     result.params.get("mens_email", 0)
-                    + result.params.get("mens_email:newbie", 0)                  * newbie_val
-                    + result.params.get("mens_email:channel_web", 0)             * channel_web
-                    + result.params.get("mens_email:channel_multichannel", 0)    * channel_mc
-                    + result.params.get("mens_email:zip_suburban", 0)            * zip_sub
-                    + result.params.get("mens_email:zip_rural", 0)               * zip_rural_val
+                    + result.params.get("mens_email:newbie", 0) * newbie_val
+                    + result.params.get("mens_email:channel_web", 0) * channel_web
+                    + result.params.get("mens_email:channel_multichannel", 0)
+                    * channel_mc
+                    + result.params.get("mens_email:zip_suburban", 0) * zip_sub
+                    + result.params.get("mens_email:zip_rural", 0) * zip_rural_val
                 )
                 me_womens = (
                     result.params.get("womens_email", 0)
-                    + result.params.get("womens_email:newbie", 0)                * newbie_val
-                    + result.params.get("womens_email:channel_web", 0)           * channel_web
-                    + result.params.get("womens_email:channel_multichannel", 0)  * channel_mc
-                    + result.params.get("womens_email:zip_suburban", 0)          * zip_sub
-                    + result.params.get("womens_email:zip_rural", 0)             * zip_rural_val
+                    + result.params.get("womens_email:newbie", 0) * newbie_val
+                    + result.params.get("womens_email:channel_web", 0) * channel_web
+                    + result.params.get("womens_email:channel_multichannel", 0)
+                    * channel_mc
+                    + result.params.get("womens_email:zip_suburban", 0) * zip_sub
+                    + result.params.get("womens_email:zip_rural", 0) * zip_rural_val
                 )
-                subgroups.append({
-                    "newbie":   newbie_label,
-                    "channel":  channel_label,
-                    "zip_code": zip_label,
-                    "me_mens":   me_mens,
-                    "me_womens": me_womens,
-                })
+                subgroups.append(
+                    {
+                        "newbie": newbie_label,
+                        "channel": channel_label,
+                        "zip_code": zip_label,
+                        "me_mens": me_mens,
+                        "me_womens": me_womens
+                    }
+                )
 
     subgroup_df = pd.DataFrame(subgroups)
 
     return {
-        "coef_df":      coef_df,
-        "subgroup_df":  subgroup_df,
-        "r_squared":    result.rsquared,
-        "n_obs":        int(result.nobs),
-        "summary_text": result.summary().as_text(),
+        "coef_df": coef_df,
+        "subgroup_df": subgroup_df,
+        "r_squared": result.rsquared,
+        "n_obs": int(result.nobs),
+        "summary_text": result.summary().as_text()
     }
 
 
 # ---------------------------------------------------------------------------
 # Cache Management
 # ---------------------------------------------------------------------------
+
 
 def build_cache():
     """Compute all results and save to disk. Returns the results dict."""
@@ -466,13 +545,13 @@ def build_cache():
     print("[Cache] Loading data...")
     df = load_data()
 
-    print("[Cache] Running PSM (bootstrap 500 reps × 2 arms)...")
+    print("[Cache] Running PSM (bootstrap 500 reps x 2 arms)...")
     psm = run_psm(df)
 
     print("[Cache] Running Bayesian A/B (PyMC, 3 arm pairs)...")
     bayesian = run_bayesian_ab(df)
 
-    print("[Cache] Running Uplift models (T-Learner + S-Learner × 2 arms)...")
+    print("[Cache] Running Uplift models (T-Learner + S-Learner w/ 2 arms)...")
     uplift = run_uplift(df)
 
     print("[Cache] Running Multi-Arm OLS...")
