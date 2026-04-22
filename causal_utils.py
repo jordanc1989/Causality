@@ -27,11 +27,25 @@ def load_data():
     from sklift.datasets import fetch_hillstrom
 
     bunch = fetch_hillstrom(target_col="all")
-    df = bunch.frame.copy()
+    # bunch["data"] = features, bunch["target"] = visit/conversion/spend, bunch["treatment"] = segment
+    df = bunch["data"].copy()
+    df["segment"] = bunch["treatment"].values
+    target_df = bunch["target"]
+    for col in target_df.columns:
+        df[col] = target_df[col].values
 
-    # Encode categoricals as numeric for modelling
-    df["zip_code_enc"] = df["zip_code"].map({"Urban": 0, "Suburban": 1, "Rural": 2})
-    df["channel_enc"] = df["channel"].map({"Phone": 0, "Web": 1, "Multichannel": 2})
+    # One-hot encode categoricals (drop_first=False so all levels are explicit;
+    # we drop one reference level manually to avoid perfect multicollinearity)
+    # zip_code: reference = Urban
+    df["zip_suburban"] = (df["zip_code"] == "Surburban").astype(int)
+    df["zip_rural"]    = (df["zip_code"] == "Rural").astype(int)
+    # channel: reference = Phone
+    df["channel_web"]          = (df["channel"] == "Web").astype(int)
+    df["channel_multichannel"] = (df["channel"] == "Multichannel").astype(int)
+
+    # Keep ordinal encodings too — used only for OLS interaction display
+    df["zip_code_enc"] = df["zip_code"].map({"Urban": 0, "Surburban": 1, "Rural": 2})
+    df["channel_enc"]  = df["channel"].map({"Phone": 0, "Web": 1, "Multichannel": 2})
 
     # Binary treatment indicators
     df["is_mens"] = (df["segment"] == "Mens E-Mail").astype(int)
@@ -45,7 +59,12 @@ def load_data():
 # Propensity Score Matching (PSM)
 # ---------------------------------------------------------------------------
 
-COVARIATES = ["recency", "history", "mens", "womens", "zip_code_enc", "newbie", "channel_enc"]
+COVARIATES = [
+    "recency", "history", "mens", "womens",
+    "zip_suburban", "zip_rural",
+    "channel_web", "channel_multichannel",
+    "newbie",
+]
 
 
 def _compute_psm_for_arm(df, arm):
@@ -107,15 +126,16 @@ def _compute_psm_for_arm(df, arm):
             matched_control[cov].values,
         )
 
-    # ATT via bootstrap
+    # ATT via bootstrap — resample matched *pairs* together to preserve pairing structure
     np.random.seed(RANDOM_SEED)
     n_boot = 500
     att_boot = []
+    t_spend_arr = matched_treated["spend"].values
+    c_spend_arr = matched_control["spend"].values
+    n_pairs = len(t_spend_arr)
     for _ in range(n_boot):
-        idx = np.random.choice(len(matched_treated), size=len(matched_treated), replace=True)
-        t_spend = matched_treated["spend"].values[idx]
-        c_spend = matched_control["spend"].values[idx]
-        att_boot.append(np.mean(t_spend) - np.mean(c_spend))
+        idx = np.random.choice(n_pairs, size=n_pairs, replace=True)
+        att_boot.append(np.mean(t_spend_arr[idx]) - np.mean(c_spend_arr[idx]))
 
     att_point = np.mean(matched_treated["spend"].values) - np.mean(matched_control["spend"].values)
     att_ci_lo = np.percentile(att_boot, 2.5)
@@ -159,17 +179,25 @@ ARM_PAIRS = {
 }
 
 
+BAYES_SAMPLE_N = 5000  # subsample per arm for PyMC speed; still statistically sound
+
+
 def _run_bayesian_pair(df, pair_key):
     """
     Fit a PyMC model comparing spend for one arm pair.
     Returns posterior samples for delta and diagnostics.
+    Uses a stratified subsample for speed with the pure-Python PyTensor backend.
     """
     import pymc as pm
     import arviz as az
 
     arm_a_label, arm_b_label = ARM_PAIRS[pair_key]
-    a_spend = df[df["segment"] == arm_a_label]["spend"].values.astype(float)
-    b_spend = df[df["segment"] == arm_b_label]["spend"].values.astype(float)
+
+    rng = np.random.default_rng(RANDOM_SEED)
+    a_full = df[df["segment"] == arm_a_label]["spend"].values.astype(float)
+    b_full = df[df["segment"] == arm_b_label]["spend"].values.astype(float)
+    a_spend = rng.choice(a_full, size=min(BAYES_SAMPLE_N, len(a_full)), replace=False)
+    b_spend = rng.choice(b_full, size=min(BAYES_SAMPLE_N, len(b_full)), replace=False)
 
     combined = np.concatenate([a_spend, b_spend])
     pooled_std = np.std(combined) + 1e-6
@@ -189,8 +217,9 @@ def _run_bayesian_pair(df, pair_key):
             draws=2000,
             tune=1000,
             chains=2,
+            nuts_sampler="nutpie",
             random_seed=RANDOM_SEED,
-            progressbar=False,
+            progressbar=True,
             return_inferencedata=True,
         )
 
@@ -234,37 +263,55 @@ def run_bayesian_ab(df):
 def _run_uplift_arm(df, arm):
     """
     Run T-Learner and S-Learner for one arm vs control using scikit-uplift.
+    Uses 5-fold cross-fitting to avoid in-sample prediction bias: models are
+    trained on 4 folds and predict on the held-out fold, so CATE estimates
+    are out-of-sample for every observation.
     """
     from sklift.models import TwoModels, SoloModel
     from sklearn.ensemble import RandomForestRegressor
+    from sklearn.model_selection import KFold
 
     arm_col = f"is_{arm}"
     mask = (df[arm_col] == 1) | (df["is_control"] == 1)
     sub = df[mask].copy().reset_index(drop=True)
 
-    X = sub[COVARIATES]
-    y = sub["spend"]
-    treatment = sub[arm_col]
+    X = sub[COVARIATES].values
+    y = sub["spend"].values
+    treatment = sub[arm_col].values
 
-    # T-Learner
-    t_learner = TwoModels(
-        estimator_trt=RandomForestRegressor(n_estimators=100, random_state=RANDOM_SEED),
-        estimator_ctrl=RandomForestRegressor(n_estimators=100, random_state=RANDOM_SEED),
-        method="vanilla",
-    )
-    t_learner.fit(X, y, treatment)
-    cate_t = t_learner.predict(X)
+    kf = KFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
+    cate_t = np.zeros(len(sub))
+    cate_s = np.zeros(len(sub))
+    feat_imp_accum = np.zeros(len(COVARIATES))
 
-    # S-Learner
-    s_learner = SoloModel(
-        estimator=RandomForestRegressor(n_estimators=100, random_state=RANDOM_SEED),
-        method="treatment_interaction",
-    )
-    s_learner.fit(X, y, treatment)
-    cate_s = s_learner.predict(X)
+    for _, (train_idx, test_idx) in enumerate(kf.split(X)):
+        X_train, X_test = X[train_idx], X[test_idx]
+        y_train = y[train_idx]
+        t_train = treatment[train_idx]
 
-    # Feature importance from T-Learner treatment model
-    feat_imp = t_learner.trt_model.feature_importances_
+        X_train_df = pd.DataFrame(X_train, columns=COVARIATES)
+        X_test_df = pd.DataFrame(X_test, columns=COVARIATES)
+
+        # T-Learner
+        t_model = TwoModels(
+            estimator_trmnt=RandomForestRegressor(n_estimators=100, random_state=RANDOM_SEED),
+            estimator_ctrl=RandomForestRegressor(n_estimators=100, random_state=RANDOM_SEED),
+            method="vanilla",
+        )
+        t_model.fit(X_train_df, y_train, t_train)
+        cate_t[test_idx] = t_model.predict(X_test_df)
+        feat_imp_accum += t_model.estimator_trmnt.feature_importances_
+
+        # S-Learner
+        s_model = SoloModel(
+            estimator=RandomForestRegressor(n_estimators=100, random_state=RANDOM_SEED),
+            method="treatment_interaction",
+        )
+        s_model.fit(X_train_df, y_train, t_train)
+        cate_s[test_idx] = s_model.predict(X_test_df)
+
+    # Average feature importance across folds
+    feat_imp = feat_imp_accum / kf.get_n_splits()
     feat_names = COVARIATES
 
     # Qini / Uplift by decile
@@ -283,31 +330,26 @@ def _run_uplift_arm(df, arm):
         lift = t_mean - c_mean if not (np.isnan(t_mean) or np.isnan(c_mean)) else 0.0
         decile_lift.append({"decile": d + 1, "lift": lift})
 
-    # Qini curve: cumulative gains
+    # Qini curve — vectorised computation
     # Sort by predicted uplift descending
     n = len(sub_sorted)
-    qini_x = []
-    qini_y = []
-    cum_treated_outcome = 0
-    cum_control_outcome = 0
-    n_treated_cum = 0
-    n_control_cum = 0
-    n_treated_total = sub_sorted[arm_col].sum()
-    n_control_total = (1 - sub_sorted[arm_col]).sum()
+    is_treated = sub_sorted[arm_col].values
+    spend_vals = sub_sorted["spend"].values
+    n_treated_total = is_treated.sum()
+    n_control_total = (1 - is_treated).sum()
 
-    for i, row in sub_sorted.iterrows():
-        if row[arm_col] == 1:
-            cum_treated_outcome += row["spend"]
-            n_treated_cum += 1
-        else:
-            cum_control_outcome += row["spend"]
-            n_control_cum += 1
-        if n_treated_cum > 0 and n_control_cum > 0:
-            qini_y.append(
-                cum_treated_outcome / n_treated_total
-                - cum_control_outcome / n_control_total * (n_treated_cum / n_treated_total)
-            )
-            qini_x.append((i + 1) / n)
+    cum_treated_outcome = np.cumsum(spend_vals * is_treated)
+    cum_control_outcome = np.cumsum(spend_vals * (1 - is_treated))
+    n_treated_cum = np.cumsum(is_treated)
+    n_control_cum = np.cumsum(1 - is_treated)
+
+    # Only compute where both groups have at least one observation
+    valid = (n_treated_cum > 0) & (n_control_cum > 0)
+    qini_x = (np.arange(1, n + 1) / n)[valid].tolist()
+    qini_y = (
+        cum_treated_outcome[valid] / n_treated_total
+        - cum_control_outcome[valid] / n_control_total * (n_treated_cum[valid] / n_treated_total)
+    ).tolist()
 
     return {
         "arm": arm,
@@ -337,67 +379,78 @@ def run_uplift(df):
 def run_ols(df):
     """
     OLS regression with treatment dummies, covariates, and interaction terms.
-    Outcome: spend.
+    Outcome: spend. Categoricals (zip_code, channel) are one-hot encoded;
+    reference levels are Urban and Phone respectively.
     """
     import statsmodels.formula.api as smf
 
     model_df = df.copy()
-    model_df["mens_email"] = (model_df["segment"] == "Mens E-Mail").astype(int)
+    model_df["mens_email"]   = (model_df["segment"] == "Mens E-Mail").astype(int)
     model_df["womens_email"] = (model_df["segment"] == "Womens E-Mail").astype(int)
 
-    # Main effects + interactions
+    # Main effects + interactions with OHE categoricals
     formula = (
         "spend ~ mens_email + womens_email "
         "+ recency + history + newbie "
-        "+ zip_code_enc + channel_enc "
+        "+ zip_suburban + zip_rural "
+        "+ channel_web + channel_multichannel "
         "+ mens_email:newbie + womens_email:newbie "
-        "+ mens_email:channel_enc + womens_email:channel_enc "
-        "+ mens_email:zip_code_enc + womens_email:zip_code_enc"
+        "+ mens_email:channel_web + womens_email:channel_web "
+        "+ mens_email:channel_multichannel + womens_email:channel_multichannel "
+        "+ mens_email:zip_suburban + womens_email:zip_suburban "
+        "+ mens_email:zip_rural + womens_email:zip_rural"
     )
 
     result = smf.ols(formula, data=model_df).fit()
 
     # Coefficient table
     coef_df = pd.DataFrame({
-        "coef": result.params,
-        "ci_lo": result.conf_int()[0],
-        "ci_hi": result.conf_int()[1],
+        "coef":   result.params,
+        "ci_lo":  result.conf_int()[0],
+        "ci_hi":  result.conf_int()[1],
         "pvalue": result.pvalues,
     }).reset_index().rename(columns={"index": "term"})
 
     # Marginal effects by subgroup
     subgroups = []
     for newbie_val, newbie_label in [(0, "Existing"), (1, "New")]:
-        for channel_val, channel_label in [(0, "Phone"), (1, "Web"), (2, "Multichannel")]:
-            for zip_val, zip_label in [(0, "Urban"), (1, "Suburban"), (2, "Rural")]:
-                # Marginal effect of mens_email
+        for channel_web, channel_mc, channel_label in [
+            (0, 0, "Phone"), (1, 0, "Web"), (0, 1, "Multichannel")
+        ]:
+            for zip_sub, zip_rural_val, zip_label in [
+                (0, 0, "Urban"), (1, 0, "Suburban"), (0, 1, "Rural")
+            ]:
                 me_mens = (
                     result.params.get("mens_email", 0)
-                    + result.params.get("mens_email:newbie", 0) * newbie_val
-                    + result.params.get("mens_email:channel_enc", 0) * channel_val
-                    + result.params.get("mens_email:zip_code_enc", 0) * zip_val
+                    + result.params.get("mens_email:newbie", 0)                  * newbie_val
+                    + result.params.get("mens_email:channel_web", 0)             * channel_web
+                    + result.params.get("mens_email:channel_multichannel", 0)    * channel_mc
+                    + result.params.get("mens_email:zip_suburban", 0)            * zip_sub
+                    + result.params.get("mens_email:zip_rural", 0)               * zip_rural_val
                 )
                 me_womens = (
                     result.params.get("womens_email", 0)
-                    + result.params.get("womens_email:newbie", 0) * newbie_val
-                    + result.params.get("womens_email:channel_enc", 0) * channel_val
-                    + result.params.get("womens_email:zip_code_enc", 0) * zip_val
+                    + result.params.get("womens_email:newbie", 0)                * newbie_val
+                    + result.params.get("womens_email:channel_web", 0)           * channel_web
+                    + result.params.get("womens_email:channel_multichannel", 0)  * channel_mc
+                    + result.params.get("womens_email:zip_suburban", 0)          * zip_sub
+                    + result.params.get("womens_email:zip_rural", 0)             * zip_rural_val
                 )
                 subgroups.append({
-                    "newbie": newbie_label,
-                    "channel": channel_label,
+                    "newbie":   newbie_label,
+                    "channel":  channel_label,
                     "zip_code": zip_label,
-                    "me_mens": me_mens,
+                    "me_mens":   me_mens,
                     "me_womens": me_womens,
                 })
 
     subgroup_df = pd.DataFrame(subgroups)
 
     return {
-        "coef_df": coef_df,
-        "subgroup_df": subgroup_df,
-        "r_squared": result.rsquared,
-        "n_obs": int(result.nobs),
+        "coef_df":      coef_df,
+        "subgroup_df":  subgroup_df,
+        "r_squared":    result.rsquared,
+        "n_obs":        int(result.nobs),
         "summary_text": result.summary().as_text(),
     }
 
