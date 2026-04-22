@@ -12,13 +12,13 @@ be self-explanatory and demonstrate deep methodological understanding.
 
 ## Tech Stack
 - **Framework:** Dash (Plotly) with dash-bootstrap-components
-- **Causal methods:** sklearn (PSM), pymc (Bayesian A/B), scikit-uplift (T-Learner/S-Learner, Qini evaluation), 
-dowhy (causal graph, refutation tests), statsmodels (Multi-Arm OLS)
+- **Causal methods:** sklearn (PSM), pymc (Bayesian A/B), scikit-uplift (T-Learner/S-Learner,
+Qini evaluation), dowhy (causal graph, refutation tests), statsmodels (Multi-Arm OLS)
 - **Visualisation:** Plotly (no matplotlib)
 - **Data:** Use scikit-uplift to load the Hillstrom dataset via `fetch_hillstrom`
 - **Styling:** Dark theme (dash-bootstrap-components DARKLY or CYBORG), professional and
   minimal — no generic "AI slop" aesthetics
-
+  
 ## Data Notes
 - Load via: `from sklift.datasets import fetch_hillstrom`
 - The dataset has 64,000 customers with three segments: `"Mens E-Mail"`, `"Womens E-Mail"`,
@@ -27,6 +27,14 @@ dowhy (causal graph, refutation tests), statsmodels (Multi-Arm OLS)
 - Outcome variables: `visit`, `conversion`, `spend`
 - This is a cross-sectional randomised experiment — there is no time dimension in the raw data
 - PyMC sampling and bootstrap procedures must use a fixed random seed for reproducibility
+
+## Data Cleaning & Preprocessing
+- No missing values or duplicates — no imputation required
+- Encode `channel` and `zip_code` as one-hot encoded columns
+- Standardise `recency`, `history` to z-scores for PSM and model inputs
+- `mens`, `womens`, `newbie` are already binary — no transformation needed
+- Engineer `high_value` flag (history > median) for HTE subgroup analysis
+- Keep raw `history` and `spend` untransformed for descriptive stats and KPI cards
 
 ## App Structure — Pages / Tabs
 
