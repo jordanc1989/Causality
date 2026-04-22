@@ -1,7 +1,7 @@
-# Causal Inference Dashboard — Hillstrom Email Campaign
+# Causal Inference Dashboard: Hillstrom Email Campaign
 
-An interactive portfolio-grade causal inference dashboard built with Python Dash.
-Applies four distinct causal methods to a real-world retail email marketing dataset,
+An interactive portfolio-grade causal inference dashboard built with Dash in Python.
+Applies a number of causal methods to a publicly available retail email marketing dataset,
 allowing side-by-side comparison of estimates, uncertainty and assumptions.
 
 ---
@@ -20,7 +20,6 @@ allowing side-by-side comparison of estimates, uncertainty and assumptions.
 | 3 | **Bayesian A/B Test** | PyMC, ArviZ |
 | 4 | **Uplift Modelling / HTE** (T-Learner, S-Learner) | scikit-uplift |
 | 5 | **Multi-Arm OLS with Interactions** | statsmodels |
-| 6 | **Method Comparison Forest Plot** | — |
 
 ---
 
