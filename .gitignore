@@ -4,3 +4,5 @@ agents.md
 __pycache__
 .cache/
 .vscode/
+.agents/
+.ruff_cache/

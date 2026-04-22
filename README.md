@@ -2,13 +2,13 @@
 
 An interactive portfolio-grade causal inference dashboard built with Python Dash.
 Applies four distinct causal methods to a real-world retail email marketing dataset,
-allowing side-by-side comparison of estimates, uncertainty, and assumptions.
+allowing side-by-side comparison of estimates, uncertainty and assumptions.
 
 ---
 
 ## Screenshot
 
-> *(placeholder — add a screenshot of the running app here)*
+![Causal Inference Dashboard Screenshot](assets/screenshot.png)
 
 ---
 
@@ -37,6 +37,11 @@ The [MineThatData Email Analytics dataset](https://blog.minethatdata.com/2008/03
 
 ---
 
+## To Add
+
+- Further feature engineering
+
+
 ## How to Run Locally
 
 ### 1. Install dependencies
@@ -61,7 +66,7 @@ Open your browser at **http://localhost:8050**.
 
 ### 3. Force recompute
 
-Delete the cache directory and restart:
+If you want to force a recompute, delete the cache directory and restart:
 
 ```bash
 rm -rf .cache && python app.py
@@ -76,7 +81,7 @@ Selecting and applying the *right* method for the causal question: ATE via PSM a
 posterior distributions via Bayesian inference, and individual-level CATE via uplift modelling.
 
 ### Uncertainty quantification
-Every estimate is accompanied by a confidence or credible interval — bootstrap CIs for PSM,
+Every estimate is accompanied by an appropriate confidence interval: bootstrap CIs for PSM,
 HDI for Bayesian, and coefficient CIs for OLS.
 
 ### Individual-level causal thinking
@@ -86,10 +91,6 @@ enabling targeted campaign optimisation.
 ### Assumption transparency
 Every tab includes a collapsible "Methodology & Assumptions" section written for both
 technical and non-technical audiences.
-
-### Business communication
-Results are expressed in dollars ($), with plain-English interpretation and a method-comparison
-summary showing where estimates agree — and where they diverge.
 
 ---
 

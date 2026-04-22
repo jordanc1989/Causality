@@ -81,7 +81,7 @@ the old cache still works until it's rebuilt.
 
 ## Component Conventions
 - `kpi_card(value, label, delta, delta_positive, color, accent, info, info_id)` — `info`/`info_id`
-  add an `ⓘ` tooltip
+  add an `ⓘ` tooltip; follow the ROPE info icon pattern
 - `section_header(text)` — Oswald uppercase label above chart sections
 - `methodology_collapse(tab_id, content)` — `html.Button` with class `btn-methodology`
 - All chart colours use named tokens (`MENS_COLOR`, `WOMENS_COLOR`, `CTRL_COLOR`, etc.)
