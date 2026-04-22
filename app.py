@@ -56,8 +56,8 @@ SURFACE_2 = "#0D3535"
 BORDER = "#1A4040"
 ACCENT = "#FF5F03"
 MENS_COLOUR = "#22D3EE"
-WOMENS_COLOUR = "#F46A6A"
-CTRL_COLOUR = "#34D399"
+WOMENS_COLOUR = "#B1C17E"
+CTRL_COLOUR = "#C6C6C6"
 TEXT = "#E2F0EF"
 MUTED = "#6B9090"
 SUCCESS = "#16A34A"
@@ -422,7 +422,8 @@ def kpi_card(
     color=TEXT,
     accent=None,
     info=None,
-    info_id=None
+    info_id=None,
+    pct_change=None,
 ):
     delta_color = (
         SUCCESS if delta_positive else DANGER if delta_positive is False else MUTED
@@ -453,15 +454,42 @@ def kpi_card(
             )
         ]
 
-    return dbc.Card(
-        dbc.CardBody(
+    left_block = html.Div(
+        [
+            html.P(label_children, style=KPI_LABEL_STYLE),
+            html.P(value, style={**KPI_VALUE_STYLE, "color": color}),
+            html.P(delta or " ", style={**KPI_DELTA_STYLE, "color": delta_color}),
+        ],
+        style={"flex": "1"},
+    )
+
+    if pct_change is not None:
+        pct_color = SUCCESS if pct_change >= 0 else DANGER
+        arrow = "↑" if pct_change >= 0 else "↓"
+        right_block = html.Div(
             [
-                html.P(label_children, style=KPI_LABEL_STYLE),
-                html.P(value, style={**KPI_VALUE_STYLE, "color": color}),
-                html.P(delta or " ", style={**KPI_DELTA_STYLE, "color": delta_color}),
-                *extra,
-            ]
-        ),
+                html.Span(arrow, style={"fontSize": "1.6rem", "lineHeight": "1"}),
+                html.Div(
+                    f"{abs(pct_change):.1f}%",
+                    style={"fontSize": "0.85rem", "fontWeight": "700", "marginTop": "2px"},
+                ),
+            ],
+            style={
+                "color": pct_color,
+                "textAlign": "center",
+                "alignSelf": "center",
+                "paddingLeft": "14px",
+                "fontFamily": "Ubuntu Mono, monospace",
+                "lineHeight": "1.2",
+                "minWidth": "52px",
+            },
+        )
+        body_children = [html.Div([left_block, right_block], style={"display": "flex"}), *extra]
+    else:
+        body_children = [left_block, *extra]
+
+    return dbc.Card(
+        dbc.CardBody(body_children),
         style={**CARD_STYLE, "borderLeft": f"3px solid {left_border}"},
         className="mb-2"
     )
@@ -618,7 +646,8 @@ def tab1_layout():
                             color=MENS_COLOUR,
                             accent=MENS_COLOUR,
                             info="Avg spend across ALL recipients (incl. non-spenders). This is the metric that drives campaign ROI. 'sig.' means the bootstrap 95% CI excludes zero.",
-                            info_id="ov-info-rev-mens"
+                            info_id="ov-info-rev-mens",
+                            pct_change=(lift_mens / avg_control * 100) if avg_control else None,
                         ),
                         md=4,
                     ),
@@ -632,7 +661,8 @@ def tab1_layout():
                             color=WOMENS_COLOUR,
                             accent=WOMENS_COLOUR,
                             info="Avg spend across ALL recipients (incl. non-spenders). This is the metric that drives campaign ROI. 'sig.' means the bootstrap 95% CI excludes zero.",
-                            info_id="ov-info-rev-womens"
+                            info_id="ov-info-rev-womens",
+                            pct_change=(lift_womens / avg_control * 100) if avg_control else None,
                         ),
                         md=4
                     ),
@@ -652,9 +682,9 @@ def tab1_layout():
                 [
                     dbc.Col(
                         kpi_card(
-                            f"{conv_mens:.1f}%",
-                            "Conversion: Men",
-                            f"+{conv_mens - conv_control:.1f}pp vs control",
+                            f"{conv_mens:.2f}%",
+                            "Conversion Rate: Men",
+                            f"+{conv_mens - conv_control:.2f}pp vs control",
                             conv_mens > conv_control,
                             color=MENS_COLOUR,
                             accent=MENS_COLOUR
@@ -663,9 +693,9 @@ def tab1_layout():
                     ),
                     dbc.Col(
                         kpi_card(
-                            f"{conv_womens:.1f}%",
-                            "Conversion: Women",
-                            f"+{conv_womens - conv_control:.1f}pp vs control",
+                            f"{conv_womens:.2f}%",
+                            "Conversion Rate: Women",
+                            f"+{conv_womens - conv_control:.2f}pp vs control",
                             conv_womens > conv_control,
                             color=WOMENS_COLOUR,
                             accent=WOMENS_COLOUR
@@ -674,8 +704,8 @@ def tab1_layout():
                     ),
                     dbc.Col(
                         kpi_card(
-                            f"{conv_control:.1f}%",
-                            "Conversion: Control",
+                            f"{conv_control:.2f}%",
+                            "Conversion Rate: Control",
                             "baseline",
                             accent=CTRL_COLOUR
                         ),
@@ -787,7 +817,7 @@ def tab1_layout():
                     dbc.Col(
                         [
                             section_header("Spend Distribution by Segment (among spenders)"),
-                            dcc.Graph(id="tab1-violin", figure=_fig_spend_box(), config=GRAPH_CONFIG)
+                            dcc.Graph(id="tab1-box", figure=_fig_spend_box(), config=GRAPH_CONFIG)
                         ],
                         md=8
                     ),
@@ -873,27 +903,30 @@ def _fig_spend_box():
     fig = go.Figure()
     for seg in seg_order:
         vals = spenders[spenders["segment"] == seg]["spend"].values
-        pct_zero = (DF[DF["segment"] == seg]["spend"] == 0).mean() * 100
-        q1, med, q3 = np.percentile(vals, [25, 50, 75])
+        q1, med, q3 = np.percentile(vals, [25, 50, 75], method='linear')
         mean_val = vals.mean()
         fill = color_map[seg]
         fig.add_trace(
             go.Box(
                 y=vals,
                 name=seg_labels[seg],
-                marker=dict(color=fill, opacity=0),
-                line=dict(color=BG, width=1.5),
+                width=0.2,
+                marker=dict(
+                    color=fill,
+                    outliercolor='rgba(0,0,0,0.4)',
+                    line=dict(outliercolor='rgba(0,0,0,0.4)', outlierwidth=1)
+                ),
+                line=dict(color='black', width=1.5),
                 fillcolor=fill,
                 opacity=0.75,
                 boxmean=True,
-                boxpoints=False,
-                customdata=[[pct_zero, q1, med, q3, mean_val]] * len(vals),
+                boxpoints='outliers',
+                customdata=[[q1, med, q3, mean_val] for _ in range(len(vals))],
                 hovertemplate=(
                     "<b>%{fullData.name}</b><br>"
-                    "Median: $%{customdata[2]:.0f}<br>"
-                    "Mean: $%{customdata[4]:.0f}<br>"
-                    "IQR: $%{customdata[1]:.0f}-$%{customdata[3]:.0f}<br>"
-                    "%{customdata[0]:.0f}% of all recipients had zero spend"
+                    "Median: $%{customdata[1]:.0f}<br>"
+                    "Mean: $%{customdata[3]:.0f}<br>"
+                    "IQR: $%{customdata[0]:.0f}-$%{customdata[2]:.0f}<br>"
                     "<extra></extra>"
                 ),
             )
