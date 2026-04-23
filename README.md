@@ -16,10 +16,10 @@ allowing side-by-side comparison of estimates, uncertainty and assumptions.
 
 | Tab | Method | Library |
 |-----|--------|---------|
-| 2 | **Propensity Score Matching (PSM)** | scikit-learn |
+| 2 | **Matched-Control (Propensity Score Matching)** | scikit-learn |
 | 3 | **Bayesian A/B Test** | PyMC, ArviZ |
 | 4 | **Uplift Modelling / HTE** (T-Learner, S-Learner) | scikit-uplift |
-| 5 | **Multi-Arm OLS with Interactions** | statsmodels |
+| 5 | **Multi-Arm OLS w/ Interactions** | statsmodels |
 
 ---
 
@@ -30,8 +30,8 @@ The [MineThatData Email Analytics dataset](https://blog.minethatdata.com/2008/03
 
 - **Men's Email** arm: 21,388 customers
 - **Women's Email** arm: 21,307 customers
-- **Control (No Email)**: 21,305 customers
-- **Outcome**: spend ($) in the two weeks after the campaign
+- **Control Group (No Email comm)**: 21,305 customers
+- **Outcome**: spend ($) in the 2 weeks after the campaign
 - **Covariates**: recency, purchase history, gender catalogue, zip code, newbie status, channel
 
 ---
@@ -60,13 +60,13 @@ python app.py
 Open your browser at **http://localhost:8050**.
 
 > **First run**: The app will pre-compute all causal models (~3–5 minutes for PyMC
-> sampling + PSM bootstrap + uplift models) and cache results to `.cache/results.pkl`.
+> sampling, PSM bootstrap & uplift models) and cache results to `.cache/results.pkl`.
 > Subsequent starts load instantly from cache.
 
 ### 3. Force recompute
 
 After changing any estimation logic in `causal_utils.py`, flip the `USE_CACHE`
-flag at the top of that file to `False` and restart the app — the next run will
+flag at the top of that file to `False` and restart the app - the next run will
 rebuild from scratch and overwrite `.cache/results.pkl`. Set it back to `True`
 afterwards so subsequent starts (and the Plotly Cloud deployment) load instantly
 from the pickle.
