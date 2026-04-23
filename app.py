@@ -165,6 +165,12 @@ TABLE_HEADER = {
     "textTransform": "uppercase",
     "border": f"1px solid {BORDER}",
 }
+# Shared active/selected cell state styles — subdued teal instead of the
+# default bright blue that clashes with the dark theme.
+TABLE_SELECTED = [
+    {"if": {"state": "active"}, "backgroundColor": SURFACE_2, "border": f"1px solid {ACCENT}"},
+    {"if": {"state": "selected"}, "backgroundColor": SURFACE_2, "border": f"1px solid {BORDER}"},
+]
 
 COVARIATE_LABELS = {
     "recency": "Recency (months)",
@@ -369,6 +375,13 @@ app.index_string = """<!DOCTYPE html>
                 border-right-color: #1A4040 !important;
             }
 
+            /* DataTable cell selection — override Dash's default bright blue */
+            .dash-table-container td.focused,
+            .dash-table-container td.cell--selected {
+                background-color: #0D3535 !important;
+                box-shadow: none !important;
+            }
+
             /* DataTable export button */
             .export {
                 font-size: 0 !important;
@@ -396,6 +409,148 @@ app.index_string = """<!DOCTYPE html>
                 color: #FF5F03 !important;
                 background: rgba(255, 95, 3, 0.06) !important;
                 outline: none !important;
+            }
+
+            /* Overview: page subtitle strip */
+            .overview-context {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.6rem 1.4rem;
+                padding: 0.55rem 0 1rem 0;
+                margin-bottom: 0.75rem;
+                border-bottom: 1px solid #1A4040;
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.74rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #6B9090;
+            }
+            .overview-context strong {
+                color: #E2F0EF;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+            }
+            .overview-context .sep {
+                width: 4px;
+                height: 4px;
+                border-radius: 50%;
+                background: #1A4040;
+                display: inline-block;
+            }
+
+            /* Overview: segment summary cards */
+            .segment-card {
+                background-color: #072C2C;
+                border: 1px solid #1A4040;
+                border-radius: 4px;
+                overflow: hidden;
+                transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+                height: 100%;
+            }
+            .segment-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38);
+                border-color: #254848;
+            }
+            .segment-card-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0.75rem 1.05rem;
+                border-bottom: 1px solid #1A4040;
+                background-color: #051F1F;
+            }
+            .segment-card-title {
+                display: flex;
+                align-items: center;
+                font-family: "Oswald", sans-serif;
+                font-weight: 500;
+                font-size: 0.82rem;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: #E2F0EF;
+            }
+            .segment-dot {
+                width: 9px;
+                height: 9px;
+                border-radius: 50%;
+                display: inline-block;
+                margin-right: 0.6rem;
+                box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
+            }
+            .segment-card-count {
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.72rem;
+                color: #6B9090;
+                letter-spacing: 0.06em;
+            }
+            .segment-card-count strong {
+                color: #C8E0DF;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+            }
+            .segment-metric-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1px;
+                background-color: #1A4040;
+            }
+            .segment-metric {
+                background-color: #072C2C;
+                padding: 1.05rem 1.1rem 1.1rem 1.1rem;
+                min-height: 118px;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+            }
+            .segment-metric-label {
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.68rem;
+                color: #6B9090;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                margin-bottom: 0.35rem;
+            }
+            .segment-metric-value {
+                font-family: "Oswald", sans-serif;
+                font-size: 1.95rem;
+                font-weight: 500;
+                line-height: 1.05;
+                letter-spacing: 0.01em;
+            }
+            .segment-metric-delta {
+                font-family: "Ubuntu", sans-serif;
+                font-size: 0.76rem;
+                margin-top: 0.55rem;
+                color: #6B9090;
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.35rem;
+            }
+            .segment-metric-delta .delta-num {
+                font-family: "Ubuntu Mono", monospace;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+            }
+            .segment-sig-badge {
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.58rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 1px 6px;
+                border-radius: 2px;
+                border: 1px solid currentColor;
+                line-height: 1.3;
+            }
+            .segment-metric-baseline {
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.68rem;
+                color: #6B9090;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                margin-top: 0.55rem;
             }
         </style>
     </head>
@@ -425,6 +580,7 @@ def kpi_card(
     info_id=None,
     pct_change=None,
 ):
+    """Metric card with optional delta row, ⓘ tooltip, and right-side pct-change badge."""
     delta_color = (
         SUCCESS if delta_positive else DANGER if delta_positive is False else MUTED
     )
@@ -495,6 +651,114 @@ def kpi_card(
     )
 
 
+def segment_overview_card(
+    name,
+    color,
+    n,
+    revenue_per,
+    conversion_rate,
+    rev_lift=None,
+    rev_pct=None,
+    rev_sig=None,
+    conv_lift_pp=None,
+    conv_pct=None,
+    is_control=False,
+):
+    """Consolidated per-segment overview card: N in header, revenue & conversion as metrics."""
+
+    def _delta_row(lift_text, pct_change, positive, sig=None):
+        if pct_change is None:
+            return None
+        arrow = "▲" if positive else "▼"
+        color_ok = SUCCESS if positive else DANGER
+        children = [
+            html.Span(arrow, style={"color": color_ok, "fontSize": "0.7rem"}),
+            html.Span(lift_text, className="delta-num", style={"color": TEXT}),
+            html.Span(f"({pct_change:+.1f}%)", style={"color": MUTED}),
+        ]
+        if sig is not None:
+            badge_color = SUCCESS if sig else MUTED
+            badge_text = "SIG" if sig else "N.S."
+            children.append(
+                html.Span(
+                    badge_text,
+                    className="segment-sig-badge",
+                    style={"color": badge_color},
+                )
+            )
+        return html.Div(children, className="segment-metric-delta")
+
+    if is_control:
+        rev_delta = html.Div("Baseline", className="segment-metric-baseline")
+        conv_delta = html.Div("Baseline", className="segment-metric-baseline")
+    else:
+        rev_delta = _delta_row(
+            f"+${rev_lift:.2f}" if rev_lift >= 0 else f"-${abs(rev_lift):.2f}",
+            rev_pct,
+            rev_lift >= 0,
+        ) or html.Div()
+        conv_delta = _delta_row(
+            f"{conv_lift_pp:+.2f}pp",
+            conv_pct,
+            conv_lift_pp >= 0,
+        ) or html.Div()
+
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Span(
+                                className="segment-dot",
+                                style={"backgroundColor": color},
+                            ),
+                            html.Span(name),
+                        ],
+                        className="segment-card-title",
+                    ),
+                    html.Div(
+                        [html.Strong(f"{n:,}"), " users"],
+                        className="segment-card-count",
+                    ),
+                ],
+                className="segment-card-header",
+                style={"borderTop": f"2px solid {color}"},
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div("Revenue / recipient", className="segment-metric-label"),
+                            html.Div(
+                                f"${revenue_per:.2f}",
+                                className="segment-metric-value",
+                                style={"color": color},
+                            ),
+                            rev_delta,
+                        ],
+                        className="segment-metric",
+                    ),
+                    html.Div(
+                        [
+                            html.Div("Conversion rate", className="segment-metric-label"),
+                            html.Div(
+                                f"{conversion_rate:.2f}%",
+                                className="segment-metric-value",
+                                style={"color": color},
+                            ),
+                            conv_delta,
+                        ],
+                        className="segment-metric",
+                    ),
+                ],
+                className="segment-metric-grid",
+            ),
+        ],
+        className="segment-card",
+    )
+
+
 def section_header(text):
     return html.H5(text, style=SECTION_HEADER_STYLE)
 
@@ -554,6 +818,8 @@ def tab1_layout():
     lift_womens = avg_womens - avg_control
 
     def _ci95(a, b, n_boot=2000, seed=cu.RANDOM_SEED):
+        # Simple difference-of-means bootstrap — not the causal bootstrap used in PSM.
+        # Valid here because the randomised design makes the raw difference unbiased.
         rng = np.random.default_rng(seed)
         diffs = np.array([
             rng.choice(a, size=len(a), replace=True).mean() -
@@ -572,247 +838,193 @@ def tab1_layout():
     proj_wom_lo, proj_wom_hi = wom_lo * n_womens, wom_hi * n_womens
 
     if wom_sig and not mens_sig:
-        headline = (
-            f"The Women's campaign drove a statistically meaningful lift of "
-            f"${lift_womens:.2f} per recipient (bootstrap 95% CI ${wom_lo:.2f}-${wom_hi:.2f}), "
-            f"worth roughly ${proj_womens:,.0f} across the {n_womens:,} customers mailed "
-            f"(projection CI: ${proj_wom_lo:,.0f}-${proj_wom_hi:,.0f}). "
-            f"The Men's campaign shows a smaller lift (${lift_mens:.2f}/recipient) that is not "
-            f"distinguishable from zero at 95% confidence — treat as inconclusive."
-        )
+        headline = "Women's campaign drove significant lift. Men's result is inconclusive at 95% confidence."
         headline_color = SUCCESS
     elif mens_sig and wom_sig:
-        headline = (
-            f"Both campaigns drove statistically meaningful lifts. "
-            f"Women's: ${lift_womens:.2f}/recipient (95% CI ${wom_lo:.2f}-${wom_hi:.2f}, "
-            f"projected ${proj_womens:,.0f} [${proj_wom_lo:,.0f}-${proj_wom_hi:,.0f}]). "
-            f"Men's: ${lift_mens:.2f}/recipient (95% CI ${mens_lo:.2f}-${mens_hi:.2f}, "
-            f"projected ${proj_mens:,.0f} [${proj_mens_lo:,.0f}-${proj_mens_hi:,.0f}])."
-        )
+        headline = "Both campaigns drove statistically significant incremental revenue."
         headline_color = SUCCESS
     else:
-        headline = (
-            f"Women's lift: ${lift_womens:.2f}/recipient (bootstrap 95% CI ${wom_lo:.2f}-${wom_hi:.2f}, "
-            f"projected ${proj_womens:,.0f} [${proj_wom_lo:,.0f}-${proj_wom_hi:,.0f}] across {n_womens:,} mailed). "
-            f"Men's lift: ${lift_mens:.2f}/recipient (bootstrap 95% CI ${mens_lo:.2f}-${mens_hi:.2f}). "
-            f"Results warrant further review across methods (see Tab 6)."
-        )
+        headline = "Results warrant further review across methods — see Tab 6 for cross-method comparison."
         headline_color = WARNING
+
+    rev_pct_mens = (lift_mens / avg_control * 100) if avg_control else None
+    rev_pct_womens = (lift_womens / avg_control * 100) if avg_control else None
+    conv_pct_mens = ((conv_mens - conv_control) / conv_control * 100) if conv_control else None
+    conv_pct_womens = ((conv_womens - conv_control) / conv_control * 100) if conv_control else None
+
+    def _hl_col(label, color, sig, lift, lo, hi, proj, proj_lo, proj_hi):
+        badge_text, badge_color = ("SIG", SUCCESS) if sig else ("n.s.", DANGER)
+        badge_id = f"hl-sig-{label.lower().replace(' ', '-').replace(chr(39), '')}"
+        tooltip_text = (
+            "95% CI excludes zero — the lift is statistically distinguishable from no effect "
+            "(2,000-resample percentile bootstrap, α = 0.05)."
+            if sig else
+            "95% CI includes zero — the lift cannot be distinguished from chance at the 5% level."
+        )
+        return dbc.Col(
+            [
+            html.Div(
+                [
+                    html.Div(label, style={"fontSize": "0.7rem", "fontFamily": "Ubuntu Mono, monospace",
+                                           "textTransform": "uppercase", "letterSpacing": "0.1em",
+                                           "color": MUTED, "marginBottom": "0.5rem"}),
+                    html.Div(
+                        [
+                            html.Span(f"${lift:.2f}",
+                                      style={"fontSize": "1.9rem", "fontFamily": "Oswald, sans-serif",
+                                             "fontWeight": "500",
+                                             "color": color if sig else MUTED, "lineHeight": "1"}),
+                            html.Span(" / recipient",
+                                      style={"fontSize": "0.73rem", "color": MUTED,
+                                             "marginLeft": "5px", "verticalAlign": "middle"}),
+                        ],
+                        style={"marginBottom": "0.3rem"},
+                    ),
+                    html.Div(
+                        [
+                            html.Span(f"95% CI  ${lo:.2f}–${hi:.2f}",
+                                      style={"fontSize": "0.7rem", "fontFamily": "Ubuntu Mono, monospace",
+                                             "color": MUTED}),
+                            html.Span(badge_text,
+                                      id=badge_id,
+                                      style={"fontSize": "0.6rem", "fontFamily": "Ubuntu Mono, monospace",
+                                             "textTransform": "uppercase", "letterSpacing": "0.12em",
+                                             "color": badge_color, "border": f"1px solid {badge_color}",
+                                             "borderRadius": "2px", "padding": "1px 5px",
+                                             "cursor": "help"}),
+                        ],
+                        style={"display": "flex", "alignItems": "center", "gap": "8px",
+                               "marginBottom": "0.8rem"},
+                    ),
+                    html.Hr(style={"borderColor": BORDER, "margin": "0.7rem 0"}),
+                    html.Div("Projected total lift",
+                             style={"fontSize": "0.68rem", "fontFamily": "Ubuntu Mono, monospace",
+                                    "textTransform": "uppercase", "letterSpacing": "0.08em",
+                                    "color": MUTED, "marginBottom": "0.3rem"}),
+                    html.Div(f"${proj:,.0f}",
+                             style={"fontSize": "1.35rem", "fontFamily": "Oswald, sans-serif",
+                                    "fontWeight": "500", "color": color if sig else MUTED,
+                                    "lineHeight": "1", "marginBottom": "0.3rem"}),
+                    html.Div(f"${proj_lo:,.0f}–${proj_hi:,.0f}",
+                             style={"fontSize": "0.68rem", "fontFamily": "Ubuntu Mono, monospace",
+                                    "color": MUTED}),
+                ],
+                style={"borderLeft": f"3px solid {color if sig else BORDER}",
+                       "paddingLeft": "0.85rem"},
+            ),
+            dbc.Tooltip(tooltip_text, target=badge_id, placement="bottom"),
+            ],
+            md=4,
+        )
 
     return dbc.Container(
         [
-            dbc.Row(
+            html.Div(
                 [
-                    dbc.Col(
-                        kpi_card(
-                            f"{n_mens:,}",
-                            "Men's Email (treated)",
-                            color=MENS_COLOUR,
-                            accent=MENS_COLOUR
-                        ),
-                        md=3
+                    html.Span([html.Strong(f"{len(DF):,}"), " customers"]),
+                    html.Span(className="sep"),
+                    html.Span("Randomised email campaign"),
+                    html.Span(className="sep"),
+                    html.Span("2 treatment arms + control"),
+                    html.Span(className="sep"),
+                    html.Span(
+                        [
+                            "Bootstrap 95% CI ",
+                            html.Span(
+                                "ⓘ",
+                                id="ov-context-info",
+                                style={"cursor": "help", "color": MUTED},
+                            ),
+                        ]
                     ),
-                    dbc.Col(
-                        kpi_card(
-                            f"{n_womens:,}",
-                            "Women's Email (treated)",
-                            color=WOMENS_COLOUR,
-                            accent=WOMENS_COLOUR
-                        ),
-                        md=3
-                    ),
-                    dbc.Col(
-                        kpi_card(
-                            f"{n_control:,}",
-                            "Control (no email)",
-                            color=CTRL_COLOUR,
-                            accent=CTRL_COLOUR
-                        ),
-                        md=3
-                    ),
-                    dbc.Col(
-                        kpi_card(
-                            f"{len(DF):,}",
-                            "Total customers in test",
-                            color=ACCENT,
-                            accent=ACCENT
-                        ),
-                        md=3
+                    dbc.Tooltip(
+                        "All lift figures on this page use a 2,000-resample percentile bootstrap "
+                        "to handle the zero-inflated spend distribution. 'SIG' = 95% CI excludes zero.",
+                        target="ov-context-info",
+                        placement="bottom",
                     ),
                 ],
-                className="mb-3"
+                className="overview-context",
             ),
             dbc.Row(
                 [
                     dbc.Col(
-                        kpi_card(
-                            f"${avg_mens:.2f}",
-                            "Revenue/recipient: Men",
-                            f"+${lift_mens:.2f} vs control"
-                            + (" (sig.)" if mens_sig else " (n.s.)"),
-                            mens_sig,
+                        segment_overview_card(
+                            name="Men's Email",
                             color=MENS_COLOUR,
-                            accent=MENS_COLOUR,
-                            info="Avg spend across ALL recipients (incl. non-spenders). This is the metric that drives campaign ROI. 'sig.' means the bootstrap 95% CI excludes zero.",
-                            info_id="ov-info-rev-mens",
-                            pct_change=(lift_mens / avg_control * 100) if avg_control else None,
+                            n=n_mens,
+                            revenue_per=avg_mens,
+                            conversion_rate=conv_mens,
+                            rev_lift=lift_mens,
+                            rev_pct=rev_pct_mens,
+                            rev_sig=mens_sig,
+                            conv_lift_pp=conv_mens - conv_control,
+                            conv_pct=conv_pct_mens,
                         ),
                         md=4,
+                        className="mb-3",
                     ),
                     dbc.Col(
-                        kpi_card(
-                            f"${avg_womens:.2f}",
-                            "Revenue/recipient: Women",
-                            f"+${lift_womens:.2f} vs control"
-                            + (" (sig.)" if wom_sig else " (n.s.)"),
-                            wom_sig,
+                        segment_overview_card(
+                            name="Women's Email",
                             color=WOMENS_COLOUR,
-                            accent=WOMENS_COLOUR,
-                            info="Avg spend across ALL recipients (incl. non-spenders). This is the metric that drives campaign ROI. 'sig.' means the bootstrap 95% CI excludes zero.",
-                            info_id="ov-info-rev-womens",
-                            pct_change=(lift_womens / avg_control * 100) if avg_control else None,
+                            n=n_womens,
+                            revenue_per=avg_womens,
+                            conversion_rate=conv_womens,
+                            rev_lift=lift_womens,
+                            rev_pct=rev_pct_womens,
+                            rev_sig=wom_sig,
+                            conv_lift_pp=conv_womens - conv_control,
+                            conv_pct=conv_pct_womens,
                         ),
-                        md=4
+                        md=4,
+                        className="mb-3",
                     ),
                     dbc.Col(
-                        kpi_card(
-                            f"${avg_control:.2f}",
-                            "Revenue/recipient: Control",
-                            "baseline",
-                            accent=CTRL_COLOUR
+                        segment_overview_card(
+                            name="Control",
+                            color=CTRL_COLOUR,
+                            n=n_control,
+                            revenue_per=avg_control,
+                            conversion_rate=conv_control,
+                            is_control=True,
                         ),
-                        md=4
+                        md=4,
+                        className="mb-3",
                     ),
                 ],
-                className="mb-3",
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        kpi_card(
-                            f"{conv_mens:.2f}%",
-                            "Conversion Rate: Men",
-                            f"+{conv_mens - conv_control:.2f}pp vs control",
-                            conv_mens > conv_control,
-                            color=MENS_COLOUR,
-                            accent=MENS_COLOUR
-                        ),
-                        md=4
-                    ),
-                    dbc.Col(
-                        kpi_card(
-                            f"{conv_womens:.2f}%",
-                            "Conversion Rate: Women",
-                            f"+{conv_womens - conv_control:.2f}pp vs control",
-                            conv_womens > conv_control,
-                            color=WOMENS_COLOUR,
-                            accent=WOMENS_COLOUR
-                        ),
-                        md=4
-                    ),
-                    dbc.Col(
-                        kpi_card(
-                            f"{conv_control:.2f}%",
-                            "Conversion Rate: Control",
-                            "baseline",
-                            accent=CTRL_COLOUR
-                        ),
-                        md=4
-                    ),
-                ],
-                className="mb-4"
+                className="mb-4 g-3",
             ),
             dbc.Card(
                 [
                     dbc.CardHeader("Headline Finding"),
                     dbc.CardBody(
                         [
-                            html.P(headline, className="mb-3"),
+                            html.P(
+                                headline,
+                                style={"fontSize": "0.82rem", "color": MUTED, "marginBottom": "1.25rem"},
+                            ),
                             dbc.Row(
                                 [
-                                    dbc.Col(
-                                        html.Div(
-                                            [
-                                                html.Div(
-                                                    f"${proj_mens:,.0f}",
-                                                    style={
-                                                        "fontSize": "1.45rem",
-                                                        "fontFamily": "Oswald, sans-serif",
-                                                        "fontWeight": "500",
-                                                        "color": MENS_COLOUR if mens_sig else MUTED,
-                                                        "lineHeight": "1.1",
-                                                    }
-                                                ),
-                                                html.Div(
-                                                    [
-                                                        "Men's total incremental revenue ",
-                                                        html.Span(
-                                                            "significant" if mens_sig else "not significant",
-                                                            style={
-                                                                "fontSize": "0.65rem",
-                                                                "color": SUCCESS if mens_sig else DANGER,
-                                                                "fontFamily": "Ubuntu Mono, monospace",
-                                                                "textTransform": "uppercase",
-                                                                "letterSpacing": "0.05em",
-                                                            }
-                                                        ),
-                                                    ],
-                                                    style={"fontSize": "0.72rem", "color": MUTED, "marginTop": "3px"}
-                                                ),
-                                            ],
-                                            style={
-                                                "borderLeft": f"3px solid {MENS_COLOUR if mens_sig else BORDER}",
-                                                "paddingLeft": "0.75rem",
-                                            }
-                                        ),
-                                        md=4
+                                    _hl_col(
+                                        "Men's Email", MENS_COLOUR, mens_sig,
+                                        lift_mens, mens_lo, mens_hi,
+                                        proj_mens, proj_mens_lo, proj_mens_hi,
                                     ),
-                                    dbc.Col(
-                                        html.Div(
-                                            [
-                                                html.Div(
-                                                    f"${proj_womens:,.0f}",
-                                                    style={
-                                                        "fontSize": "1.45rem",
-                                                        "fontFamily": "Oswald, sans-serif",
-                                                        "fontWeight": "500",
-                                                        "color": WOMENS_COLOUR if wom_sig else MUTED,
-                                                        "lineHeight": "1.1",
-                                                    }
-                                                ),
-                                                html.Div(
-                                                    [
-                                                        "Women's total incremental revenue ",
-                                                        html.Span(
-                                                            "significant" if wom_sig else "not significant",
-                                                            style={
-                                                                "fontSize": "0.65rem",
-                                                                "color": SUCCESS if wom_sig else DANGER,
-                                                                "fontFamily": "Ubuntu Mono, monospace",
-                                                                "textTransform": "uppercase",
-                                                                "letterSpacing": "0.05em",
-                                                            }
-                                                        ),
-                                                    ],
-                                                    style={"fontSize": "0.72rem", "color": MUTED, "marginTop": "3px"}
-                                                ),
-                                            ],
-                                            style={
-                                                "borderLeft": f"3px solid {WOMENS_COLOUR if wom_sig else BORDER}",
-                                                "paddingLeft": "0.75rem",
-                                            }
-                                        ),
-                                        md=4
+                                    _hl_col(
+                                        "Women's Email", WOMENS_COLOUR, wom_sig,
+                                        lift_womens, wom_lo, wom_hi,
+                                        proj_womens, proj_wom_lo, proj_wom_hi,
                                     ),
                                 ],
-                                className="mb-3"
+                                className="g-3 mb-3",
                             ),
                             html.P(
                                 "Difference-in-means from the randomised experiment; confidence intervals "
                                 "use a percentile bootstrap (2,000 resamples) to account for the "
                                 "zero-inflated spend distribution. Subsequent tabs stress-test this with "
                                 "matching, Bayesian, and uplift methods.",
-                                className="text-muted small mb-0"
+                                className="text-muted small mb-0",
                             ),
                         ]
                     ),
@@ -1882,7 +2094,7 @@ def toggle_method_tab2(n, is_open):
     Input("rope-slider", "value")
 )
 def update_bayesian(pair_key, rope_val):
-    rope_val = rope_val if rope_val is not None else 0
+    rope_val = rope_val if rope_val is not None else 0  # Dash returns None for empty number inputs
     b = BAYESIAN[pair_key]
     delta = b["delta_samples"]
 
@@ -2082,6 +2294,8 @@ def toggle_method_tab3(n, is_open):
     prevent_initial_call=True,
 )
 def toggle_ppc(n, is_open, pair_key):
+    # PPC is on the log-amount component only (converters); we can't easily
+    # display the zero-mass since the LogNormal is not defined at zero.
     b = BAYESIAN[pair_key]
     obs_a = b.get("observed_amount_a")
     obs_b = b.get("observed_amount_b")
@@ -2283,7 +2497,7 @@ def update_uplift(arm, model):
     )
 
     p1, p99 = np.percentile(cate, 1), np.percentile(cate, 99)
-    cate_clipped = cate[(cate >= p1) & (cate <= p99)]
+    cate_clipped = cate[(cate >= p1) & (cate <= p99)]  # display only; full CATE used for all analysis
     pct_shown = len(cate_clipped) / len(cate) * 100
 
     hist_fig = go.Figure(
@@ -2383,6 +2597,7 @@ def update_uplift(arm, model):
         margin=dict(t=50, b=30)
     )
 
+    # Plotly fill colours don't accept hex+alpha directly; convert to rgba string
     qini_fill = (
         f"rgba({','.join(str(int(c * 255)) for c in px.colors.hex_to_rgb(color))},0.15)"
         if color.startswith("#")
@@ -2526,7 +2741,7 @@ def update_ols(tab):
     # Weight the zip-level marginal effects by actual population shares when
     # collapsing to (newbie, channel). The raw dataset has wildly uneven zip
     # distributions; an unweighted mean would over-represent rare zip cells.
-    zip_spell = {"Urban": "Urban", "Surburban": "Suburban", "Rural": "Rural"}
+    zip_spell = {"Urban": "Urban", "Surburban": "Suburban", "Rural": "Rural"}  # raw data misspells "Suburban"
     _cell_counts = (
         DF.assign(
             _newbie=DF["newbie"].map({0: "Existing", 1: "New"}),
@@ -2544,6 +2759,7 @@ def update_ols(tab):
     _weighted["n"] = _weighted["n"].fillna(0)
 
     def _wavg(g):
+        """Population-weighted average of marginal effects within a (newbie, channel) group."""
         w = g["n"].values
         if w.sum() == 0:
             return pd.Series(
@@ -2608,6 +2824,7 @@ def update_ols(tab):
                 },
                 "color": DANGER
             },
+            *TABLE_SELECTED,
         ],
         page_size=12
     )
@@ -2676,6 +2893,7 @@ def toggle_method_tab5(n, is_open):
 
 
 def _build_comparison_df():
+    """Assemble a tidy DataFrame of point estimates and CIs across all 5 methods × 2 arms."""
     rows = []
     for arm in ["mens", "womens"]:
         arm_label = "Men's Email" if arm == "mens" else "Women's Email"
@@ -2784,6 +3002,7 @@ def update_comparison(tab):
                 },
                 "color": DANGER
             },
+            *TABLE_SELECTED,
         ],
     )
 

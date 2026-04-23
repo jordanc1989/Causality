@@ -508,6 +508,7 @@ def _run_uplift_arm(df, arm):
     sub["cate_s"] = cate_s
 
     def _decile_lift(sub_sorted):
+        """Compute actual spend lift per decile for a population sorted by predicted CATE."""
         sub_sorted = sub_sorted.reset_index(drop=True)
         sub_sorted["decile"] = pd.qcut(sub_sorted.index, q=10, labels=False)
         rows = []
@@ -537,6 +538,7 @@ def _run_uplift_arm(df, arm):
     def _qini_auc(xs, ys):
         if len(xs) < 2:
             return 0.0
+        # `trapezoid` replaced `trapz` in numpy 2.0; fall back for older envs
         trapz = getattr(np, "trapezoid", None) or np.trapz
         return float(trapz(ys, xs))
 
