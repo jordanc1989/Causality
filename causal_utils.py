@@ -11,7 +11,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-# Narrow suppression: PyMC/ArviZ emit deprecation chatter on import; scikit-uplift
+# Narrow suppression: PyMC/ArviZ emit deprecation chatter on import: scikit-uplift
 # emits a FutureWarning about pandas groupby. Keep everything else visible.
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=FutureWarning, module="sklift")
@@ -21,7 +21,7 @@ CACHE_FILE = os.path.join(CACHE_DIR, "results.pkl")
 RANDOM_SEED = 42
 
 # Set to False to force a full recompute (and overwrite the pickle) the next
-# time the app starts — use after any change to this file's estimation logic.
+# time the app starts - use after any change to this file's estimation logic.
 # Leave True for production/Plotly Cloud so the pre-computed pickle is loaded
 # instantly instead of re-running ~3-5 min of PSM/Bayesian/uplift fits.
 USE_CACHE = True
@@ -254,7 +254,7 @@ def _run_bayesian_pair(df, pair_key):
     to PSM's ATT and OLS's main effect.
 
     Runs on the full arm data (no subsampling) via the nutpie NUTS
-    sampler — fits in a few seconds for ~20-40k observations per arm.
+    sampler, should be quick.
     """
     import pymc as pm
     import arviz as az
@@ -412,7 +412,7 @@ def _qini_curve_continuous(sorted_df, arm_col):
     R_T_total - R_C_total * (N_T/N_C), i.e. the total incremental revenue
     captured over random targeting. The x-axis is the fraction of population
     targeted. scikit-uplift's `qini_curve` enforces binary outcomes and can't
-    be used on `spend` directly — this is the same formula, generalised.
+    be used on `spend` directly. This is the same formula generalised.
     """
     n_rows = len(sorted_df)
     is_t = sorted_df[arm_col].values.astype(float)
@@ -446,7 +446,7 @@ def _run_uplift_arm(df, arm):
     importance| from the T-Learner: features the two outcome models use
     differently are the ones driving heterogeneous treatment effects. Plain
     `estimator_trmnt.feature_importances_` would instead tell you what predicts
-    spend in the treated group — a different question.
+    spend in the treated group (a different question).
     """
     from sklift.models import TwoModels, SoloModel
     from sklearn.ensemble import RandomForestRegressor
@@ -577,8 +577,8 @@ def run_uplift(df):
 def run_ols(df):
     """
     OLS regression with treatment dummies, covariates, and interaction terms.
-    Outcome: spend. Categoricals (zip_code, channel) are one-hot encoded;
-    reference levels are Urban and Phone respectively.
+    Outcome: spend. Categoricals (zip_code, channel) are one-hot encoded.
+    Reference levels are Urban and Phone respectively.
     """
     import statsmodels.formula.api as smf
 
@@ -664,7 +664,7 @@ def run_ols(df):
 
     # Population-weighted ATE and its HC3 CI via the delta method.
     # The `mens_email` / `womens_email` coefficients on their own are the
-    # effect for the reference subgroup (Existing + Phone + Urban); they are
+    # effect for the reference subgroup (Existing + Phone + Urban), they are
     # not directly comparable to PSM's ATT or the Bayesian delta. The ATE
     # below is the average of the linear-prediction marginal effects over
     # the actual sample distribution of the covariates, which IS on the same

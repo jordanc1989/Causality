@@ -856,10 +856,10 @@ def tab1_layout():
         badge_text, badge_color = ("SIG", SUCCESS) if sig else ("n.s.", DANGER)
         badge_id = f"hl-sig-{label.lower().replace(' ', '-').replace(chr(39), '')}"
         tooltip_text = (
-            "95% CI excludes zero — the lift is statistically distinguishable from no effect "
+            "95% CI excludes zero: the lift is statistically distinguishable from no effect "
             "(2,000-resample percentile bootstrap, α = 0.05)."
             if sig else
-            "95% CI includes zero — the lift cannot be distinguished from chance at the 5% level."
+            "95% CI includes zero: the lift cannot be distinguished from chance at the 5% level."
         )
         return dbc.Col(
             [
@@ -1520,7 +1520,7 @@ def tab3_layout():
                     ),
                     html.P(
                         "The 95% Highest Density Interval (HDI) is the shortest interval containing "
-                        "95% of the posterior probability — i.e. a 95% probability the true expected "
+                        "95% of the posterior probability, i.e. a 95% probability the true expected "
                         "spend difference lies in this range (given the model and data)."
                     ),
                     html.P(
@@ -1624,7 +1624,7 @@ def tab4_layout():
                         "treated spend minus the cumulative control spend re-weighted by the "
                         "treated/control ratio. Higher area under the curve means the model ranks "
                         "high-responders well. The decile chart shows actual spend lift for "
-                        "customers ranked by predicted uplift — good models show declining lift."
+                        "customers ranked by predicted uplift: good models show declining lift."
                     ),
                     html.P(
                         "Feature importance is reported as the absolute difference between the "
@@ -1635,9 +1635,9 @@ def tab4_layout():
                         "(what predicts spend in the treated group)."
                     ),
                     html.P(
-                        "S-Learner with a RandomForest and treatment×covariate interactions is known "
+                        "S-Learner with a RandomForest and 'treatment x covariate' interactions is known "
                         "to shrink CATE toward zero when outcome variance is large relative to the "
-                        "treatment signal — a pattern we see here, where the T-Learner's average "
+                        "treatment signal: a pattern we see here, where the T-Learner's average "
                         "CATE tends to be larger in magnitude than the S-Learner's."
                     ),
                     html.P(
@@ -1829,7 +1829,7 @@ app.layout = html.Div(
                     html.Div(
                         [
                             html.Img(
-                                src="/assets/jordan_cheney_logo_dark.png",
+                                src="/assets/jc_logo_dark.png",
                                 style={
                                     "height": "28px",
                                     "width": "auto",
@@ -2294,7 +2294,7 @@ def toggle_method_tab3(n, is_open):
     prevent_initial_call=True,
 )
 def toggle_ppc(n, is_open, pair_key):
-    # PPC is on the log-amount component only (converters); we can't easily
+    # PPC is on the log-amount component only (converters), we can't easily
     # display the zero-mass since the LogNormal is not defined at zero.
     b = BAYESIAN[pair_key]
     obs_a = b.get("observed_amount_a")
@@ -2534,7 +2534,7 @@ def update_uplift(arm, model):
     )
     fi_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title="Heterogeneity importance (|treated − control| model diff)",
+        title="Heterogeneity importance (|treated - control| model diff)",
         xaxis_title="Relative importance (normalised)",
         margin=dict(t=50, b=30, l=130),
     )
@@ -2893,7 +2893,7 @@ def toggle_method_tab5(n, is_open):
 
 
 def _build_comparison_df():
-    """Assemble a tidy DataFrame of point estimates and CIs across all 5 methods × 2 arms."""
+    """Assemble a tidy DataFrame of point estimates and CIs across all 5 methods x 2 arms."""
     rows = []
     for arm in ["mens", "womens"]:
         arm_label = "Men's Email" if arm == "mens" else "Women's Email"
@@ -3070,7 +3070,7 @@ def update_comparison(tab):
     womens_min, womens_max = min(womens_valid), max(womens_valid)
 
     # Robust verdict: don't flip on a single near-zero estimate. Treat
-    # |effect| < $0.10 as "noise zone" — smaller than any plausible action
+    # |effect| < $0.10 as "noise zone": smaller than any plausible action
     # threshold in this dataset. "Agree" requires (a) no method in the noise
     # zone is on the opposite side, AND (b) all material estimates share sign.
     NOISE_EPS = 0.10
@@ -3125,7 +3125,7 @@ def update_comparison(tab):
                     ),
                     html.P(
                         "Method agreement strengthens causal credibility. When estimates diverge, "
-                        "the gap reflects differing assumptions: PSM relies on covariate overlap, "
+                        "the gap reflects differing assumptions. PSM relies on covariate overlap, "
                         "Bayesian A/B on distribution, and uplift on out-of-sample generalisation.",
                         className="text-muted small mb-0"
                     ),
