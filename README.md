@@ -1,7 +1,7 @@
-# Causal Inference Dashboard: Hillstrom Email Campaign
+# Causal Inference Dashboard
 
 An interactive portfolio-grade causal inference dashboard built with Dash in Python.
-Applies a number of causal methods to a publicly available retail email marketing dataset,
+Applies a number of causal methods to a publicly available retail email marketing dataset (Hillstrom, 2008),
 allowing side-by-side comparison of estimates, uncertainty and assumptions.
 
 ---
