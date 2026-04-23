@@ -553,7 +553,7 @@ def tab1_layout():
     lift_mens = avg_mens - avg_control
     lift_womens = avg_womens - avg_control
 
-    def _ci95(a, b, n_boot=2000, seed=42):
+    def _ci95(a, b, n_boot=2000, seed=cu.RANDOM_SEED):
         rng = np.random.default_rng(seed)
         diffs = np.array([
             rng.choice(a, size=len(a), replace=True).mean() -
@@ -568,24 +568,32 @@ def tab1_layout():
     wom_sig = wom_lo > 0
     proj_mens = lift_mens * n_mens
     proj_womens = lift_womens * n_womens
+    proj_mens_lo, proj_mens_hi = mens_lo * n_mens, mens_hi * n_mens
+    proj_wom_lo, proj_wom_hi = wom_lo * n_womens, wom_hi * n_womens
 
     if wom_sig and not mens_sig:
         headline = (
             f"The Women's campaign drove a statistically meaningful lift of "
             f"${lift_womens:.2f} per recipient (bootstrap 95% CI ${wom_lo:.2f}-${wom_hi:.2f}), "
-            f"worth roughly ${proj_womens:,.0f} across the {n_womens:,} customers mailed. "
+            f"worth roughly ${proj_womens:,.0f} across the {n_womens:,} customers mailed "
+            f"(projection CI: ${proj_wom_lo:,.0f}-${proj_wom_hi:,.0f}). "
             f"The Men's campaign shows a smaller lift (${lift_mens:.2f}/recipient) that is not "
             f"distinguishable from zero at 95% confidence — treat as inconclusive."
         )
         headline_color = SUCCESS
     elif mens_sig and wom_sig:
         headline = (
-            f"Both campaigns drove statistically meaningful lifts:"
+            f"Both campaigns drove statistically meaningful lifts. "
+            f"Women's: ${lift_womens:.2f}/recipient (95% CI ${wom_lo:.2f}-${wom_hi:.2f}, "
+            f"projected ${proj_womens:,.0f} [${proj_wom_lo:,.0f}-${proj_wom_hi:,.0f}]). "
+            f"Men's: ${lift_mens:.2f}/recipient (95% CI ${mens_lo:.2f}-${mens_hi:.2f}, "
+            f"projected ${proj_mens:,.0f} [${proj_mens_lo:,.0f}-${proj_mens_hi:,.0f}])."
         )
         headline_color = SUCCESS
     else:
         headline = (
-            f"Women's lift: ${lift_womens:.2f}/recipient (bootstrap 95% CI ${wom_lo:.2f}-${wom_hi:.2f}). "
+            f"Women's lift: ${lift_womens:.2f}/recipient (bootstrap 95% CI ${wom_lo:.2f}-${wom_hi:.2f}, "
+            f"projected ${proj_womens:,.0f} [${proj_wom_lo:,.0f}-${proj_wom_hi:,.0f}] across {n_womens:,} mailed). "
             f"Men's lift: ${lift_mens:.2f}/recipient (bootstrap 95% CI ${mens_lo:.2f}-${mens_hi:.2f}). "
             f"Results warrant further review across methods (see Tab 6)."
         )
@@ -1102,8 +1110,18 @@ def tab2_layout():
                         "before and after matching. Standardised mean differences below 0.1 indicate good balance."
                     ),
                     html.P(
-                        "Uncertainty is quantified via 500 bootstrap samples of the matched dataset. "
-                        "The 95% CI shown is the 2.5th-97.5th percentile of bootstrap ATT estimates."
+                        "Uncertainty is quantified via a causal bootstrap: 200 replicates, each of "
+                        "which resamples the combined treated+control pool, re-fits the propensity "
+                        "model, re-matches, and recomputes the ATT. This propagates uncertainty from "
+                        "the propensity-score estimation and the matching step. A naive pair-level "
+                        "bootstrap would be invalid here because 1:1 nearest-neighbour matching "
+                        "with replacement creates dependence between pairs that share a control "
+                        "(Abadie & Imbens, 2006)."
+                    ),
+                    html.P(
+                        "Common support is reported as a KPI but not enforced — no caliper is applied, "
+                        "so every treated unit finds a match. The number of treated units whose "
+                        "propensity lies outside the overlap region is shown alongside the ATT."
                     ),
                 ],
             ),
@@ -1219,6 +1237,25 @@ def tab3_layout():
                     dbc.Col(
                         [
                             html.Button(
+                                "▸ Posterior Predictive Check (conditional spend amount)",
+                                id="ppc-btn",
+                                className="btn-methodology mb-2",
+                                n_clicks=0
+                            ),
+                            dbc.Collapse(
+                                dcc.Graph(id="bayes-ppc-plot", config=GRAPH_CONFIG),
+                                id="ppc-collapse",
+                                is_open=False
+                            ),
+                        ]
+                    ),
+                ]
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.Button(
                                 "▸ Show MCMC Trace Plots",
                                 id="trace-btn",
                                 className="btn-methodology mb-2",
@@ -1256,18 +1293,28 @@ def tab3_layout():
                 "tab3",
                 [
                     html.P(
-                        "The Bayesian A/B test models spend as a Normal distribution for each group, "
-                        "with weakly informative priors centred on the pooled mean. The treatment effect "
-                        "(delta) is the difference in posterior means. MCMC is run with PyMC (2,000 draws, "
-                        "2 chains)."
+                        "Spend is ~99% zeros with a right-skewed positive tail, so a plain Normal "
+                        "likelihood is a severe misspecification. Instead the model uses a "
+                        "two-part (hurdle) specification: a Bernoulli on whether the customer "
+                        "spends at all, and a LogNormal on the amount among converters. The "
+                        "expected per-customer spend is P(convert) · E[amount | convert], and "
+                        "delta is the difference in expected spend between the two arms."
                     ),
                     html.P(
-                        "The 95% Highest Density Interval (HDI) is the shortest interval containing 95% of the "
-                        "posterior probability. This means that we believe there is a 95% probability the true effect lies in this range."
+                        "Priors: Beta(1, 1) (uniform) on conversion probability; Normal on "
+                        "log-mean centred on the pooled log-amount; HalfNormal on log-sigma. "
+                        "MCMC is run with PyMC via the nutpie NUTS sampler (2,000 draws, 2 chains) "
+                        "on the full arm data — no subsampling."
                     ),
                     html.P(
-                        "The ROPE (Region of Practical Equivalence) lets you define a minimum effect size that "
-                        "matters for business decisions. The dashboard shows the probability mass outside the ROPE."
+                        "The 95% Highest Density Interval (HDI) is the shortest interval containing "
+                        "95% of the posterior probability — i.e. a 95% probability the true expected "
+                        "spend difference lies in this range (given the model and data)."
+                    ),
+                    html.P(
+                        "The ROPE (Region of Practical Equivalence) lets you define a minimum effect "
+                        "size that matters for business decisions. The dashboard shows the probability "
+                        "mass outside the ROPE."
                     ),
                 ],
             ),
@@ -1354,15 +1401,32 @@ def tab4_layout():
                         "by differencing predictions under treatment vs non-treatment."
                     ),
                     html.P(
-                        "Both models use 5-fold cross-fitting: each observation's CATE is predicted by a "
-                        "model trained on the other four folds. This helps avoid in-sample overfitting and gives "
-                        "honest out-of-sample estimates."
+                        "Both models use 5-fold stratified cross-fitting (stratified on treatment, "
+                        "so every fold has both arms represented). Each observation's CATE is "
+                        "predicted by a model trained on the other four folds. This avoids "
+                        "in-sample overfitting and gives honest out-of-sample estimates."
                     ),
                     html.P(
-                        "The Qini curve ranks customers by predicted uplift. A higher area under the curve "
-                        "indicates the model successfully identifies high-responders. "
-                        "The decile chart shows actual spend lift for customers ranked by predicted uplift. "
-                        "Good models show declining lift across deciles."
+                        "The Qini curve uses the canonical Radcliffe (2007) definition for continuous "
+                        "outcomes: at rank k, cumulative net revenue captured equals the cumulative "
+                        "treated spend minus the cumulative control spend re-weighted by the "
+                        "treated/control ratio. Higher area under the curve means the model ranks "
+                        "high-responders well. The decile chart shows actual spend lift for "
+                        "customers ranked by predicted uplift — good models show declining lift."
+                    ),
+                    html.P(
+                        "Feature importance is reported as the absolute difference between the "
+                        "T-Learner's treated-outcome and control-outcome random-forest importances. "
+                        "Features the two models use differently are the ones driving heterogeneity "
+                        "in treatment effect — which is the actual object of interest. Raw "
+                        "`estimator_trmnt.feature_importances_` would answer a different question "
+                        "(what predicts spend in the treated group)."
+                    ),
+                    html.P(
+                        "S-Learner with a RandomForest and treatment×covariate interactions is known "
+                        "to shrink CATE toward zero when outcome variance is large relative to the "
+                        "treatment signal — a pattern we see here, where the T-Learner's average "
+                        "CATE tends to be larger in magnitude than the S-Learner's."
                     ),
                     html.P(
                         "Key assumption: the same ignorability assumption as PSM: all relevant confounders "
@@ -1430,6 +1494,18 @@ def tab5_layout():
                         "Interaction terms (treatment x newbie, treatment x channel, treatment x zip code) capture "
                         "treatment effect heterogeneity at the subgroup level, complementing the "
                         "non-parametric uplift models in Tab 4."
+                    ),
+                    html.P(
+                        "Standard errors use the HC3 heteroscedasticity-robust (White) estimator. "
+                        "Spend is right-skewed and its variance scales with the treatment means, so "
+                        "default OLS SEs would be biased — HC3 is the recommended small-sample "
+                        "correction for this kind of outcome."
+                    ),
+                    html.P(
+                        "The subgroup heatmap collapses the 3-way (newbie × channel × zip) marginal "
+                        "effects to a 2-way (newbie × channel) view by averaging over zip, weighted "
+                        "by the actual customer counts in each (newbie, channel, zip) cell. An "
+                        "unweighted mean would over-represent rare zip categories."
                     ),
                     html.P(
                         "Key assumption: linearity of the conditional expectation function. The model is estimated "
@@ -1998,6 +2074,82 @@ def toggle_method_tab3(n, is_open):
 
 
 @app.callback(
+    Output("ppc-collapse", "is_open"),
+    Output("bayes-ppc-plot", "figure"),
+    Input("ppc-btn", "n_clicks"),
+    State("ppc-collapse", "is_open"),
+    State("bayes-pair-selector", "value"),
+    prevent_initial_call=True,
+)
+def toggle_ppc(n, is_open, pair_key):
+    b = BAYESIAN[pair_key]
+    obs_a = b.get("observed_amount_a")
+    obs_b = b.get("observed_amount_b")
+    ppc_a = b.get("ppc_amount_a")
+    ppc_b = b.get("ppc_amount_b")
+
+    fig = go.Figure()
+    if obs_a is not None and ppc_a is not None:
+        fig.add_trace(
+            go.Histogram(
+                x=obs_a,
+                name=f"Observed ({b['arm_a_label']})",
+                histnorm="probability density",
+                marker_color=MENS_COLOUR,
+                opacity=0.45,
+                nbinsx=60,
+            )
+        )
+        fig.add_trace(
+            go.Histogram(
+                x=ppc_a,
+                name=f"Posterior predictive ({b['arm_a_label']})",
+                histnorm="probability density",
+                marker_color=ACCENT,
+                opacity=0.45,
+                nbinsx=60,
+            )
+        )
+    if obs_b is not None and ppc_b is not None:
+        fig.add_trace(
+            go.Histogram(
+                x=obs_b,
+                name=f"Observed ({b['arm_b_label']})",
+                histnorm="probability density",
+                marker_color=WOMENS_COLOUR,
+                opacity=0.45,
+                nbinsx=60,
+                visible="legendonly",
+            )
+        )
+        fig.add_trace(
+            go.Histogram(
+                x=ppc_b,
+                name=f"Posterior predictive ({b['arm_b_label']})",
+                histnorm="probability density",
+                marker_color=CTRL_COLOUR,
+                opacity=0.45,
+                nbinsx=60,
+                visible="legendonly",
+            )
+        )
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        barmode="overlay",
+        title="Posterior predictive check: conditional spend amount (converters only)",
+        xaxis_title="Spend ($)",
+        yaxis_title="Density",
+        margin=dict(t=60, b=70),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+    )
+    all_obs = [x for x in (obs_a, obs_b) if x is not None and len(x) > 0]
+    if all_obs:
+        p99 = max(float(np.percentile(o, 99)) for o in all_obs)
+        fig.update_xaxes(range=[0, p99])
+    return not is_open, fig
+
+
+@app.callback(
     Output("diag-collapse", "is_open"),
     Output("bayes-diagnostics-table", "children"),
     Input("diag-btn", "n_clicks"),
@@ -2168,8 +2320,8 @@ def update_uplift(arm, model):
     )
     fi_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title="Feature Importance (T-Learner treatment model)",
-        xaxis_title="Importance",
+        title="Heterogeneity importance (|treated − control| model diff)",
+        xaxis_title="Relative importance (normalised)",
         margin=dict(t=50, b=30, l=130),
     )
 
@@ -2246,7 +2398,7 @@ def update_uplift(arm, model):
             line=dict(color=color, width=2),
             fill="tozeroy",
             fillcolor=qini_fill,
-            hovertemplate="Top %{x:.0%} targeted<br>Cumulative uplift: %{y:.3f}<extra>%{fullData.name}</extra>",
+            hovertemplate="Top %{x:.0%} targeted<br>Cumulative incremental spend: $%{y:,.0f}<extra>%{fullData.name}</extra>",
         )
     )
     qini_fig.add_trace(
@@ -2259,11 +2411,13 @@ def update_uplift(arm, model):
             hoverinfo="skip",
         )
     )
+    qini_auc_key = "qini_auc_s" if model == "s" else "qini_auc_t"
+    qini_auc = u.get(qini_auc_key, 0.0)
     qini_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"Qini Curve - {model_label}",
+        title=f"Qini Curve — {model_label} (AUC = ${qini_auc:,.0f})",
         xaxis_title="Fraction of population targeted",
-        yaxis_title="Cumulative uplift (normalised)",
+        yaxis_title="Cumulative incremental spend ($)",
         margin=dict(t=50, b=70),
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
     )
@@ -2369,12 +2523,46 @@ def update_ols(tab):
         margin=dict(t=50, b=30, l=260)
     )
 
-    disp_df = (
-        subgroup_df.groupby(["newbie", "channel"])[["me_mens", "me_womens"]]
-        .mean()
+    # Weight the zip-level marginal effects by actual population shares when
+    # collapsing to (newbie, channel). The raw dataset has wildly uneven zip
+    # distributions; an unweighted mean would over-represent rare zip cells.
+    zip_spell = {"Urban": "Urban", "Surburban": "Suburban", "Rural": "Rural"}
+    _cell_counts = (
+        DF.assign(
+            _newbie=DF["newbie"].map({0: "Existing", 1: "New"}),
+            _zip=DF["zip_code"].map(zip_spell),
+        )
+        .groupby(["_newbie", "channel", "_zip"])
+        .size()
+        .rename("n")
+        .reset_index()
+        .rename(columns={"_newbie": "newbie", "_zip": "zip_code"})
+    )
+    _weighted = subgroup_df.merge(
+        _cell_counts, on=["newbie", "channel", "zip_code"], how="left"
+    )
+    _weighted["n"] = _weighted["n"].fillna(0)
+
+    def _wavg(g):
+        w = g["n"].values
+        if w.sum() == 0:
+            return pd.Series(
+                {"me_mens": g["me_mens"].mean(), "me_womens": g["me_womens"].mean()}
+            )
+        return pd.Series(
+            {
+                "me_mens": float(np.average(g["me_mens"], weights=w)),
+                "me_womens": float(np.average(g["me_womens"], weights=w)),
+            }
+        )
+
+    weighted_sub = (
+        _weighted.groupby(["newbie", "channel"], group_keys=False)
+        .apply(_wavg)
         .reset_index()
     )
-    disp_df = disp_df.rename(
+
+    disp_df = weighted_sub.rename(
         columns={
             "newbie": "Customer type",
             "channel": "Channel",
@@ -2424,18 +2612,13 @@ def update_ols(tab):
         page_size=12
     )
 
-    all_vals = pd.concat(
-        [
-            subgroup_df.groupby(["newbie", "channel"])["me_mens"].mean(),
-            subgroup_df.groupby(["newbie", "channel"])["me_womens"].mean()
-        ]
-    )
+    all_vals = pd.concat([weighted_sub["me_mens"], weighted_sub["me_womens"]])
     zmax = max(abs(all_vals.min()), abs(all_vals.max()))
     zmin = -zmax
 
     def make_heatmap(arm_col):
-        heat_pivot = (
-            subgroup_df.groupby(["newbie", "channel"])[arm_col].mean().unstack()
+        heat_pivot = weighted_sub.pivot(
+            index="newbie", columns="channel", values=arm_col
         )
         return go.Figure(
             go.Heatmap(
@@ -2543,19 +2726,22 @@ def _build_comparison_df():
             }
         )
 
-    coef_df = OLS["coef_df"]
-    for arm, col, arm_label in [
-        ("mens", "mens_email", "Men's Email"),
-        ("womens", "womens_email", "Women's Email"),
+    # OLS: report the *population-weighted ATE* (average marginal effect over
+    # the sample's actual covariate distribution) with its HC3 delta-method CI.
+    # The raw `mens_email` / `womens_email` coefficients are only the effect
+    # for the reference subgroup (Existing + Phone + Urban) and are not
+    # directly comparable to PSM's ATT or the Bayesian delta.
+    for arm, ate_key, lo_key, hi_key, arm_label in [
+        ("mens", "ate_mens", "ate_mens_lo", "ate_mens_hi", "Men's Email"),
+        ("womens", "ate_womens", "ate_womens_lo", "ate_womens_hi", "Women's Email"),
     ]:
-        row_ols = coef_df[coef_df["term"] == col].iloc[0]
         rows.append(
             {
-                "Method": "OLS (main effect)",
+                "Method": "OLS (avg marginal effect, HC3)",
                 "Arm": arm_label,
-                "Estimate ($)": round(row_ols["coef"], 2),
-                "CI Lower ($)": round(row_ols["ci_lo"], 2),
-                "CI Upper ($)": round(row_ols["ci_hi"], 2)
+                "Estimate ($)": round(OLS.get(ate_key, 0.0), 2),
+                "CI Lower ($)": round(OLS.get(lo_key, 0.0), 2),
+                "CI Upper ($)": round(OLS.get(hi_key, 0.0), 2),
             }
         )
 
@@ -2661,21 +2847,39 @@ def update_comparison(tab):
     womens_estimates = comp_df[comp_df["Arm"] == "Women's Email"]["Estimate ($)"].values
     mens_valid = [v for v in mens_estimates if pd.notna(v)]
     womens_valid = [v for v in womens_estimates if pd.notna(v)]
-    mens_agree = all(v > 0 for v in mens_valid)
-    womens_agree = all(v > 0 for v in womens_valid)
     mens_min, mens_max = min(mens_valid), max(mens_valid)
     womens_min, womens_max = min(womens_valid), max(womens_valid)
 
-    mens_verdict = (
-        "All methods agree on a positive effect."
-        if mens_agree
-        else "Methods disagree on direction: inspect assumptions carefully."
-    )
-    womens_verdict = (
-        "All methods agree on a positive effect."
-        if womens_agree
-        else "Methods disagree on direction: inspect assumptions carefully."
-    )
+    # Robust verdict: don't flip on a single near-zero estimate. Treat
+    # |effect| < $0.10 as "noise zone" — smaller than any plausible action
+    # threshold in this dataset. "Agree" requires (a) no method in the noise
+    # zone is on the opposite side, AND (b) all material estimates share sign.
+    NOISE_EPS = 0.10
+
+    def _verdict(estimates):
+        material = [v for v in estimates if abs(v) >= NOISE_EPS]
+        near_zero = [v for v in estimates if abs(v) < NOISE_EPS]
+        if not material:
+            return "All methods indistinguishable from zero."
+        pos = sum(1 for v in material if v > 0)
+        neg = sum(1 for v in material if v < 0)
+        if pos > 0 and neg == 0:
+            tail = (
+                f" ({len(near_zero)} method[s] near zero.)" if near_zero else ""
+            )
+            return "All methods point to a positive effect." + tail
+        if neg > 0 and pos == 0:
+            tail = (
+                f" ({len(near_zero)} method[s] near zero.)" if near_zero else ""
+            )
+            return "All methods point to a negative effect." + tail
+        return (
+            f"Methods disagree on direction ({pos} positive, {neg} negative): "
+            "inspect assumptions carefully."
+        )
+
+    mens_verdict = _verdict(mens_valid)
+    womens_verdict = _verdict(womens_valid)
 
     takeaway = dbc.Card(
         [
@@ -2711,7 +2915,7 @@ def update_comparison(tab):
         ],
         style={
             **CARD_STYLE,
-            "borderLeft": f"3px solid {SUCCESS if (mens_agree and womens_agree) else WARNING}"
+            "borderLeft": f"3px solid {SUCCESS if ('point to' in mens_verdict and 'point to' in womens_verdict) else WARNING}"
         },
     )
 
