@@ -65,11 +65,11 @@ Open your browser at **http://localhost:8050**.
 
 ### 3. Force recompute
 
-If you want to force a recompute, delete the cache directory and restart:
-
-```bash
-rm -rf .cache && python app.py
-```
+After changing any estimation logic in `causal_utils.py`, flip the `USE_CACHE`
+flag at the top of that file to `False` and restart the app — the next run will
+rebuild from scratch and overwrite `.cache/results.pkl`. Set it back to `True`
+afterwards so subsequent starts (and the Plotly Cloud deployment) load instantly
+from the pickle.
 
 ---
 

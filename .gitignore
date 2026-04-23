@@ -2,9 +2,11 @@
 agents.md
 .DS_Store
 __pycache__
-.cache/
+.cache/*
+!.cache/results.pkl
 .vscode/
 .agents/
 .ruff_cache/
 .claude/
 CLAUDE.md
+plotly-cloud.toml

@@ -17,6 +17,12 @@ CACHE_DIR = ".cache"
 CACHE_FILE = os.path.join(CACHE_DIR, "results.pkl")
 RANDOM_SEED = 10
 
+# Set to False to force a full recompute (and overwrite the pickle) the next
+# time the app starts — use after any change to this file's estimation logic.
+# Leave True for production/Plotly Cloud so the pre-computed pickle is loaded
+# instantly instead of re-running ~3-5 min of PSM/Bayesian/uplift fits.
+USE_CACHE = True
+
 # ---------------------------------------------------------------------------
 # Data Loading
 # ---------------------------------------------------------------------------
@@ -573,11 +579,13 @@ def build_cache():
 
 
 def load_or_build_cache():
-    """Load cached results if available, otherwise compute and cache."""
-    if os.path.exists(CACHE_FILE):
-        print(f"[Cache] Loading from {CACHE_FILE}...")
+    """Load cached results if USE_CACHE and a pickle exists, otherwise recompute."""
+    if USE_CACHE and os.path.exists(CACHE_FILE):
+        print(f"[Cache] USE_CACHE=True — loading from {CACHE_FILE}...")
         with open(CACHE_FILE, "rb") as f:
             return pickle.load(f)
+    if not USE_CACHE:
+        print("[Cache] USE_CACHE=False — forcing rebuild (this will take several minutes)...")
     else:
         print("[Cache] No cache found — computing (this will take several minutes)...")
-        return build_cache()
+    return build_cache()
