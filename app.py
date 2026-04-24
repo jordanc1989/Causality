@@ -1073,9 +1073,9 @@ def tab1_layout():
                                         ),
                                         html.P(
                                             "Difference-in-means from the randomised experiment; confidence intervals "
-                                            "use a percentile bootstrap (2,000 resamples) to account for the "
-                                            "zero-inflated spend distribution. Subsequent tabs stress-test this with "
-                                            "matching, Bayesian, and uplift methods.",
+                                            "use a percentile bootstrap (2k resamples) to account for the "
+                                            "zero-inflated spend distribution. Subsequent tabs test this with "
+                                            "matching, Bayesian and uplift methods.",
                                             className="text-muted small mb-0",
                                         ),
                                     ]
@@ -1094,14 +1094,16 @@ def tab1_layout():
                                 "The Hillstrom MineThatData dataset captures a randomised email marketing "
                                 "experiment across 64k US retail customers. Two treatment groups received "
                                 "targeted email campaigns (Men's or Women's catalogue), while the control "
-                                "group received nothing.",
+                                "group received nothing. The groups were split around 33% each, and the "
+                                "experiment ran for 30 days. The dataset includes customer attributes "
+                                "(recency, frequency, monetary value, channel) and outcomes (conversion, spend).",
                                 className="small text-muted"
                             ),
                             html.P(
                                 "The causal question: does receiving an email cause customers to spend more? "
-                                "Even in a randomised experiment, this causal analysis adds value by quantifying "
+                                "Even in a randomised experiment, causal analysis adds value by quantifying "
                                 "uncertainty, identifying which customers respond most (HTE), and stress-testing "
-                                "results across methodologies.",
+                                "results across different methodologies.",
                                 className="small text-muted"
                             ),
                         ],
@@ -1142,17 +1144,6 @@ def tab1_layout():
                     ),
                 ],
                 className="mb-4 g-3 align-items-start"
-            ),
-            methodology_collapse(
-                "tab1",
-                [
-                    html.P(
-                        "This tab presents descriptive statistics. Because this is a randomised experiment, "
-                        "groups should be broadly balanced on observed covariates, the balance table should confirm this. "
-                        "However, minor imbalances can still bias estimates, motivating the matching and regression "
-                        "adjustments in subsequent tabs."
-                    ),
-                ],
             ),
         ],
         fluid=True,
@@ -2199,7 +2190,7 @@ def update_bayesian(pair_key, rope_val):
                 info=(
                     "95% Highest Density Interval: the narrowest range containing 95% of the "
                     "posterior probability. These are the most credible values of the per-customer "
-                    "treatment effect given the data and priors."
+                    "treatment effect."
                 ),
                 info_id="bayes-kpi-hdi-info",
             ),
@@ -2210,8 +2201,8 @@ def update_bayesian(pair_key, rope_val):
                 accent=SUCCESS if p_pos > 0.9 else WARNING,
                 info=(
                     "Posterior probability that the treatment truly lifts per-customer spend above zero. "
-                    "Values above 95% are strong evidence of a positive effect; values near 50% mean "
-                    "the data are indifferent about the direction."
+                    "Values above 95% are strong evidence of a positive effect. Values near 50% mean "
+                    "the data is indifferent about the direction."
                 ),
                 info_id="bayes-kpi-ppos-info",
             ),
@@ -2321,7 +2312,7 @@ def update_bayesian(pair_key, rope_val):
     verdict = (
         "Strong evidence the effect is practically non-zero."
         if p_outside_rope > 0.9
-        else "Not yet decisive; treat as practically equivalent to zero for now."
+        else "Not yet decisive, treat as practically equivalent to zero for now."
     )
     rope_card = html.Div(
         [
@@ -2349,8 +2340,8 @@ def update_bayesian(pair_key, rope_val):
                      style={"fontStyle": "italic", "marginBottom": 0}),
             dbc.Tooltip(
                 f"Posterior probability that the true per-customer treatment effect exceeds ±${rope_val} "
-                f"in magnitude. Values inside the ROPE are treated as practically equivalent to zero; "
-                f"probability outside is the evidence the effect is large enough to matter.",
+                f"in magnitude. Values inside the ROPE are treated as practically equivalent to zero. "
+                f"Probability outside is the evidence the effect is large enough to matter.",
                 target="bayes-rope-info",
                 placement="top",
                 style={"fontFamily": "Ubuntu, sans-serif", "fontSize": "0.8rem"},
@@ -2661,7 +2652,7 @@ def update_uplift(arm, model):
     )
 
     p1, p99 = np.percentile(cate, 1), np.percentile(cate, 99)
-    cate_clipped = cate[(cate >= p1) & (cate <= p99)]  # display only; full CATE used for all analysis
+    cate_clipped = cate[(cate >= p1) & (cate <= p99)]  # display only, full CATE used for all analysis
     pct_shown = len(cate_clipped) / len(cate) * 100
 
     hist_fig = go.Figure(
@@ -2761,7 +2752,7 @@ def update_uplift(arm, model):
         margin=dict(t=50, b=30)
     )
 
-    # Plotly fill colours don't accept hex+alpha directly; convert to rgba string
+    # Plotly fill colours don't accept hex+alpha directly so convert to rgba string
     qini_fill = (
         f"rgba({','.join(str(int(c * 255)) for c in px.colors.hex_to_rgb(color))},0.15)"
         if color.startswith("#")
