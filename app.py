@@ -12,7 +12,7 @@ import plotly.express as px
 import plotly.io as pio
 
 import dash
-from dash import dcc, html, dash_table, Input, Output, State
+from dash import dcc, html, dash_table, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 
 import causal_utils as cu
@@ -292,6 +292,55 @@ app.index_string = """<!DOCTYPE html>
                 background-color: #072C2C !important;
                 border: 1px solid #1A4040 !important;
                 margin-bottom: 4px !important;
+            }
+
+            /* Segmented control (modern radio group) */
+            .segmented-control {
+                display: inline-flex;
+                background: #0D3535;
+                border: 1px solid #1A4040;
+                border-radius: 6px;
+                padding: 3px;
+                gap: 2px;
+            }
+            .segmented-control .form-check {
+                margin: 0 !important;
+                padding-left: 0 !important;
+                display: flex;
+            }
+            .segmented-control .form-check-input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+                margin: 0;
+            }
+            .segmented-control .form-check-label {
+                cursor: pointer;
+                padding: 0.45rem 1.1rem;
+                border-radius: 4px;
+                color: #6B9090;
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.72rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+                user-select: none;
+                border: 1px solid transparent;
+                line-height: 1.2;
+                white-space: nowrap;
+            }
+            .segmented-control .form-check-label:hover {
+                color: #E8F1F1;
+                background: rgba(255,255,255,0.04);
+            }
+            .segmented-control .form-check-input:checked + .form-check-label {
+                color: #FF5F03;
+                background: rgba(255,95,3,0.1);
+                border-color: rgba(255,95,3,0.35);
+            }
+            .segmented-control .form-check-input:focus-visible + .form-check-label {
+                outline: 2px solid rgba(255,95,3,0.5);
+                outline-offset: 1px;
             }
 
             /* Methodology button */
@@ -1349,157 +1398,189 @@ def tab2_layout():
 def tab3_layout():
     return dbc.Container(
         [
+            html.Div(
+                [
+                    html.Span([html.Strong("Hurdle model"), ": Bernoulli x LogNormal"]),
+                    html.Span(className="sep"),
+                    html.Span("2,000 draws x 2 chains"),
+                    html.Span(className="sep"),
+                    html.Span("Full arm data (no subsampling)"),
+                ],
+                className="overview-context",
+            ),
             dbc.Row(
                 [
                     dbc.Col(
                         [
-                            html.Label("Comparison:", className="small text-muted"),
+                            section_header("Comparison"),
                             dbc.RadioItems(
                                 id="bayes-pair-selector",
                                 options=[
-                                    {
-                                        "label": "Men's vs Control",
-                                        "value": "mens_vs_control"
-                                    },
-                                    {
-                                        "label": "Women's vs Control",
-                                        "value": "womens_vs_control"
-                                    },
-                                    {
-                                        "label": "Men's vs Women's",
-                                        "value": "mens_vs_womens"
-                                    }
+                                    {"label": "Men's vs Control", "value": "mens_vs_control"},
+                                    {"label": "Women's vs Control", "value": "womens_vs_control"},
+                                    {"label": "Men's vs Women's", "value": "mens_vs_womens"},
                                 ],
                                 value="mens_vs_control",
                                 inline=True,
-                                className="mb-3"
+                                className="segmented-control mt-2",
                             ),
                         ]
                     ),
-                ]
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(html.Div(id="bayes-kpi-cards"), md=4),
-                    dbc.Col(dcc.Graph(id="bayes-posterior-plot", config=GRAPH_CONFIG), md=8)
                 ],
-                className="mb-3"
+                className="mb-4",
             ),
             dbc.Row(
                 [
                     dbc.Col(
                         [
-                            html.Div(
-                                [
-                                    html.Span(
-                                        "Minimum meaningful effect",
-                                        className="small text-muted"
-                                    ),
-                                    html.Span(
-                                        " ⓘ",
-                                        id="rope-info-icon",
-                                        style={
-                                            "cursor": "help",
-                                            "color": MUTED,
-                                            "fontSize": "0.85em",
-                                            "marginLeft": "4px"
-                                        }
-                                    ),
-                                    dbc.Tooltip(
-                                        "The Region of Practical Equivalence (ROPE) defines a band of effect sizes "
-                                        "that are too small to act on. Posterior probability inside ±$X per customer "
-                                        "is treated as 'practically zero'. Set this to the minimum spend lift that "
-                                        "would justify running the campaign.",
-                                        target="rope-info-icon",
-                                        placement="right",
-                                        style={
-                                            "fontFamily": "Oswald, sans-serif",
-                                            "fontSize": "0.75rem"
-                                        }
-                                    ),
-                                ],
-                                style={"marginBottom": "6px"}
-                            ),
-                            dbc.InputGroup(
-                                [
-                                    dbc.InputGroupText("±$"),
-                                    dbc.Input(
-                                        id="rope-slider",
-                                        type="number",
-                                        min=0,
-                                        max=10,
-                                        step=0.5,
-                                        value=1,
-                                        debounce=True
-                                    ),
-                                    dbc.InputGroupText("per customer")
-                                ],
-                                size="sm",
-                                style={"maxWidth": "220px"}
-                            ),
+                            section_header("Posterior Summary"),
+                            html.Div(id="bayes-kpi-cards", className="mt-2"),
                         ],
-                        md=5,
+                        md=4,
                     ),
-                    dbc.Col(html.Div(id="rope-result-card"), md=7)
+                    dbc.Col(
+                        [
+                            section_header("Posterior Distribution — Treatment Effect δ"),
+                            dcc.Graph(id="bayes-posterior-plot", config=GRAPH_CONFIG, className="mt-2"),
+                        ],
+                        md=8,
+                    ),
                 ],
-                className="mb-3"
+                className="mb-4",
             ),
+            dbc.Card(
+                dbc.CardBody(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Span("Practical Significance (ROPE)",
+                                                          style={**SECTION_HEADER_STYLE,
+                                                                 "borderBottom": "none",
+                                                                 "paddingBottom": 0,
+                                                                 "marginBottom": "0.3rem",
+                                                                 "display": "block"}),
+                                                html.Span(
+                                                    "Posterior mass outside the Region of Practical Equivalence. "
+                                                    "Set ±$X to the smallest per-customer lift worth acting on.",
+                                                    className="small text-muted",
+                                                    style={"display": "block", "marginBottom": "0.6rem"},
+                                                ),
+                                            ],
+                                        ),
+                                        dbc.InputGroup(
+                                            [
+                                                dbc.InputGroupText("±$"),
+                                                dbc.Input(
+                                                    id="rope-slider",
+                                                    type="number",
+                                                    min=0,
+                                                    max=10,
+                                                    step=0.5,
+                                                    value=1,
+                                                    debounce=True,
+                                                ),
+                                                dbc.InputGroupText("per customer"),
+                                            ],
+                                            size="sm",
+                                            style={"maxWidth": "240px"},
+                                        ),
+                                    ],
+                                    md=5,
+                                    className="d-flex flex-column justify-content-center",
+                                ),
+                                dbc.Col(
+                                    html.Div(id="rope-result-card"),
+                                    md=7,
+                                    className="d-flex align-items-center",
+                                ),
+                            ],
+                            className="g-3",
+                        ),
+                    ],
+                    style={"paddingTop": "1rem", "paddingBottom": "1rem"},
+                ),
+                style={**CARD_STYLE, "borderLeft": f"3px solid {ACCENT}"},
+                className="mb-4",
+            ),
+            section_header("Model Diagnostics & Checks"),
             dbc.Row(
                 [
                     dbc.Col(
                         [
                             html.Button(
-                                "▸ Posterior Predictive Check (conditional spend amount)",
+                                "▸ Posterior Predictive Check",
                                 id="ppc-btn",
-                                className="btn-methodology mb-2",
-                                n_clicks=0
+                                className="btn-methodology mb-2 w-100",
+                                n_clicks=0,
                             ),
                             dbc.Collapse(
-                                dcc.Graph(id="bayes-ppc-plot", config=GRAPH_CONFIG),
+                                [
+                                    html.P(
+                                        [
+                                            html.Strong("What this shows: "),
+                                            "whether the fitted LogNormal reproduces the observed conditional "
+                                            "spend distribution (amount | converted). The posterior predictive "
+                                            "density (orange) should broadly track the observed density (teal) "
+                                            "in location, spread, and tail weight. ",
+                                            html.Strong("What to watch for: "),
+                                            "the overall smooth shape should align. Narrow vertical spikes in "
+                                            "the observed data are expected: the Hillstrom catalogue has a "
+                                            "handful of SKUs priced at $29.99 and $499, so many converters "
+                                            "land on those exact amounts. A continuous LogNormal cannot model "
+                                            "discrete price points, so it smooths over them by design. Judge "
+                                            "fit on the bulk shape, not the spikes.",
+                                        ],
+                                        className="text-muted small mb-2",
+                                    ),
+                                    dcc.Graph(id="bayes-ppc-plot", config=GRAPH_CONFIG),
+                                ],
                                 id="ppc-collapse",
-                                is_open=False
+                                is_open=False,
                             ),
-                        ]
+                        ],
+                        md=12,
+                        className="mb-2",
                     ),
-                ]
-            ),
-            dbc.Row(
-                [
                     dbc.Col(
                         [
                             html.Button(
-                                "▸ Show MCMC Trace Plots",
+                                "▸ MCMC Trace Plots",
                                 id="trace-btn",
-                                className="btn-methodology mb-2",
-                                n_clicks=0
+                                className="btn-methodology mb-2 w-100",
+                                n_clicks=0,
                             ),
                             dbc.Collapse(
                                 dcc.Graph(id="bayes-trace-plot", config=GRAPH_CONFIG),
                                 id="trace-collapse",
-                                is_open=False
+                                is_open=False,
                             ),
-                        ]
+                        ],
+                        md=12,
+                        className="mb-2",
                     ),
-                ]
-            ),
-            dbc.Row(
-                [
                     dbc.Col(
                         [
                             html.Button(
-                                "▸ MCMC Diagnostics",
+                                "▸ Convergence Diagnostics (R̂, ESS)",
                                 id="diag-btn",
-                                className="btn-methodology mb-2",
-                                n_clicks=0
+                                className="btn-methodology mb-2 w-100",
+                                n_clicks=0,
                             ),
                             dbc.Collapse(
                                 html.Div(id="bayes-diagnostics-table"),
                                 id="diag-collapse",
-                                is_open=False
-                            )
-                        ]
+                                is_open=False,
+                            ),
+                        ],
+                        md=12,
+                        className="mb-2",
                     ),
-                ]
+                ],
+                className="mb-3 mt-2",
             ),
             methodology_collapse(
                 "tab3",
@@ -2107,23 +2188,45 @@ def update_bayesian(pair_key, rope_val):
             kpi_card(
                 hdi_str,
                 f"Treatment effect: {b['arm_a_label']} vs {b['arm_b_label']}",
-                accent=arm_color
+                accent=arm_color,
+                info=(
+                    "95% Highest Density Interval: the narrowest range containing 95% of the "
+                    "posterior probability. These are the most credible values of the per-customer "
+                    "treatment effect given the data and priors."
+                ),
+                info_id="bayes-kpi-hdi-info",
             ),
             kpi_card(
                 f"{p_pos:.1%}",
                 "P(effect > 0)",
                 color=SUCCESS if p_pos > 0.9 else WARNING,
-                accent=SUCCESS if p_pos > 0.9 else WARNING
+                accent=SUCCESS if p_pos > 0.9 else WARNING,
+                info=(
+                    "Posterior probability that the treatment truly lifts per-customer spend above zero. "
+                    "Values above 95% are strong evidence of a positive effect; values near 50% mean "
+                    "the data are indifferent about the direction."
+                ),
+                info_id="bayes-kpi-ppos-info",
             ),
             kpi_card(
                 f"${b['mean_a']:.2f}",
                 f"Mean spend - {b['arm_a_label']}",
-                accent=arm_color
+                accent=arm_color,
+                info=(
+                    "Posterior mean of expected per-customer spend for this arm, combining the "
+                    "conversion probability and the log-normal amount component of the hurdle model."
+                ),
+                info_id="bayes-kpi-meana-info",
             ),
             kpi_card(
                 f"${b['mean_b']:.2f}",
                 f"Mean spend - {b['arm_b_label']}",
-                accent=CTRL_COLOUR
+                accent=CTRL_COLOUR,
+                info=(
+                    "Posterior mean of expected per-customer spend for this arm, combining the "
+                    "conversion probability and the log-normal amount component of the hurdle model."
+                ),
+                info_id="bayes-kpi-meanb-info",
             ),
         ]
     )
@@ -2199,19 +2302,54 @@ def update_bayesian(pair_key, rope_val):
 
     posterior_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"Posterior Distribution - Treatment Effect: {b['arm_a_label']} vs {b['arm_b_label']}",
+        title=f"{b['arm_a_label']} vs {b['arm_b_label']}",
         xaxis_title="Effect on Spend ($)",
         yaxis_title="Density",
-        margin=dict(t=50, b=70),
+        margin=dict(t=40, b=70),
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
     )
 
     p_outside_rope = float(np.mean((delta > rope_val) | (delta < -rope_val)))
-    rope_card = kpi_card(
-        f"{p_outside_rope:.1%}",
-        f"P(effect outside ROPE ±${rope_val})",
-        color=SUCCESS if p_outside_rope > 0.9 else WARNING,
-        accent=SUCCESS if p_outside_rope > 0.9 else WARNING,
+    rope_color = SUCCESS if p_outside_rope > 0.9 else WARNING
+    verdict = (
+        "Strong evidence the effect is practically non-zero."
+        if p_outside_rope > 0.9
+        else "Not yet decisive; treat as practically equivalent to zero for now."
+    )
+    rope_card = html.Div(
+        [
+            html.Div(
+                [
+                    html.Span(f"{p_outside_rope:.1%}",
+                              style={"fontSize": "2rem", "fontFamily": "Oswald, sans-serif",
+                                     "fontWeight": "500", "color": rope_color, "lineHeight": "1"}),
+                    html.Span(
+                        [
+                            f"  P(|δ| > ${rope_val})",
+                            html.Span(" ⓘ", id="bayes-rope-info",
+                                      style={"cursor": "help", "color": MUTED,
+                                             "fontSize": "0.85em", "marginLeft": "4px"}),
+                        ],
+                        style={"fontSize": "0.78rem", "color": MUTED,
+                               "fontFamily": "Ubuntu Mono, monospace",
+                               "textTransform": "uppercase", "letterSpacing": "0.08em",
+                               "marginLeft": "10px", "verticalAlign": "middle"},
+                    ),
+                ],
+                style={"display": "flex", "alignItems": "baseline", "marginBottom": "0.3rem"},
+            ),
+            html.Div(verdict, className="small text-muted",
+                     style={"fontStyle": "italic", "marginBottom": 0}),
+            dbc.Tooltip(
+                f"Posterior probability that the true per-customer treatment effect exceeds ±${rope_val} "
+                f"in magnitude. Values inside the ROPE are treated as practically equivalent to zero; "
+                f"probability outside is the evidence the effect is large enough to matter.",
+                target="bayes-rope-info",
+                placement="top",
+                style={"fontFamily": "Ubuntu, sans-serif", "fontSize": "0.8rem"},
+            ),
+        ],
+        style={"borderLeft": f"3px solid {rope_color}", "paddingLeft": "0.9rem"},
     )
 
     return kpis, posterior_fig, rope_card
@@ -2261,7 +2399,7 @@ def toggle_trace(n, is_open, pair_key):
                 y=1.0,
                 xref="paper",
                 yref="paper",
-                text=f"<b>MCMC Diagnostics</b><br>R-hat: {rhat}<br>Bulk ESS: {bulk_ess}<br>Tail ESS: {tail_ess}",
+                text=f"<b>MCMC Diagnostics</b><br>R̂: {rhat}<br>Bulk ESS: {bulk_ess}<br>Tail ESS: {tail_ess}",
                 showarrow=False,
                 font=dict(family="Ubuntu Mono, monospace", size=10, color=MUTED),
                 align="left",
@@ -2289,13 +2427,15 @@ def toggle_method_tab3(n, is_open):
     Output("ppc-collapse", "is_open"),
     Output("bayes-ppc-plot", "figure"),
     Input("ppc-btn", "n_clicks"),
+    Input("bayes-pair-selector", "value"),
     State("ppc-collapse", "is_open"),
-    State("bayes-pair-selector", "value"),
     prevent_initial_call=True,
 )
-def toggle_ppc(n, is_open, pair_key):
+def toggle_ppc(n, pair_key, is_open):
     # PPC is on the log-amount component only (converters), we can't easily
     # display the zero-mass since the LogNormal is not defined at zero.
+    # Toggle is_open only on button click; pair changes only refresh the figure.
+    new_is_open = not is_open if ctx.triggered_id == "ppc-btn" else is_open
     b = BAYESIAN[pair_key]
     obs_a = b.get("observed_amount_a")
     obs_b = b.get("observed_amount_b")
@@ -2356,11 +2496,7 @@ def toggle_ppc(n, is_open, pair_key):
         margin=dict(t=60, b=70),
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
     )
-    all_obs = [x for x in (obs_a, obs_b) if x is not None and len(x) > 0]
-    if all_obs:
-        p99 = max(float(np.percentile(o, 99)) for o in all_obs)
-        fig.update_xaxes(range=[0, p99])
-    return not is_open, fig
+    return new_is_open, fig
 
 
 @app.callback(
@@ -2385,7 +2521,7 @@ def toggle_diagnostics(n, is_open, pair_key):
                 style={"fontFamily": "Ubuntu Mono, monospace", "fontSize": "0.75rem"},
             ),
             html.Th(
-                "R-hat",
+                "R̂",
                 style={"fontFamily": "Ubuntu Mono, monospace", "fontSize": "0.75rem"},
             ),
             html.Th(
@@ -2485,14 +2621,35 @@ def update_uplift(arm, model):
                 np.mean(cate) > 0,
                 color=color,
                 accent=color,
+                info=(
+                    "Average Conditional Average Treatment Effect: the mean individual-level uplift "
+                    "predicted by the model across all customers. This should be close to the overall "
+                    "ATE seen on other tabs. Divergence suggests heavy tails or modelling artefacts."
+                ),
+                info_id="uplift-kpi-avg-info",
             ),
             kpi_card(
                 f"${np.percentile(cate, 90):.2f}",
                 "90th percentile CATE",
                 "High-responder threshold",
                 accent=ACCENT,
+                info=(
+                    "The uplift threshold above which the top 10% of customers sit. Useful for sizing "
+                    "a high-value targeting segment: mailing only customers with predicted uplift above "
+                    "this value captures the strongest responders."
+                ),
+                info_id="uplift-kpi-p90-info",
             ),
-            kpi_card(f"{np.mean(cate > 0):.1%}", "% customers with positive uplift"),
+            kpi_card(
+                f"{np.mean(cate > 0):.1%}",
+                "% customers with positive uplift",
+                info=(
+                    "Share of customers for whom the model predicts a positive treatment effect. A "
+                    "ceiling on the profitable targetable audience: customers with negative predicted "
+                    "uplift should not be mailed regardless of cost."
+                ),
+                info_id="uplift-kpi-ppos-info",
+            ),
         ]
     )
 
