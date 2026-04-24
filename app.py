@@ -1044,51 +1044,48 @@ def tab1_layout():
                 ],
                 className="mb-4 g-3",
             ),
-            dbc.Card(
-                [
-                    dbc.CardHeader("Headline Finding"),
-                    dbc.CardBody(
-                        [
-                            html.P(
-                                headline,
-                                style={"fontSize": "0.82rem", "color": MUTED, "marginBottom": "1.25rem"},
-                            ),
-                            dbc.Row(
-                                [
-                                    _hl_col(
-                                        "Men's Email", MENS_COLOUR, mens_sig,
-                                        lift_mens, mens_lo, mens_hi,
-                                        proj_mens, proj_mens_lo, proj_mens_hi,
-                                    ),
-                                    _hl_col(
-                                        "Women's Email", WOMENS_COLOUR, wom_sig,
-                                        lift_womens, wom_lo, wom_hi,
-                                        proj_womens, proj_wom_lo, proj_wom_hi,
-                                    ),
-                                ],
-                                className="g-3 mb-3",
-                            ),
-                            html.P(
-                                "Difference-in-means from the randomised experiment; confidence intervals "
-                                "use a percentile bootstrap (2,000 resamples) to account for the "
-                                "zero-inflated spend distribution. Subsequent tabs stress-test this with "
-                                "matching, Bayesian, and uplift methods.",
-                                className="text-muted small mb-0",
-                            ),
-                        ]
-                    ),
-                ],
-                style={**CARD_STYLE, "borderLeft": f"3px solid {headline_color}"},
-                className="mb-4"
-            ),
             dbc.Row(
                 [
                     dbc.Col(
-                        [
-                            section_header("Spend Distribution by Segment (among spenders)"),
-                            dcc.Graph(id="tab1-box", figure=_fig_spend_box(), config=GRAPH_CONFIG)
-                        ],
-                        md=8
+                        dbc.Card(
+                            [
+                                dbc.CardHeader("Headline Finding"),
+                                dbc.CardBody(
+                                    [
+                                        html.P(
+                                            headline,
+                                            style={"fontSize": "0.82rem", "color": MUTED, "marginBottom": "1.25rem"},
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                _hl_col(
+                                                    "Men's Email", MENS_COLOUR, mens_sig,
+                                                    lift_mens, mens_lo, mens_hi,
+                                                    proj_mens, proj_mens_lo, proj_mens_hi,
+                                                ),
+                                                _hl_col(
+                                                    "Women's Email", WOMENS_COLOUR, wom_sig,
+                                                    lift_womens, wom_lo, wom_hi,
+                                                    proj_womens, proj_wom_lo, proj_wom_hi,
+                                                ),
+                                            ],
+                                            className="g-3 mb-3",
+                                        ),
+                                        html.P(
+                                            "Difference-in-means from the randomised experiment; confidence intervals "
+                                            "use a percentile bootstrap (2,000 resamples) to account for the "
+                                            "zero-inflated spend distribution. Subsequent tabs stress-test this with "
+                                            "matching, Bayesian, and uplift methods.",
+                                            className="text-muted small mb-0",
+                                        ),
+                                    ]
+                                ),
+                            ],
+                            style={**CARD_STYLE, "borderLeft": f"3px solid {headline_color}"},
+                            className="h-100"
+                        ),
+                        md=6,
+                        className="mb-3",
                     ),
                     dbc.Col(
                         [
@@ -1102,19 +1099,27 @@ def tab1_layout():
                             ),
                             html.P(
                                 "The causal question: does receiving an email cause customers to spend more? "
-                                "Even in a randomised experiment, causal analysis adds value by quantifying "
+                                "Even in a randomised experiment, this causal analysis adds value by quantifying "
                                 "uncertainty, identifying which customers respond most (HTE), and stress-testing "
                                 "results across methodologies.",
                                 className="small text-muted"
                             ),
                         ],
-                        md=4
+                        md=6,
+                        className="mb-3",
                     ),
                 ],
-                className="mb-4"
+                className="mb-4 g-3 align-items-start"
             ),
             dbc.Row(
                 [
+                    dbc.Col(
+                        [
+                            section_header("Spend Distribution by Segment (among spenders)"),
+                            dcc.Graph(id="tab1-box", figure=_fig_spend_box(), config=GRAPH_CONFIG)
+                        ],
+                        md=6,
+                    ),
                     dbc.Col(
                         [
                             section_header("Did the randomisation work?"),
@@ -1132,9 +1137,11 @@ def tab1_layout():
                             dcc.Graph(
                                 id="tab1-balance", figure=_fig_covariate_balance(), config=GRAPH_CONFIG
                             ),
-                        ]
+                        ],
+                        md=6,
                     ),
-                ]
+                ],
+                className="mb-4 g-3 align-items-start"
             ),
             methodology_collapse(
                 "tab1",
@@ -3318,4 +3325,4 @@ def toggle_method_tab1(n, is_open):
 # ===========================================================================
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8050)
+    app.run(debug=False, port=8050)
