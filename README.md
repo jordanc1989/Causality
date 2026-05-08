@@ -7,6 +7,10 @@ This project demonstrates how to:
 - inspect heterogeneity and targeting value
 - communicate assumptions and modeling trade-offs in a decision-friendly format
 
+## Dashboard Preview
+
+![Causal Inference Dashboard preview](assets/screenshot.png)
+
 ## Why This Project Matters
 
 Teams often ask two different questions:
