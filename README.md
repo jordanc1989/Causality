@@ -1,49 +1,48 @@
 # Causal Inference Dashboard
 
-An interactive portfolio-grade causal inference dashboard built with Dash in Python.
-Applies a number of causal methods to a publicly available retail email marketing dataset (Hillstrom, 2008),
-allowing side-by-side comparison of estimates, uncertainty and assumptions.
+Interactive Dash app for comparing causal measurement approaches on a real randomised marketing experiment (Hillstrom, 2008).
 
----
+This project demonstrates how to:
+- estimate average treatment effects with uncertainty
+- inspect heterogeneity and targeting value
+- communicate assumptions and modeling trade-offs in a decision-friendly format
 
-## Screenshot
+## Why This Project Matters
 
-![Causal Inference Dashboard Screenshot](assets/screenshot.png)
+Teams often ask two different questions:
+- "Did the campaign work on average?" (causal effect / ATE)
+- "Who should we target next?" (HTE / uplift policy)
 
----
+This dashboard puts both views side-by-side so methodological choices and business implications are transparent.
 
 ## Methods Covered
 
-| Tab | Method | Library |
-|-----|--------|---------|
-| 2 | **Matched-Control (Propensity Score Matching)** | scikit-learn |
-| 3 | **Bayesian A/B Test** | PyMC, ArviZ |
-| 4 | **Uplift Modelling / HTE** (T-Learner, S-Learner) | scikit-uplift |
-| 5 | **Multi-Arm OLS w/ Interactions** | statsmodels |
-
----
+| Tab | Method | Role in this project |
+|-----|--------|----------------------|
+| 2 | Matched-Control (Propensity Score Matching) | Sensitivity/diagnostic view of matched ATT-style estimates |
+| 3 | Bayesian A/B (PyMC hurdle model) | Probabilistic effect estimation with posterior uncertainty |
+| 4 | Uplift / HTE (T-Learner, S-Learner) | Ranking customers by estimated incremental value |
+| 5 | Multi-Arm OLS with interactions | Precision-adjusted average effects and subgroup patterns |
+| 6 | Method Comparison | Side-by-side estimate reconciliation and takeaway |
 
 ## Dataset
 
-The [MineThatData Email Analytics dataset](https://blog.minethatdata.com/2008/03/minethatdata-e-mail-analytics-and-data.html)
-(Hillstrom, 2008) captures a randomised marketing experiment across 64,000 US retail customers:
+Source: [MineThatData Email Analytics (Hillstrom)](https://blog.minethatdata.com/2008/03/minethatdata-e-mail-analytics-and-data.html)
 
-- **Men's Email** arm: 21,388 customers
-- **Women's Email** arm: 21,307 customers
-- **Control Group (No Email comm)**: 21,305 customers
-- **Outcome**: spend ($) in the 2 weeks after the campaign
-- **Covariates**: recency, purchase history, gender catalogue, zip code, newbie status, channel
+Randomized experiment across ~64,000 customers:
+- Men's Email: 21,388
+- Women's Email: 21,307
+- Control (No Email): 21,305
+- Primary outcome: 2-week post-campaign spend (USD)
+- Key covariates: recency, history, mens/womens indicators, zip code, newbie, channel
 
----
+## Quick Start
 
-## To Add
+### Requirements
+- Python 3.11+ recommended
+- macOS/Linux/Windows supported
 
-- Further feature engineering
-
-
-## How to Run Locally
-
-### 1. Install dependencies
+### Install
 
 ```bash
 python -m venv .venv
@@ -51,56 +50,62 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Run the app
+### Run
 
 ```bash
 python app.py
 ```
 
-Open your browser at **http://localhost:8050**.
+Open `http://localhost:8050`.
 
-> **First run**: The app will pre-compute all causal models (~3–5 minutes for PyMC
-> sampling, PSM bootstrap & uplift models) and cache results to `.cache/results.pkl`.
-> Subsequent starts load instantly from cache.
+### First-run behavior
+- First run precomputes models and caches results in `.cache/results.pkl`.
+- Subsequent runs load from cache and start quickly.
+- Depending on machine speed, initial build can take several minutes.
 
-### 3. Force recompute
+### Force recompute
+- Set `USE_CACHE = False` in `causal_utils.py`.
+- Restart app once to rebuild `.cache/results.pkl`.
+- Set `USE_CACHE` back to `True`.
 
-After changing any estimation logic in `causal_utils.py`, flip the `USE_CACHE`
-flag at the top of that file to `False` and restart the app - the next run will
-rebuild from scratch and overwrite `.cache/results.pkl`. Set it back to `True`
-afterwards so subsequent starts (and the Plotly Cloud deployment) load instantly
-from the pickle.
+## Reproducibility Notes
 
----
+- Fixed random seed (`RANDOM_SEED = 42`) is used throughout.
+- If you change estimation logic in `causal_utils.py`, rebuild cache as above.
+- `requirements.txt` currently uses lower-bound version specs (`>=`); for strict reproducibility, create a pinned lock file before sharing benchmark results.
 
-## What This Demonstrates
+## Methodology Notes and Caveats
 
-### Methodological breadth
-Selecting and applying the *right* method for the causal question: ATE via PSM and OLS,
-posterior distributions via Bayesian inference, and individual-level CATE via uplift modelling.
+- The underlying dataset is randomized, so causal identification of average effects comes from random assignment.
+- Covariate-adjusted and matched analyses are included as precision, sensitivity, and interpretability tools.
+- Uplift metrics are useful for ranking policy decisions but should ideally be reported with uncertainty intervals when used for high-stakes targeting.
+- Subgroup interaction findings are exploratory unless multiplicity is explicitly controlled.
 
-### Uncertainty quantification
-Every estimate is accompanied by an appropriate confidence interval: bootstrap CIs for PSM,
-HDI for Bayesian, and coefficient CIs for OLS.
+## Results Snapshot (What reviewers should look for)
 
-### Individual-level causal thinking
-Uplift modelling moves beyond average effects to identify *which customers* respond most,
-enabling targeted campaign optimisation.
-
-### Assumption transparency
-Every tab includes a collapsible "Methodology & Assumptions" section written for both
-technical and non-technical audiences.
-
----
+- Agreement and disagreement across methods for Men's vs Control and Women's vs Control.
+- Posterior probability and HDI width in Bayesian A/B (effect magnitude + uncertainty).
+- Whether uplift curves and decile lift indicate actionable ranking value beyond random targeting.
+- Consistency between OLS interaction patterns and uplift heterogeneity signals.
 
 ## Project Structure
 
-```
+```text
 .
-├── app.py            # Dash app layout + callbacks
-├── causal_utils.py   # All causal estimation logic (PSM, Bayesian, Uplift, OLS)
+├── app.py            # Dash UI, figures, callbacks, interpretation copy
+├── causal_utils.py   # Data prep and causal estimation logic
 ├── requirements.txt
-├── README.md
-└── .cache/
-    └── results.pkl   # Auto-generated on first run
+└── README.md
 ```
+
+## Roadmap
+
+- Add deployment and public demo link.
+- Add benchmark tests for uplift policy value with uncertainty intervals.
+- Add formal multiplicity-adjusted subgroup reporting mode.
+- Add pinned dependency lock for deterministic environment recreation.
+
+
+## License
+
+MIT. See `LICENSE`.

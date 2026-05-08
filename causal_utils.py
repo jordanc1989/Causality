@@ -118,12 +118,11 @@ def _compute_psm_for_arm(df, arm):
     """
     Run PSM for one arm vs control.
 
-    ATT is estimated via a *causal* bootstrap: each replicate resamples the
-    combined treated+control pool, re-fits the propensity score, re-matches,
-    and recomputes the ATT. This correctly propagates uncertainty from the
-    propensity-score estimation and the matching step, and avoids the naive
-    pair-level bootstrap which is invalid for NN matching with replacement
-    (Abadie & Imbens, 2006, 2008).
+    ATT uncertainty is approximated via a full re-fit/re-match bootstrap:
+    each replicate resamples the combined treated+control pool, re-fits the
+    propensity score, re-matches, and recomputes ATT. We report this as a
+    practical sensitivity interval rather than an exact finite-sample CI for
+    nearest-neighbour matching.
 
     arm: "mens" | "womens"
     Returns dict with all PSM artefacts.
@@ -371,8 +370,8 @@ def _run_bayesian_pair(df, pair_key):
         "hdi_lo": float(hdi[0]),
         "hdi_hi": float(hdi[1]),
         "p_positive": float(np.mean(delta_samples > 0)),
-        "mean_a": float(np.mean(a_spend)),
-        "mean_b": float(np.mean(b_spend)),
+        "mean_a": float(np.mean(idata.posterior["exp_spend_a"].values)),
+        "mean_b": float(np.mean(idata.posterior["exp_spend_b"].values)),
         "rhat_delta": rhat_delta,
         "bulk_ess_delta": bulk_ess_delta,
         "tail_ess_delta": tail_ess_delta,
@@ -533,14 +532,24 @@ def _run_uplift_arm(df, arm):
     qini_x, qini_y = _qini_curve_continuous(sub_sorted_t, arm_col)
     qini_x_s, qini_y_s = _qini_curve_continuous(sub_sorted_s, arm_col)
 
-    # Qini coefficient (normalised AUC) — trapezoidal area vs. the zero line.
-    # Positive = model ranks uplift better than random targeting.
+    # AUUC-like area under cumulative incremental gain curve.
     def _qini_auc(xs, ys):
         if len(xs) < 2:
             return 0.0
         # `trapezoid` replaced `trapz` in numpy 2.0; fall back for older envs
         trapz = getattr(np, "trapezoid", None) or np.trapz
         return float(trapz(ys, xs))
+
+    # Excess area above the random-targeting baseline:
+    # line from (0, 0) to (1, final cumulative incremental gain).
+    def _qini_excess_auc(xs, ys):
+        if len(xs) < 2:
+            return 0.0
+        xs_arr = np.asarray(xs, dtype=float)
+        ys_arr = np.asarray(ys, dtype=float)
+        baseline = xs_arr * ys_arr[-1]
+        trapz = getattr(np, "trapezoid", None) or np.trapz
+        return float(trapz(ys_arr - baseline, xs_arr))
 
     return {
         "arm": arm,
@@ -556,6 +565,8 @@ def _run_uplift_arm(df, arm):
         "qini_y_s": qini_y_s,
         "qini_auc_t": _qini_auc(qini_x, qini_y),
         "qini_auc_s": _qini_auc(qini_x_s, qini_y_s),
+        "qini_excess_auc_t": _qini_excess_auc(qini_x, qini_y),
+        "qini_excess_auc_s": _qini_excess_auc(qini_x_s, qini_y_s),
         "avg_cate_t": float(np.mean(cate_t)),
         "avg_cate_s": float(np.mean(cate_s))
     }
@@ -722,7 +733,7 @@ def build_cache():
     print("[Cache] Loading data...")
     df = load_data()
 
-    print("[Cache] Running PSM (causal bootstrap 200 reps x 2 arms, ~4-8 min)...")
+    print("[Cache] Running PSM (re-fit/re-match bootstrap 200 reps x 2 arms, ~4-8 min)...")
     psm = run_psm(df)
 
     print("[Cache] Running Bayesian A/B (PyMC, 3 arm pairs)...")

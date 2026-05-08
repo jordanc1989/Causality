@@ -1363,19 +1363,16 @@ def tab2_layout():
                         "on all observed covariates."
                     ),
                     html.P(
-                        "Key assumptions: (1) Ignorability (all confounders are observed and included in the "
-                        "propensity model). (2) Common support (treated and control overlap in propensity scores). "
-                        "(3) SUTVA (no spillover between customers). The Love Plot shows covariate balance "
-                        "before and after matching. Standardised mean differences below 0.1 indicate good balance."
+                        "Because Hillstrom is randomised, treatment assignment is exogenous by design and "
+                        "the primary causal estimand is an ITT/ATE contrast. This tab uses PSM as a "
+                        "diagnostic/sensitivity lens, checking overlap and balance in a matched sample "
+                        "and reporting an ATT-style estimate for comparison."
                     ),
                     html.P(
-                        "Uncertainty is quantified via a causal bootstrap: 200 replicates, each of "
-                        "which resamples the combined treated+control pool, re-fits the propensity "
-                        "model, re-matches, and recomputes the ATT. This propagates uncertainty from "
-                        "the propensity-score estimation and the matching step. A naive pair-level "
-                        "bootstrap would be invalid here because 1:1 nearest-neighbour matching "
-                        "with replacement creates dependence between pairs that share a control "
-                        "(Abadie & Imbens, 2006)."
+                        "Uncertainty here comes from a full re-fit/re-match bootstrap (200 replicates): "
+                        "each replicate resamples the treated+control pool, re-fits propensity scores, "
+                        "re-matches, and recomputes ATT. We treat this as a practical sensitivity interval "
+                        "for matched estimates rather than an exact finite-sample confidence interval."
                     ),
                     html.P(
                         "Common support is reported as a KPI but not enforced — no caliper is applied, "
@@ -1701,8 +1698,9 @@ def tab4_layout():
                         "The Qini curve uses the canonical Radcliffe (2007) definition for continuous "
                         "outcomes: at rank k, cumulative net revenue captured equals the cumulative "
                         "treated spend minus the cumulative control spend re-weighted by the "
-                        "treated/control ratio. Higher area under the curve means the model ranks "
-                        "high-responders well. The decile chart shows actual spend lift for "
+                        "treated/control ratio. The chart overlays a random-targeting baseline "
+                        "line from zero to the full-population gain; ranking quality is the "
+                        "excess area above that baseline. The decile chart shows actual spend lift for "
                         "customers ranked by predicted uplift: good models show declining lift."
                     ),
                     html.P(
@@ -1720,9 +1718,10 @@ def tab4_layout():
                         "CATE tends to be larger in magnitude than the S-Learner's."
                     ),
                     html.P(
-                        "Key assumption: the same ignorability assumption as PSM: all relevant confounders "
-                        "are observed. HTE estimates have wider uncertainty than ATE estimates and should be "
-                        "treated as directional rather than precise."
+                        "Because assignment is randomised, these models focus on treatment-effect heterogeneity "
+                        "and policy ranking rather than confounding control. HTE estimates typically carry "
+                        "more sampling uncertainty than ATE estimates and should be treated as directional "
+                        "unless accompanied by explicit uncertainty intervals."
                     ),
                 ],
             ),
@@ -1778,8 +1777,9 @@ def tab5_layout():
                 [
                     html.P(
                         "OLS regression estimates population-average treatment effects while controlling for "
-                        "observed covariates. All three arms (Men, Women, Control) are compared simultaneously "
-                        "via treatment dummy variables, avoiding the multiple comparison inflation of separate tests."
+                        "observed baseline covariates. In this randomised experiment, covariate adjustment "
+                        "is primarily for precision. All three arms (Men, Women, Control) are estimated in "
+                        "one model via treatment indicators."
                     ),
                     html.P(
                         "Interaction terms (treatment x newbie, treatment x channel, treatment x zip code) capture "
@@ -1800,7 +1800,8 @@ def tab5_layout():
                     ),
                     html.P(
                         "Key assumption: linearity of the conditional expectation function. The model is estimated "
-                        "by OLS (not IV or 2SLS) and relies on the same ignorability assumption as PSM."
+                        "by OLS (not IV or 2SLS). P-values for many interaction terms are exploratory unless "
+                        "you apply a multiplicity adjustment (e.g., Holm/FDR) for confirmatory claims."
                     ),
                 ],
             ),
@@ -1844,7 +1845,7 @@ def tab6_layout():
                                     dbc.AccordionItem(
                                         [
                                             html.P(
-                                                "Estimates the ATT via covariate balancing. Best when you believe all confounders are observed. Sensitive to propensity model misspecification."
+                                                "Estimates a matched-sample ATT via covariate balancing. In this project's randomised setting, use it mainly as a robustness/sensitivity view rather than the primary identification strategy."
                                             ),
                                         ],
                                         title="Propensity Score Matching (PSM)"
@@ -1852,7 +1853,7 @@ def tab6_layout():
                                     dbc.AccordionItem(
                                         [
                                             html.P(
-                                                "Provides a full posterior distribution over the treatment effect. Best for communicating uncertainty and making probabilistic decisions. Requires distributional assumptions (Normal likelihood here)."
+                                                "Provides a full posterior distribution over treatment effects. Best for communicating uncertainty and making probabilistic decisions. Uses a hurdle model (Bernoulli conversion x LogNormal amount)."
                                             ),
                                         ],
                                         title="Bayesian A/B Test"
@@ -2774,18 +2775,20 @@ def update_uplift(arm, model):
     qini_fig.add_trace(
         go.Scatter(
             x=[0, 1],
-            y=[0, 0],
+            y=[0, qini_yd[-1] if len(qini_yd) else 0],
             mode="lines",
-            name="Random",
+            name="Random baseline",
             line=dict(color=BORDER, dash="dash"),
             hoverinfo="skip",
         )
     )
     qini_auc_key = "qini_auc_s" if model == "s" else "qini_auc_t"
+    qini_excess_key = "qini_excess_auc_s" if model == "s" else "qini_excess_auc_t"
     qini_auc = u.get(qini_auc_key, 0.0)
+    qini_excess = u.get(qini_excess_key, 0.0)
     qini_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"Qini Curve — {model_label} (AUC = ${qini_auc:,.0f})",
+        title=f"Qini Curve — {model_label} (AUUC = ${qini_auc:,.0f}, Excess vs random = ${qini_excess:,.0f})",
         xaxis_title="Fraction of population targeted",
         yaxis_title="Cumulative incremental spend ($)",
         margin=dict(t=50, b=70),
