@@ -23,7 +23,7 @@ This dashboard puts both views side-by-side so methodological choices and busine
 
 | Tab | Method | Role in this project |
 |-----|--------|----------------------|
-| 2 | Matched-Control (Propensity Score Matching) | Sensitivity/diagnostic view of matched ATT-style estimates |
+| 2 | PSM sensitivity (propensity matching + caliper) | Observational-style diagnostic; matched ATT on pruned cohort vs control |
 | 3 | Bayesian A/B (PyMC hurdle model) | Probabilistic effect estimation with posterior uncertainty |
 | 4 | Uplift / HTE (T-Learner, S-Learner) | Ranking customers by estimated incremental value |
 | 5 | Multi-Arm OLS with interactions | Precision-adjusted average effects and subgroup patterns |
@@ -33,7 +33,7 @@ This dashboard puts both views side-by-side so methodological choices and busine
 
 Source: [MineThatData Email Analytics (Hillstrom)](https://blog.minethatdata.com/2008/03/minethatdata-e-mail-analytics-and-data.html)
 
-Randomized experiment across ~64,000 customers:
+Randomised experiment across ~64,000 customers:
 - Men's Email: 21,388
 - Women's Email: 21,307
 - Control (No Email): 21,305
@@ -42,22 +42,27 @@ Randomized experiment across ~64,000 customers:
 
 ## Quick Start
 
+Dependencies are managed with **[uv](https://docs.astral.sh/uv/)** ([`pyproject.toml`](pyproject.toml) + [`uv.lock`](uv.lock)).
+
 ### Requirements
-- Python 3.11+ recommended
+- [uv](https://docs.astral.sh/uv/getting-started/) installed
+- Python **3.13+** (see [`requires-python`](pyproject.toml); [`.python-version`](.python-version) pins 3.13 for local development)
 - macOS/Linux/Windows supported
 
 ### Install
 
+From the project root:
+
 ```bash
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+uv sync
 ```
+
+This creates `.venv` (if needed) and installs the locked dependency set.
 
 ### Run
 
 ```bash
-python app.py
+uv run python app.py
 ```
 
 Open `http://localhost:8050`.
@@ -68,15 +73,14 @@ Open `http://localhost:8050`.
 - Depending on machine speed, initial build can take several minutes.
 
 ### Force recompute
-- Set `USE_CACHE = False` in `causal_utils.py`.
-- Restart app once to rebuild `.cache/results.pkl`.
-- Set `USE_CACHE` back to `True`.
+- Delete `.cache/results.pkl`, or set `USE_CACHE = False` in `causal_utils.py`.
+- Restart the app once to rebuild the cache.
+- Set `USE_CACHE` back to `True` after a deliberate rebuild (optional; deleting the pickle has the same effect if `USE_CACHE` stays `True`).
 
 ## Reproducibility Notes
 
-- Fixed random seed (`RANDOM_SEED = 42`) is used throughout.
-- If you change estimation logic in `causal_utils.py`, rebuild cache as above.
-- `requirements.txt` currently uses lower-bound version specs (`>=`); for strict reproducibility, create a pinned lock file before sharing benchmark results.
+- If you change estimation logic in `causal_utils.py`, delete `.cache/results.pkl` or use `USE_CACHE = False`, then rerun the app once.
+- **`uv.lock`** pins transitive versions; run `uv lock` after changing dependencies in `pyproject.toml`.
 
 ## Methodology Notes and Caveats
 
@@ -96,9 +100,11 @@ Open `http://localhost:8050`.
 
 ```text
 .
-├── app.py            # Dash UI, figures, callbacks, interpretation copy
-├── causal_utils.py   # Data prep and causal estimation logic
-├── requirements.txt
+├── app.py              # Dash UI, figures, callbacks, interpretation copy
+├── causal_utils.py     # Data prep and causal estimation logic
+├── pyproject.toml      # Project metadata and dependencies
+├── uv.lock             # Locked versions (committed for reproducibility)
+├── .python-version     # Hint for Python 3.13 (optional; used by uv/pyenv)
 └── README.md
 ```
 
@@ -107,7 +113,6 @@ Open `http://localhost:8050`.
 - Add deployment and public demo link.
 - Add benchmark tests for uplift policy value with uncertainty intervals.
 - Add formal multiplicity-adjusted subgroup reporting mode.
-- Add pinned dependency lock for deterministic environment recreation.
 
 
 ## License

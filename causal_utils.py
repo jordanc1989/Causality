@@ -81,11 +81,18 @@ COVARIATES = [
 ]
 
 
-def _fit_propensity_and_match(sub, arm_col, seed):
+def _logit_propensity(propensity):
+    eps = np.finfo(np.float64).eps * 2
+    p = np.asarray(propensity, dtype=float)
+    p = np.clip(p, eps, 1.0 - eps)
+    return np.log(p / (1.0 - p))
+
+
+def _fit_propensity_and_match(sub, arm_col, seed, caliper_sds=0.2):
     """
-    Fit a logistic propensity model on the given sub-sample and run
-    1:1 nearest-neighbour matching with replacement. Returns matched
-    treated/control spend arrays and PS distances.
+    Fit logistic propensity, then 1:1 nearest-neighbour matching on PS with a
+    caliper of ``caliper_sds`` times the pooled SD of logit(PS) across all rows.
+    Pairs whose nearest neighbour exceeds the logit-distance caliper are dropped.
     """
     from sklearn.linear_model import LogisticRegression
     from sklearn.preprocessing import StandardScaler
@@ -103,15 +110,62 @@ def _fit_propensity_and_match(sub, arm_col, seed):
 
     sub = sub.copy()
     sub["propensity"] = propensity
-    treated = sub[sub[arm_col] == 1]
-    control = sub[sub[arm_col] == 0]
+    sub["logit_ps"] = _logit_propensity(propensity)
 
-    nn = NearestNeighbors(n_neighbors=1)
+    pooled_sd = float(np.std(sub["logit_ps"].values, ddof=1))
+    if pooled_sd <= 0 or not np.isfinite(pooled_sd):
+        pooled_sd = 1e-6
+    caliper_width = float(caliper_sds * pooled_sd)
+
+    treated_all = sub[sub[arm_col] == 1].reset_index(drop=True)
+    control = sub[sub[arm_col] == 0].reset_index(drop=True)
+    meta_base = {"caliper_width": caliper_width, "pooled_logit_sd": pooled_sd}
+
+    if len(treated_all) == 0 or len(control) == 0:
+        meta_base["n_dropped_no_caliper"] = len(treated_all)
+        return (
+            treated_all,
+            control,
+            treated_all.iloc[[]],
+            control.iloc[[]],
+            np.array([], dtype=float),
+            meta_base,
+        )
+
+    nn = NearestNeighbors(n_neighbors=1, metric="euclidean")
     nn.fit(control[["propensity"]].values)
-    distances, indices = nn.kneighbors(treated[["propensity"]].values)
+    _, indices_ps = nn.kneighbors(treated_all[["propensity"]].values)
 
-    matched_control = control.iloc[indices.flatten()]
-    return treated, control, matched_control, distances
+    match_idx = indices_ps.flatten().astype(np.int64)
+    dist_logit = np.abs(
+        treated_all["logit_ps"].values - control["logit_ps"].iloc[match_idx].values
+    )
+    matched_ok = dist_logit <= caliper_width
+
+    if not matched_ok.any():
+        meta_base["n_dropped_no_caliper"] = int(len(treated_all))
+        return (
+            treated_all,
+            control,
+            treated_all.iloc[[]],
+            control.iloc[[]],
+            np.array([], dtype=float),
+            meta_base,
+        )
+
+    matched_control = control.iloc[match_idx[matched_ok]].reset_index(drop=True)
+    distances_logit_kept = dist_logit[matched_ok]
+    treated_matched = treated_all.loc[matched_ok].reset_index(drop=True)
+
+    meta_base["n_dropped_no_caliper"] = int((~matched_ok).sum())
+    return (
+        treated_all,
+        control,
+        treated_matched,
+        matched_control,
+        distances_logit_kept,
+        meta_base,
+    )
 
 
 def _compute_psm_for_arm(df, arm):
@@ -131,28 +185,42 @@ def _compute_psm_for_arm(df, arm):
     mask = (df[arm_col] == 1) | (df["is_control"] == 1)
     sub = df[mask].copy().reset_index(drop=True)
 
-    # Point estimate
-    treated, control, matched_control, distances = _fit_propensity_and_match(
-        sub, arm_col, RANDOM_SEED
-    )
-    att_point = float(
-        np.mean(treated["spend"].values) - np.mean(matched_control["spend"].values)
-    )
-    avg_ps_distance = float(np.mean(distances.flatten()))
+    (
+        treated_all,
+        control,
+        treated_matched,
+        matched_control,
+        distances_logit,
+        match_meta,
+    ) = _fit_propensity_and_match(sub, arm_col, RANDOM_SEED)
 
-    # Common support on point-estimate propensities
+    n_treated_total = len(treated_all)
+    n_matched = len(treated_matched)
+    if n_matched > 0:
+        att_point = float(
+            np.mean(treated_matched["spend"].values)
+            - np.mean(matched_control["spend"].values)
+        )
+        avg_ps_distance = float(np.mean(distances_logit))
+    else:
+        att_point = float("nan")
+        avg_ps_distance = float("nan")
+
+    # Common support on point-estimate propensities (full treated pool)
     cs_lower = float(
-        max(treated["propensity"].min(), control["propensity"].min())
+        max(treated_all["propensity"].min(), control["propensity"].min())
     )
     cs_upper = float(
-        min(treated["propensity"].max(), control["propensity"].max())
+        min(treated_all["propensity"].max(), control["propensity"].max())
     )
     n_outside_support = int(
-        ((treated["propensity"] < cs_lower) | (treated["propensity"] > cs_upper)).sum()
+        ((treated_all["propensity"] < cs_lower)
+         | (treated_all["propensity"] > cs_upper)).sum()
     )
 
-    # SMDs before and after matching (point estimate matching)
     def smd(a, b):
+        if len(a) < 2 or len(b) < 2:
+            return float("nan")
         pooled_std = np.sqrt((np.var(a, ddof=1) + np.var(b, ddof=1)) / 2)
         if pooled_std == 0:
             return 0.0
@@ -160,9 +228,20 @@ def _compute_psm_for_arm(df, arm):
 
     smd_before = {}
     smd_after = {}
+    smd_after_caliper_match = {}
     for cov in COVARIATES:
-        smd_before[cov] = smd(treated[cov].values, control[cov].values)
-        smd_after[cov] = smd(treated[cov].values, matched_control[cov].values)
+        smd_before[cov] = smd(
+            treated_all[cov].values, control[cov].values
+        )
+        if n_matched > 0:
+            s = smd(
+                treated_matched[cov].values, matched_control[cov].values
+            )
+            smd_after[cov] = s
+            smd_after_caliper_match[cov] = s
+        else:
+            smd_after[cov] = float("nan")
+            smd_after_caliper_match[cov] = float("nan")
 
     # Causal bootstrap: resample the pooled sub-sample with replacement,
     # re-fit propensity and re-match on each replicate. 200 reps gives
@@ -170,46 +249,60 @@ def _compute_psm_for_arm(df, arm):
     rng = np.random.default_rng(RANDOM_SEED)
     n_boot = 200
     n_total = len(sub)
+    min_matched_boot = 15
     att_boot = []
     for b in range(n_boot):
         idx = rng.integers(0, n_total, size=n_total)
         boot_sub = sub.iloc[idx].reset_index(drop=True)
-        # Need both treated and control in the bootstrap sample
         if boot_sub[arm_col].sum() < 10 or (boot_sub[arm_col] == 0).sum() < 10:
             continue
         try:
-            t_b, _, mc_b, _ = _fit_propensity_and_match(
+            _, _, t_b_matched, mc_b, _, _ = _fit_propensity_and_match(
                 boot_sub, arm_col, RANDOM_SEED + b
             )
-            att_boot.append(
-                float(np.mean(t_b["spend"].values) - np.mean(mc_b["spend"].values))
-            )
+            if len(t_b_matched) >= min_matched_boot:
+                att_boot.append(
+                    float(
+                        np.mean(t_b_matched["spend"].values)
+                        - np.mean(mc_b["spend"].values)
+                    )
+                )
         except Exception:
-            # e.g. singular matrix on degenerate sample — skip
             continue
 
-    att_boot = np.array(att_boot)
-    att_ci_lo = float(np.percentile(att_boot, 2.5))
-    att_ci_hi = float(np.percentile(att_boot, 97.5))
-    pct_matched = len(treated) / len(treated) * 100  # always 100% (no caliper)
+    att_boot = np.asarray(att_boot, dtype=float)
+    if len(att_boot) > 0:
+        att_ci_lo = float(np.percentile(att_boot, 2.5))
+        att_ci_hi = float(np.percentile(att_boot, 97.5))
+    else:
+        att_ci_lo = float("nan")
+        att_ci_hi = float("nan")
+
+    pct_matched = (
+        100.0 * n_matched / n_treated_total if n_treated_total > 0 else 0.0
+    )
 
     return {
         "arm": arm,
-        "propensity_treated": treated["propensity"].values,
+        "propensity_treated": treated_all["propensity"].values,
         "propensity_control": control["propensity"].values,
         "smd_before": smd_before,
         "smd_after": smd_after,
+        "smd_after_caliper_match": smd_after_caliper_match,
         "att_point": att_point,
         "att_ci_lo": att_ci_lo,
         "att_ci_hi": att_ci_hi,
-        "n_matched": len(treated),
-        "n_treated_total": len(treated),
+        "n_matched": n_matched,
+        "n_treated_total": n_treated_total,
         "pct_matched": pct_matched,
         "avg_ps_distance": avg_ps_distance,
         "cs_lower": cs_lower,
         "cs_upper": cs_upper,
         "n_outside_support": n_outside_support,
         "n_boot_successful": len(att_boot),
+        "caliper_width": match_meta["caliper_width"],
+        "pooled_logit_sd": match_meta["pooled_logit_sd"],
+        "n_dropped_no_caliper": match_meta["n_dropped_no_caliper"],
     }
 
 
@@ -230,6 +323,81 @@ ARM_PAIRS = {
     "womens_vs_control": ("Womens E-Mail", "No E-Mail"),
     "mens_vs_womens": ("Mens E-Mail", "Womens E-Mail")
 }
+
+# Posterior mimic (hurdle): cheap simulated datasets for PPC plots (not pickled huge).
+_PPC_N_DRAWS = 400
+_PPC_N_FAKE_CUSTOMERS = 250
+
+
+def _simulate_hurdle_ppc_arrays(idata, seed=RANDOM_SEED):
+    """
+    Simulate spend = Bernoulli(p) * LogNormal(mu, sigma) at selected posterior draws.
+    Returns downsampled flattened arrays for dashboards (not full n × draws matrices).
+    """
+    rng = np.random.default_rng(seed)
+
+    def _flat(var):
+        return np.asarray(idata.posterior[var].values).reshape(-1)
+
+    p_a = _flat("p_a")
+    p_b = _flat("p_b")
+    mu_a = _flat("mu_log_a")
+    mu_b = _flat("mu_log_b")
+    sig_a = _flat("sigma_log_a")
+    sig_b = _flat("sigma_log_b")
+
+    nd = len(p_a)
+    n_pick = min(_PPC_N_DRAWS, nd)
+    ix = rng.choice(nd, size=n_pick, replace=False)
+
+    pa, pb = p_a[ix], p_b[ix]
+    ma, mb = mu_a[ix], mu_b[ix]
+    sa, sb = sig_a[ix], sig_b[ix]
+    nk = len(ix)
+
+    ua = rng.random((nk, _PPC_N_FAKE_CUSTOMERS))
+    ub = rng.random((nk, _PPC_N_FAKE_CUSTOMERS))
+    conv_a = (ua < pa[:, None]).astype(np.float64)
+    conv_b = (ub < pb[:, None]).astype(np.float64)
+
+    amt_a = rng.lognormal(mean=ma[:, None], sigma=sa[:, None], size=(nk, _PPC_N_FAKE_CUSTOMERS))
+    amt_b = rng.lognormal(mean=mb[:, None], sigma=sb[:, None], size=(nk, _PPC_N_FAKE_CUSTOMERS))
+
+    spend_a = conv_a * amt_a
+    spend_b = conv_b * amt_b
+
+    ppc_flat_a = spend_a.ravel()
+    ppc_flat_b = spend_b.ravel()
+    ppc_amount_pos_a = amt_a.ravel()[conv_a.ravel() > 0.5]
+    ppc_amount_pos_b = amt_b.ravel()[conv_b.ravel() > 0.5]
+
+    ppc_conv_rep_mean_a = conv_a.mean(axis=1)
+    ppc_conv_rep_mean_b = conv_b.mean(axis=1)
+    ppc_rep_mean_spend_a = spend_a.mean(axis=1)
+    ppc_rep_mean_spend_b = spend_b.mean(axis=1)
+
+    def _hist_sample(flat, cap=8000):
+        n = len(flat)
+        if n <= cap:
+            return flat
+        return rng.choice(flat, size=cap, replace=False)
+
+    ppc_spend_a_display = _hist_sample(ppc_flat_a)
+    ppc_spend_b_display = _hist_sample(ppc_flat_b)
+
+    out = {
+        "ppc_n_draws": int(n_pick),
+        "ppc_n_fake_per_draw": _PPC_N_FAKE_CUSTOMERS,
+        "ppc_conv_rep_mean_a": ppc_conv_rep_mean_a,
+        "ppc_conv_rep_mean_b": ppc_conv_rep_mean_b,
+        "ppc_rep_mean_spend_a": ppc_rep_mean_spend_a,
+        "ppc_rep_mean_spend_b": ppc_rep_mean_spend_b,
+        "ppc_amount_pos_a": ppc_amount_pos_a,
+        "ppc_amount_pos_b": ppc_amount_pos_b,
+        "ppc_spend_display_a": ppc_spend_a_display,
+        "ppc_spend_display_b": ppc_spend_b_display,
+    }
+    return out
 
 
 def _run_bayesian_pair(df, pair_key):
@@ -341,23 +509,12 @@ def _run_bayesian_pair(df, pair_key):
 
     delta_chains = idata.posterior["delta"].values  # (chains, draws)
 
-    # Posterior predictive replicates for a PPC plot in the Bayesian tab
-    # (one-shot generation; kept small to fit in the cache).
-    ppc_a = None
-    ppc_b = None
+    # Hurdle-consistent PPC: simulated full spend (zeros + positive tail)
+    ppc_pack = None
     try:
-        with model:
-            post_pred = pm.sample_posterior_predictive(
-                idata,
-                var_names=["obs_amount_a", "obs_amount_b"],
-                random_seed=RANDOM_SEED,
-                progressbar=False,
-            )
-        # Take the first 500 predictive draws for plotting
-        ppc_a = post_pred.posterior_predictive["obs_amount_a"].values[0, :500].flatten()
-        ppc_b = post_pred.posterior_predictive["obs_amount_b"].values[0, :500].flatten()
+        ppc_pack = _simulate_hurdle_ppc_arrays(idata, seed=RANDOM_SEED + 11)
     except Exception:
-        pass
+        ppc_pack = None
 
     return {
         "pair_key": pair_key,
@@ -376,10 +533,19 @@ def _run_bayesian_pair(df, pair_key):
         "bulk_ess_delta": bulk_ess_delta,
         "tail_ess_delta": tail_ess_delta,
         "diagnostics_table": diag_rows,
-        "ppc_amount_a": ppc_a,
-        "ppc_amount_b": ppc_b,
+        "observed_spend_a": a_spend,
+        "observed_spend_b": b_spend,
         "observed_amount_a": a_pos,
         "observed_amount_b": b_pos,
+        "obs_conv_rate_a": float(np.mean(a_converted)),
+        "obs_conv_rate_b": float(np.mean(b_converted)),
+        "ppc_pack": ppc_pack,
+        "ppc_amount_a": None
+        if ppc_pack is None
+        else ppc_pack.get("ppc_amount_pos_a"),
+        "ppc_amount_b": None
+        if ppc_pack is None
+        else ppc_pack.get("ppc_amount_pos_b"),
     }
 
 

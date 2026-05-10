@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 import plotly.io as pio
+from plotly.subplots import make_subplots
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, State, ctx
@@ -968,33 +969,6 @@ def tab1_layout():
 
     return dbc.Container(
         [
-            html.Div(
-                [
-                    html.Span([html.Strong(f"{len(DF):,}"), " customers"]),
-                    html.Span(className="sep"),
-                    html.Span("Randomised email campaign"),
-                    html.Span(className="sep"),
-                    html.Span("2 treatment arms + control"),
-                    html.Span(className="sep"),
-                    html.Span(
-                        [
-                            "Bootstrap 95% CI ",
-                            html.Span(
-                                "ⓘ",
-                                id="ov-context-info",
-                                style={"cursor": "help", "color": MUTED},
-                            ),
-                        ]
-                    ),
-                    dbc.Tooltip(
-                        "All lift figures on this page use a 2,000-resample percentile bootstrap "
-                        "to handle the zero-inflated spend distribution. 'SIG' = 95% CI excludes zero.",
-                        target="ov-context-info",
-                        placement="bottom",
-                    ),
-                ],
-                className="overview-context",
-            ),
             dbc.Row(
                 [
                     dbc.Col(
@@ -1288,24 +1262,39 @@ def tab2_layout():
                         html.P(
                             [
                                 html.Strong("How customers are matched: "),
-                                "A logistic regression is fitted on all 9 observed covariates (recency, history, "
-                                "catalogue interest, channel, zip type, newbie flag) to estimate each customer's ",
-                                html.Em("propensity score"),
-                                " - the probability they would have received the email given their attributes. "
-                                "Each treated customer is then paired with the control customer whose propensity "
-                                "score is closest (1:1 nearest-neighbour, with replacement). In a randomised trial "
-                                "the score should hover around 0.5 for everyone and the two groups should overlap "
-                                "almost completely: that's what the distribution chart on the right shows."
+                                "For each email recipient we search the control group for the closest lookalike ",
+                                "on things you could see before the send: spend history, recency, channel, ",
+                                "broad postcode type, which catalogues someone leans toward, and similar ",
+                                "flags. If even the nearest control still looks too different, ",
+                                "we omit that shopper from this sensitivity view instead of stretching the comparison. ",
+                                "Assignments were ",
+                                html.Strong("randomised"),
+                                ", so almost everyone pairs cleanly ",
+                                "and the headline uplift barely budges versus always grabbing the ",
+                                "nearest neighbour. For the algebraic details (propensity model, ",
+                                "logit caliper, pooled bootstrap), expand ",
+                                html.Strong("Methodology"),
+                                " below.",
                             ],
                             className="mb-2 small"
                         ),
                         html.P(
                             [
                                 html.Strong("Why this matters: "),
-                                "Matching sharpens estimates by reducing noise from covariate imbalance. "
-                                "The Love Plot below shows balance before and after matching (all dots should "
-                                "move inside the ±0.1 band). Uncertainty in the ATT is quantified via 500 "
-                                "bootstrap resamples of the matched pairs."
+                                "This view is styled like the ",
+                                html.Em("observational"),
+                                " dashboards marketers run when randomisation is unavailable; ",
+                                "it does not replace the Overview or Tab 5 estimates that lean on the ",
+                                html.Strong("randomised"),
+                                " assignment. ",
+                                "The Love plot shows whether shopper traits line ",
+                                "up sensibly ",
+                                html.Em("before"),
+                                " and ",
+                                html.Em("after"),
+                                " pairing, and the bar chart repeats the lift with ",
+                                "a band computed by redoing matching 200 times on resampled data ",
+                                "(a practical stress test rather than textbook matching confidence intervals)."
                             ],
                             className="mb-0 small text-muted"
                         ),
@@ -1357,27 +1346,45 @@ def tab2_layout():
                 "tab2",
                 [
                     html.P(
-                        "Propensity Score Matching (PSM) estimates the Average Treatment Effect on the Treated (ATT) "
-                        "by matching each treated customer to a control customer with a similar probability of "
-                        "treatment (propensity score). The propensity score is estimated via logistic regression "
-                        "on all observed covariates."
+                        [
+                            html.Strong("Statistical machinery (matching): "),
+                            "A logistic regression uses nine pre-treatment covariates—recency, history, men's and "
+                            "women's catalogue interest flags, two zip-type indicators (suburban/rural vs urban), "
+                            "two channel indicators (web / multichannel vs phone), and the newbie flag—to estimate "
+                            "each customer's ",
+                            html.Em("propensity score"),
+                            ": the modelled probability they would appear in the email arm given those traits.",
+                            " Matching is ",
+                            html.Strong("1:1 nearest neighbour on the propensity score"),
+                            " with replacement.",
+                            " A ",
+                            html.Strong("caliper"),
+                            " trims pairs where the ",
+                            html.Em("absolute gap in logit(propensity)"),
+                            " exceeds ",
+                            html.Strong("0.2 times the pooled standard deviation"),
+                            " of logit(PS) across all rows in that arm-vs-control subset.",
+                            " Unmatched treated customers are omitted from ATT and balance diagnostics on the ",
+                            "\"after\" cohort."
+                        ]
                     ),
                     html.P(
                         "Because Hillstrom is randomised, treatment assignment is exogenous by design and "
-                        "the primary causal estimand is an ITT/ATE contrast. This tab uses PSM as a "
-                        "diagnostic/sensitivity lens, checking overlap and balance in a matched sample "
-                        "and reporting an ATT-style estimate for comparison."
+                        "the primary causal estimand is an ITT/ATE contrast (see Overview bootstrap and Tab 5 "
+                        "population-weighted OLS). "
+                        "PSM illustrates observational workflows: overlap tightening, pruning, and covariance "
+                        "balance on the matched cohort—not the project's headline estimator."
                     ),
                     html.P(
-                        "Uncertainty here comes from a full re-fit/re-match bootstrap (200 replicates): "
-                        "each replicate resamples the treated+control pool, re-fits propensity scores, "
-                        "re-matches, and recomputes ATT. We treat this as a practical sensitivity interval "
-                        "for matched estimates rather than an exact finite-sample confidence interval."
+                        "Uncertainty is a pooled re-fit/re-match bootstrap (200 replicates): each replicate "
+                        "resamples treated+control, re-estimates propensity, reapplies NN + caliper, and "
+                        "recomputes ATT on surviving pairs. Interpret as a heuristic sensitivity envelope, "
+                        "not textbook nearest-neighbour CIs."
                     ),
                     html.P(
-                        "Common support is reported as a KPI but not enforced — no caliper is applied, "
-                        "so every treated unit finds a match. The number of treated units whose "
-                        "propensity lies outside the overlap region is shown alongside the ATT."
+                        "The Love plot contrasts all treated covariates to pooled controls ",
+                        "(before pairing) versus caliper-kept treated units to their ",
+                        "matched controls."
                     ),
                 ],
             ),
@@ -1517,17 +1524,18 @@ def tab3_layout():
                                     html.P(
                                         [
                                             html.Strong("What this shows: "),
-                                            "whether the fitted LogNormal reproduces the observed conditional "
-                                            "spend distribution (amount | converted). The posterior predictive "
-                                            "density (orange) should broadly track the observed density (teal) "
-                                            "in location, spread, and tail weight. ",
+                                            "three hurdle-consistent posterior mimics stacked per arm. Row 1 simulates ",
+                                            html.Code("Bernoulli(p) × LogNormal(μ, σ)"),
+                                            " so the spike at ",
+                                            html.Code("$0"),
+                                            " enters the replicated spend distribution alongside the skewed positives. ",
+                                            "Row 2 conditions on converters only versus observed positive amounts; ",
+                                            "row 3 compares the replicated batch conversion fractions to empirical rates. ",
                                             html.Strong("What to watch for: "),
-                                            "the overall smooth shape should align. Narrow vertical spikes in "
-                                            "the observed data are expected: the Hillstrom catalogue has a "
-                                            "handful of SKUs priced at $29.99 and $499, so many converters "
-                                            "land on those exact amounts. A continuous LogNormal cannot model "
-                                            "discrete price points, so it smooths over them by design. Judge "
-                                            "fit on the bulk shape, not the spikes.",
+                                            "overall alignment in mass at zero (row 1), bulk positive-tail shape ",
+                                            "(row 2), and calibrated conversion dispersion (row 3). Discrete catalogue ",
+                                            "price ladders still spike the observed converters; judge LogNormal ",
+                                            "fit on the smoothed analogue, not every SKU notch.",
                                         ],
                                         className="text-muted small mb-2",
                                     ),
@@ -1603,6 +1611,12 @@ def tab3_layout():
                         "The ROPE (Region of Practical Equivalence) lets you define a minimum effect "
                         "size that matters for business decisions. The dashboard shows the probability "
                         "mass outside the ROPE."
+                    ),
+                    html.P(
+                        "Posterior predictive checks draw Monte Carlo batches where each replicated "
+                        "customer spends zero or samples a fresh LogNormal amount conditional on "
+                        "conversion — mirroring the generative hurdle story rather than extrapolating "
+                        "only the conditional tail likelihood."
                     ),
                 ],
             ),
@@ -1822,7 +1836,20 @@ def tab6_layout():
                     dbc.Col(
                         [
                             section_header("All Methods Summary"),
-                            html.Div(id="comparison-table")
+                            html.P(
+                                [
+                                    html.Strong("RCT-first read: "),
+                                    "Difference-in-means on the Overview (bootstrap) and ",
+                                    html.Strong("OLS population-weighted ATE"),
+                                    " with HC3 robust errors align with ",
+                                    "randomised-design ITT contrasts. ",
+                                    "PSM here is an ATT on a caliper-pruned ",
+                                    "matched subset—as if treatment were selective—purely ",
+                                    "for diagnostics and observational-method comparison.",
+                                ],
+                                className="text-muted small mb-2",
+                            ),
+                            html.Div(id="comparison-table"),
                         ]
                     ),
                 ],
@@ -1845,10 +1872,10 @@ def tab6_layout():
                                     dbc.AccordionItem(
                                         [
                                             html.P(
-                                                "Estimates a matched-sample ATT via covariate balancing. In this project's randomised setting, use it mainly as a robustness/sensitivity view rather than the primary identification strategy."
+                                                "Matched-sample ATT with a 0.2 SD (logit propensity) caliper: unmatched treated rows are discarded. Bootstrapped CIs reflect re-fit/rematch variability, not textbook NN match CIs."
                                             ),
                                         ],
-                                        title="Propensity Score Matching (PSM)"
+                                        title="PSM sensitivity (observational-style)"
                                     ),
                                     dbc.AccordionItem(
                                         [
@@ -1894,7 +1921,7 @@ def tab6_layout():
 
 TABS = [
     dbc.Tab(tab1_layout(), label="1 Overview", tab_id="tab-1"),
-    dbc.Tab(tab2_layout(), label="2 Matched-Control", tab_id="tab-2"),
+    dbc.Tab(tab2_layout(), label="2 PSM sensitivity", tab_id="tab-2"),
     dbc.Tab(tab3_layout(), label="3 Bayesian A/B", tab_id="tab-3"),
     dbc.Tab(tab4_layout(), label="4 Uplift / HTE", tab_id="tab-4"),
     dbc.Tab(tab5_layout(), label="5 Multi-Arm OLS", tab_id="tab-5"),
@@ -2002,41 +2029,69 @@ def update_psm(arm):
     arm_label = "Men's Email" if arm == "mens" else "Women's Email"
     arm_color = MENS_COLOUR if arm == "mens" else WOMENS_COLOUR
 
-    ci_str = f"95% CI: ${p['att_ci_lo']:.2f} - ${p['att_ci_hi']:.2f}"
-    ps_dist = p.get("avg_ps_distance")
-    dist_str = (
-        f"Avg Propensity Score distance: {ps_dist:.3f}"
-        if ps_dist is not None
-        else "1:1 NN, no caliper"
+    att_pt = p.get("att_point", float("nan"))
+    ci_lo = p.get("att_ci_lo", float("nan"))
+    ci_hi = p.get("att_ci_hi", float("nan"))
+    att_ok = bool(np.isfinite(att_pt))
+    ci_ok = bool(np.isfinite(ci_lo) and np.isfinite(ci_hi))
+    ci_str = (
+        f"95% CI: ${ci_lo:.2f} – ${ci_hi:.2f}"
+        if ci_ok
+        else "95% CI unavailable (insufficient bootstrap samples)"
     )
+    ps_dist = p.get("avg_ps_distance")
+    cal_w = p.get("caliper_width")
+    pct_mt = float(p.get("pct_matched", 100.0))
+    n_drop = int(p.get("n_dropped_no_caliper", 0))
+    n_tot = int(p.get("n_treated_total", p.get("n_matched", 0)))
+
+    if ps_dist is not None and np.isfinite(ps_dist) and cal_w is not None:
+        dist_str = (
+            f"{pct_mt:.1f}% paired · mean |Δlogit(P)| = {ps_dist:.4f} (caliper ≤ {cal_w:.4f}) · "
+            f"{n_drop:,} treated dropped"
+        )
+    else:
+        dist_str = "Matching statistics unavailable"
     cs_str = f"{p['cs_lower']:.3f} - {p['cs_upper']:.3f}"
+    pct_label = f"{pct_mt:.1f}% matched"
 
     kpis = html.Div(
         [
             kpi_card(
-                f"${p['att_point']:.2f}",
-                f"ATT - {arm_label}",
+                f"${att_pt:.2f}" if att_ok else "—",
+                f"ATT — {arm_label}",
                 ci_str,
-                p["att_point"] > 0,
+                (att_pt > 0) if att_ok else None,
                 color=arm_color,
                 accent=arm_color,
                 info=(
-                    "Average Treatment Effect on the Treated (ATT): estimated causal effect of "
-                    "receiving the comm on spend (for customers who actually received it). "
-                    "It's the mean spend difference between each treated customer and "
-                    "their matched-control counterpart."
+                    "Average Treatment Effect on the Treated (ATT): mean spend difference between "
+                    "each caliper-retained treated row and its nearest matched control."
                 ),
                 info_id="psm-info-att"
             ),
             kpi_card(
-                f"{p['n_matched']:,}",
-                "Matched pairs",
-                dist_str,
+                pct_label,
+                "% treated retained after caliper",
+                f"{p.get('n_matched', 0):,} paired of {n_tot:,} treated",
+                None,
                 accent=ACCENT,
                 info=(
-                    "Each treated customer is paired 1:1 with the most similar control customer "
-                    "by propensity score (no caliper applied, so all treated units are matched). "
-                    "Average PS distance measures match quality, closer to 0 means tighter matches."
+                    "1:1 nearest-neighbour pairing on propensity scores with replacement. "
+                    "Pairs are discarded if the absolute gap in logit(propensity score) exceeds "
+                    "0.2× pooled SD of logit(PS) among all pooled rows."
+                ),
+                info_id="psm-info-pct"
+            ),
+            kpi_card(
+                f"{p.get('n_matched', 0):,}",
+                "Matched pairs",
+                dist_str,
+                None,
+                accent=MUTED,
+                info=(
+                    "Matched rows only. Mean |Δlogit(PS)| along accepted pairs summarizes "
+                    "how tight NN matches were before caliper pruning."
                 ),
                 info_id="psm-info-pairs"
             ),
@@ -2044,22 +2099,20 @@ def update_psm(arm):
                 cs_str,
                 "Common support range",
                 info=(
-                    "The propensity score range where both treated and control groups overlap. "
-                    "Causal estimates are most credible within this range. A wide interval "
-                    "indicates good overlap. A narrow one suggests the groups are very different "
-                    "and matching might be unreliable at the extremes."
+                    "Overlap window on raw propensity scores across both groups. Wide overlap is "
+                    "expected here; the logit caliper is what enforces pairwise closeness."
                 ),
                 info_id="psm-info-cs"
             ),
         ]
     )
 
-    # Propensity score distribution
+    # Propensity score distribution (full cohorts)
     ps_fig = go.Figure()
     ps_fig.add_trace(
         go.Histogram(
             x=p["propensity_treated"],
-            name=arm_label,
+            name=f"{arm_label} (all treated)",
             opacity=0.7,
             nbinsx=50,
             marker_color=arm_color
@@ -2077,7 +2130,10 @@ def update_psm(arm):
     ps_fig.update_layout(
         barmode="overlay",
         template=PLOTLY_TEMPLATE,
-        title="Propensity Score Distribution",
+        title=(
+            "Propensity score distribution<br>"
+            f"<sup>Overlap diagnostic - {pct_mt:.1f}% retained after 0.2 SD logit caliper</sup>"
+        ),
         xaxis_title="Propensity score",
         yaxis_title="Count",
         legend=dict(
@@ -2086,11 +2142,18 @@ def update_psm(arm):
         margin=dict(t=50, b=70)
     )
 
-    # Love plot
+    # Love plot — “after” = caliper-kept treated vs their matched controls
     covs = list(p["smd_before"].keys())
     cov_labels = [COVARIATE_LABELS.get(c, c) for c in covs]
     smd_before = [p["smd_before"][c] for c in covs]
-    smd_after = [p["smd_after"][c] for c in covs]
+    sad = p.get("smd_after", {})
+    if isinstance(sad, dict) and sad:
+        smd_after_plot = []
+        for c in covs:
+            v = sad.get(c, float("nan"))
+            smd_after_plot.append(float(v) if pd.notna(v) else float("nan"))
+    else:
+        smd_after_plot = [float("nan")] * len(covs)
 
     love_fig = go.Figure()
     love_fig.add_trace(
@@ -2098,19 +2161,19 @@ def update_psm(arm):
             x=smd_before,
             y=cov_labels,
             mode="markers",
-            name="Before matching",
+            name="Before (all treated vs controls)",
             marker=dict(color=DANGER, size=10, symbol="circle"),
             hovertemplate="%{y}<br>SMD: %{x:.3f}<extra>Before matching</extra>",
         )
     )
     love_fig.add_trace(
         go.Scatter(
-            x=smd_after,
+            x=smd_after_plot,
             y=cov_labels,
             mode="markers",
-            name="After matching",
+            name="After (retained cohort vs matched ctrl)",
             marker=dict(color=SUCCESS, size=10, symbol="diamond"),
-            hovertemplate="%{y}<br>SMD: %{x:.3f}<extra>After matching</extra>",
+            hovertemplate="%{y}<br>SMD: %{x:.3f}<extra>After caliper NN</extra>",
         )
     )
     love_fig.add_vline(
@@ -2120,22 +2183,29 @@ def update_psm(arm):
     love_fig.add_vline(x=0, line_color=BORDER)
     love_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title="Love Plot: Standardised Mean Differences",
-        xaxis_title="Standardised Mean Difference",
+        title=(
+            "Love plot: covariate balance<br>"
+            f"<sup>{p.get('n_matched', 0):,} caliper-kept treated units</sup>"
+        ),
+        xaxis_title="Standardised mean difference",
         yaxis=dict(automargin=True),
         margin=dict(t=50, b=70, l=195, r=40),
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
     )
 
-    # ATT bar chart
+    if att_ok and ci_ok:
+        bar_y = [att_pt, ci_lo, ci_hi]
+        bar_text = [f"${v:.2f}" for v in bar_y]
+    else:
+        bar_y = [0.0, 0.0, 0.0]
+        bar_text = ["—", "—", "—"]
+
     stats_fig = go.Figure(
         go.Bar(
-            x=["ATT Estimate", "CI Lower", "CI Upper"],
-            y=[p["att_point"], p["att_ci_lo"], p["att_ci_hi"]],
+            x=["ATT estimate", "CI lower", "CI upper"],
+            y=bar_y,
             marker_color=[arm_color, BORDER, BORDER],
-            text=[
-                f"${v:.2f}" for v in [p["att_point"], p["att_ci_lo"], p["att_ci_hi"]]
-            ],
+            text=bar_text,
             textposition="outside",
             textfont=dict(color=TEXT),
             hovertemplate="%{x}: $%{y:.2f}<extra></extra>",
@@ -2143,8 +2213,8 @@ def update_psm(arm):
     )
     stats_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title="ATT with 95% Bootstrap CI",
-        yaxis_title="Effect on Spend ($)",
+        title="ATT with pooled re-fit/rematch bootstrap (200 reps)",
+        yaxis_title="Effect on spend ($)",
         margin=dict(t=50, b=30)
     )
 
@@ -2431,70 +2501,172 @@ def toggle_method_tab3(n, is_open):
     prevent_initial_call=True,
 )
 def toggle_ppc(n, pair_key, is_open):
-    # PPC is on the log-amount component only (converters), we can't easily
-    # display the zero-mass since the LogNormal is not defined at zero.
     # Toggle is_open only on button click; pair changes only refresh the figure.
     new_is_open = not is_open if ctx.triggered_id == "ppc-btn" else is_open
     b = BAYESIAN[pair_key]
-    obs_a = b.get("observed_amount_a")
-    obs_b = b.get("observed_amount_b")
-    ppc_a = b.get("ppc_amount_a")
-    ppc_b = b.get("ppc_amount_b")
+    lab_a = b["arm_a_label"]
+    lab_b = b["arm_b_label"]
+    pack = b.get("ppc_pack")
 
-    fig = go.Figure()
-    if obs_a is not None and ppc_a is not None:
+    if pack is None:
+        fig = go.Figure()
+        fig.update_layout(
+            template=PLOTLY_TEMPLATE,
+            title="Posterior predictive: rebuild `.cache/results.pkl` after upgrading causal_utils",
+            height=420,
+            margin=dict(t=60, b=50),
+        )
+        return new_is_open, fig
+
+    nd = pack.get("ppc_n_draws", "—")
+    nf = pack.get("ppc_n_fake_per_draw", "—")
+
+    fig = make_subplots(
+        rows=3,
+        cols=2,
+        subplot_titles=(
+            f"Full spend — {lab_a}",
+            f"Full spend — {lab_b}",
+            f"Amount | spend > 0 — {lab_a}",
+            f"Amount | spend > 0 — {lab_b}",
+            f"Conversion rate mimic — {lab_a}",
+            f"Conversion rate mimic — {lab_b}",
+        ),
+        vertical_spacing=0.09,
+        horizontal_spacing=0.07,
+    )
+
+    obs_sa = b.get("observed_spend_a")
+    obs_sb = b.get("observed_spend_b")
+    ppc_sa = pack.get("ppc_spend_display_a")
+    ppc_sb = pack.get("ppc_spend_display_b")
+    obs_pa = b.get("observed_amount_a")
+    obs_pb = b.get("observed_amount_b")
+    ppc_pa = pack.get("ppc_amount_pos_a")
+    ppc_pb = pack.get("ppc_amount_pos_b")
+    ocra = b.get("obs_conv_rate_a")
+    ocrb = b.get("obs_conv_rate_b")
+    pcrma = pack.get("ppc_conv_rep_mean_a")
+    pcrmb = pack.get("ppc_conv_rep_mean_b")
+
+    def _add_hist_pair(row, col, obs_x, ppc_x, obs_name, ppc_name, color_o, color_p):
+        if obs_x is None or ppc_x is None or len(obs_x) == 0 or len(ppc_x) == 0:
+            return
         fig.add_trace(
             go.Histogram(
-                x=obs_a,
-                name=f"Observed ({b['arm_a_label']})",
+                x=obs_x,
+                name=obs_name,
                 histnorm="probability density",
-                marker_color=MENS_COLOUR,
-                opacity=0.45,
-                nbinsx=60,
-            )
+                marker_color=color_o,
+                opacity=0.42,
+                nbinsx=70,
+                showlegend=(row == 1 and col == 1),
+            ),
+            row=row,
+            col=col,
         )
         fig.add_trace(
             go.Histogram(
-                x=ppc_a,
-                name=f"Posterior predictive ({b['arm_a_label']})",
+                x=ppc_x,
+                name=ppc_name,
                 histnorm="probability density",
+                marker_color=color_p,
+                opacity=0.42,
+                nbinsx=70,
+                showlegend=(row == 1 and col == 1),
+            ),
+            row=row,
+            col=col,
+        )
+
+    _add_hist_pair(
+        1, 1, obs_sa, ppc_sa, f"Observed — {lab_a}", f"PPC mimic — {lab_a}",
+        MENS_COLOUR, ACCENT,
+    )
+    _add_hist_pair(
+        1, 2, obs_sb, ppc_sb, f"Observed — {lab_b}", f"PPC mimic — {lab_b}",
+        WOMENS_COLOUR, CTRL_COLOUR,
+    )
+    _add_hist_pair(
+        2, 1, obs_pa, ppc_pa, f"Obs converters — {lab_a}", f"PPC | spend>0 — {lab_a}",
+        MENS_COLOUR, ACCENT,
+    )
+    _add_hist_pair(
+        2, 2, obs_pb, ppc_pb, f"Obs converters — {lab_b}", f"PPC | spend>0 — {lab_b}",
+        WOMENS_COLOUR, CTRL_COLOUR,
+    )
+
+    if pcrma is not None and len(pcrma):
+        fig.add_trace(
+            go.Histogram(
+                x=pcrma,
+                nbinsx=45,
+                name="PPC draw mean conversion",
                 marker_color=ACCENT,
-                opacity=0.45,
-                nbinsx=60,
-            )
+                opacity=0.55,
+                showlegend=False,
+            ),
+            row=3,
+            col=1,
         )
-    if obs_b is not None and ppc_b is not None:
+    if ocra is not None and np.isfinite(ocra):
+        fig.add_vline(
+            x=ocra,
+            line_dash="dash",
+            line_color=TEXT,
+            annotation_text=f"Observed {ocra * 100:.2f}%",
+            annotation_position="top",
+            row=3,
+            col=1,
+        )
+
+    if pcrmb is not None and len(pcrmb):
         fig.add_trace(
             go.Histogram(
-                x=obs_b,
-                name=f"Observed ({b['arm_b_label']})",
-                histnorm="probability density",
-                marker_color=WOMENS_COLOUR,
-                opacity=0.45,
-                nbinsx=60,
-                visible="legendonly",
-            )
-        )
-        fig.add_trace(
-            go.Histogram(
-                x=ppc_b,
-                name=f"Posterior predictive ({b['arm_b_label']})",
-                histnorm="probability density",
+                x=pcrmb,
+                nbinsx=45,
+                name="PPC draw mean conversion",
                 marker_color=CTRL_COLOUR,
-                opacity=0.45,
-                nbinsx=60,
-                visible="legendonly",
-            )
+                opacity=0.55,
+                showlegend=False,
+            ),
+            row=3,
+            col=2,
         )
+    if ocrb is not None and np.isfinite(ocrb):
+        fig.add_vline(
+            x=ocrb,
+            line_dash="dash",
+            line_color=TEXT,
+            annotation_text=f"Observed {ocrb * 100:.2f}%",
+            annotation_position="top",
+            row=3,
+            col=2,
+        )
+
     fig.update_layout(
         template=PLOTLY_TEMPLATE,
         barmode="overlay",
-        title="Posterior predictive check: conditional spend amount (converters only)",
-        xaxis_title="Spend ($)",
-        yaxis_title="Density",
-        margin=dict(t=60, b=70),
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+        height=980,
+        title=(
+            "Hurdle posterior predictive check "
+            f"(Bernoulli × LogNormal draws; {nd} posterior slices × {nf} "
+            "synthetic customers per slice, downsampled for spend histograms)"
+        ),
+        margin=dict(t=80, b=46, l=54, r=36),
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
     )
+
+    for r in (1, 2):
+        for c in (1, 2):
+            fig.update_xaxes(title_text="Spend ($)", row=r, col=c)
+            fig.update_yaxes(title_text="Density", row=r, col=c)
+
+    fig.update_xaxes(title_text="Conversion fraction", tickformat=".0%", row=3, col=1)
+    fig.update_xaxes(title_text="Conversion fraction", tickformat=".0%", row=3, col=2)
+    fig.update_yaxes(title_text="Count", row=3, col=1)
+    fig.update_yaxes(title_text="Count", row=3, col=2)
+
     return new_is_open, fig
 
 
@@ -3052,17 +3224,24 @@ def toggle_method_tab5(n, is_open):
 
 def _build_comparison_df():
     """Assemble a tidy DataFrame of point estimates and CIs across all 5 methods x 2 arms."""
+    def _rnd_money(v):
+        try:
+            x = float(v)
+            return round(x, 2) if np.isfinite(x) else None
+        except (TypeError, ValueError):
+            return None
+
     rows = []
     for arm in ["mens", "womens"]:
         arm_label = "Men's Email" if arm == "mens" else "Women's Email"
         p = PSM[arm]
         rows.append(
             {
-                "Method": "PSM (ATT)",
+                "Method": "PSM (ATT, caliper NN)",
                 "Arm": arm_label,
-                "Estimate ($)": round(p["att_point"], 2),
-                "CI Lower ($)": round(p["att_ci_lo"], 2),
-                "CI Upper ($)": round(p["att_ci_hi"], 2)
+                "Estimate ($)": _rnd_money(p.get("att_point")),
+                "CI Lower ($)": _rnd_money(p.get("att_ci_lo")),
+                "CI Upper ($)": _rnd_money(p.get("att_ci_hi")),
             }
         )
 
@@ -3168,6 +3347,9 @@ def update_comparison(tab):
         sub = comp_df[comp_df["Arm"] == arm_label].copy()
         fig = go.Figure()
         for i, row in sub.iterrows():
+            est_cell = row["Estimate ($)"]
+            if pd.isna(est_cell) or est_cell is None:
+                continue
             has_ci = pd.notna(row["CI Lower ($)"]) and pd.notna(row["CI Upper ($)"])
             fig.add_trace(
                 go.Scatter(
@@ -3222,10 +3404,12 @@ def update_comparison(tab):
 
     mens_estimates = comp_df[comp_df["Arm"] == "Men's Email"]["Estimate ($)"].values
     womens_estimates = comp_df[comp_df["Arm"] == "Women's Email"]["Estimate ($)"].values
-    mens_valid = [v for v in mens_estimates if pd.notna(v)]
-    womens_valid = [v for v in womens_estimates if pd.notna(v)]
-    mens_min, mens_max = min(mens_valid), max(mens_valid)
-    womens_min, womens_max = min(womens_valid), max(womens_valid)
+    mens_valid = [float(v) for v in mens_estimates if pd.notna(v)]
+    womens_valid = [float(v) for v in womens_estimates if pd.notna(v)]
+    mens_min = min(mens_valid) if mens_valid else 0.0
+    mens_max = max(mens_valid) if mens_valid else 0.0
+    womens_min = min(womens_valid) if womens_valid else 0.0
+    womens_max = max(womens_valid) if womens_valid else 0.0
 
     # Robust verdict: don't flip on a single near-zero estimate. Treat
     # |effect| < $0.10 as "noise zone": smaller than any plausible action
@@ -3282,9 +3466,10 @@ def update_comparison(tab):
                         ]
                     ),
                     html.P(
-                        "Method agreement strengthens causal credibility. When estimates diverge, "
-                        "the gap reflects differing assumptions. PSM relies on covariate overlap, "
-                        "Bayesian A/B on distribution, and uplift on out-of-sample generalisation.",
+                        "Agreement strengthens credibility; divergence surfaces differing assumptions. "
+                        "Randomisation-grounded contrasts are on the Overview and Tab 5 (OLS); "
+                        "Bayesian focuses on posterior uncertainty for distribution shifts; uplift "
+                        "prioritises out-of-sample targeting discrimination.",
                         className="text-muted small mb-0"
                     ),
                 ]
