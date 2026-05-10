@@ -1,0 +1,405 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+            body {
+                background-color: #041818 !important;
+                font-family: "Ubuntu", sans-serif !important;
+                color: #E2F0EF !important;
+                -webkit-font-smoothing: antialiased;
+                margin: 0;
+            }
+
+            ::-webkit-scrollbar { width: 5px; height: 5px; }
+            ::-webkit-scrollbar-track { background: #041818; }
+            ::-webkit-scrollbar-thumb { background: #1A4040; border-radius: 3px; }
+            ::-webkit-scrollbar-thumb:hover { background: #FF5F03; }
+
+            /* Navbar */
+            .enterprise-navbar {
+                background: #020E0E !important;
+                border-bottom: 2px solid #FF5F03 !important;
+                padding: 0.55rem 0 !important;
+            }
+
+            /* Cards */
+            .card {
+                background-color: #072C2C !important;
+                border: 1px solid #1A4040 !important;
+                border-radius: 4px !important;
+            }
+            .card-body { padding: 0.9rem 1rem !important; }
+            .card-header {
+                background-color: #051F1F !important;
+                border-bottom: 1px solid #1A4040 !important;
+                color: #E2F0EF !important;
+                font-family: "Oswald", sans-serif !important;
+                font-weight: 500 !important;
+                font-size: 0.78rem !important;
+                letter-spacing: 0.1em !important;
+                text-transform: uppercase !important;
+                padding: 0.6rem 1rem !important;
+            }
+
+            /* Tab nav */
+            .nav-tabs {
+                border-bottom: 1px solid #1A4040 !important;
+                padding: 0 0.5rem;
+                background-color: #020E0E !important;
+            }
+            .nav-tabs .nav-link {
+                color: #6B9090 !important;
+                background: transparent !important;
+                border: none !important;
+                border-bottom: 2px solid transparent !important;
+                border-radius: 0 !important;
+                padding: 0.65rem 1.1rem !important;
+                font-family: "Oswald", sans-serif !important;
+                font-weight: 400 !important;
+                font-size: 0.78rem !important;
+                letter-spacing: 0.08em !important;
+                text-transform: uppercase !important;
+                transition: color 0.15s, border-color 0.15s;
+                white-space: nowrap;
+            }
+            .nav-tabs .nav-link:hover {
+                color: #E2F0EF !important;
+                border-bottom-color: #2A5050 !important;
+            }
+            .nav-tabs .nav-link.active {
+                color: #FF5F03 !important;
+                background: transparent !important;
+                border-bottom: 2px solid #FF5F03 !important;
+            }
+            .tab-content { background-color: #041818 !important; }
+
+            /* Accordion */
+            .accordion-button {
+                background-color: #072C2C !important;
+                color: #E2F0EF !important;
+                font-family: "Ubuntu", sans-serif !important;
+                font-size: 0.87rem !important;
+                box-shadow: none !important;
+            }
+            .accordion-button:not(.collapsed) {
+                background-color: #0D3535 !important;
+                color: #FF5F03 !important;
+            }
+            .accordion-body {
+                background-color: #072C2C !important;
+                color: #9ABABA !important;
+                font-size: 0.87rem !important;
+                line-height: 1.7 !important;
+                border-top: 1px solid #1A4040 !important;
+            }
+            .accordion-item {
+                background-color: #072C2C !important;
+                border: 1px solid #1A4040 !important;
+                margin-bottom: 4px !important;
+            }
+
+            /* Segmented control (modern radio group) */
+            .segmented-control {
+                display: inline-flex;
+                background: #0D3535;
+                border: 1px solid #1A4040;
+                border-radius: 6px;
+                padding: 3px;
+                gap: 2px;
+            }
+            .segmented-control .form-check {
+                margin: 0 !important;
+                padding-left: 0 !important;
+                display: flex;
+            }
+            .segmented-control .form-check-input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+                margin: 0;
+            }
+            .segmented-control .form-check-label {
+                cursor: pointer;
+                padding: 0.45rem 1.1rem;
+                border-radius: 4px;
+                color: #6B9090;
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.72rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+                user-select: none;
+                border: 1px solid transparent;
+                line-height: 1.2;
+                white-space: nowrap;
+            }
+            .segmented-control .form-check-label:hover {
+                color: #E8F1F1;
+                background: rgba(255,255,255,0.04);
+            }
+            .segmented-control .form-check-input:checked + .form-check-label {
+                color: #FF5F03;
+                background: rgba(255,95,3,0.1);
+                border-color: rgba(255,95,3,0.35);
+            }
+            .segmented-control .form-check-input:focus-visible + .form-check-label {
+                outline: 2px solid rgba(255,95,3,0.5);
+                outline-offset: 1px;
+            }
+
+            /* Methodology button */
+            .btn-methodology {
+                background: transparent !important;
+                border: 1px solid #1A4040 !important;
+                color: #6B9090 !important;
+                font-family: "Ubuntu Mono", monospace !important;
+                font-size: 0.72rem !important;
+                letter-spacing: 0.06em !important;
+                padding: 0.3rem 0.85rem !important;
+                border-radius: 3px !important;
+                cursor: pointer;
+                transition: all 0.15s;
+            }
+            .btn-methodology:hover,
+            .btn-methodology:focus {
+                border-color: #FF5F03 !important;
+                color: #FF5F03 !important;
+                background: rgba(255,95,3,0.06) !important;
+                outline: none !important;
+                box-shadow: none !important;
+            }
+
+            /* Forms */
+            .form-check-input:checked {
+                background-color: #FF5F03 !important;
+                border-color: #FF5F03 !important;
+            }
+            .form-check-input:focus {
+                box-shadow: 0 0 0 0.2rem rgba(255,95,3,0.25) !important;
+            }
+            .form-control, .form-select {
+                background-color: #0D3535 !important;
+                border: 1px solid #1A4040 !important;
+                color: #E2F0EF !important;
+            }
+            .form-control:focus, .form-select:focus {
+                background-color: #0D3535 !important;
+                border-color: #FF5F03 !important;
+                color: #E2F0EF !important;
+                box-shadow: 0 0 0 0.15rem rgba(255,95,3,0.2) !important;
+            }
+            .input-group-text {
+                background-color: #0D3535 !important;
+                border: 1px solid #1A4040 !important;
+                color: #6B9090 !important;
+                font-family: "Ubuntu Mono", monospace !important;
+                font-size: 0.82rem !important;
+            }
+            .form-check-label {
+                font-size: 0.85rem !important;
+                color: #9ABABA !important;
+            }
+            label.small { color: #6B9090 !important; }
+
+            /* Methodology card */
+            .methodology-content .card-body {
+                border-left: 2px solid #1A4040 !important;
+                background-color: #051F1F !important;
+            }
+
+            .text-muted { color: #6B9090 !important; }
+
+            /* Tooltips (ⓘ info icons) */
+            .tooltip .tooltip-inner {
+                background-color: rgba(13, 53, 53, 0.92) !important;
+                color: #C8E0DF !important;
+                border: 1px solid #1A4040 !important;
+                border-radius: 4px !important;
+                font-family: "Ubuntu", sans-serif !important;
+                font-size: 0.78rem !important;
+                line-height: 1.5 !important;
+                max-width: 260px !important;
+                padding: 0.45rem 0.7rem !important;
+                backdrop-filter: blur(4px);
+                text-align: left !important;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.45) !important;
+            }
+            .tooltip .tooltip-arrow::before {
+                border-right-color: #1A4040 !important;
+            }
+
+            /* DataTable cell selection — override Dash's default bright blue */
+            .dash-table-container td.focused,
+            .dash-table-container td.cell--selected {
+                background-color: #0D3535 !important;
+                box-shadow: none !important;
+            }
+
+            /* DataTable export button */
+            .export {
+                font-size: 0 !important;
+                background: transparent !important;
+                border: 1px solid #1A4040 !important;
+                color: #6B9090 !important;
+                font-family: "Ubuntu Mono", monospace !important;
+                letter-spacing: 0.06em !important;
+                padding: 0.3rem 0.85rem !important;
+                border-radius: 3px !important;
+                cursor: pointer !important;
+                transition: all 0.15s !important;
+                text-transform: uppercase !important;
+                margin-bottom: 0.5rem !important;
+            }
+            .export::after {
+                content: "Export to CSV";
+                font-size: 0.72rem;
+                font-family: "Ubuntu Mono", monospace;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+            }
+            .export:hover, .export:focus {
+                border-color: #FF5F03 !important;
+                color: #FF5F03 !important;
+                background: rgba(255, 95, 3, 0.06) !important;
+                outline: none !important;
+            }
+
+            /* Overview: page subtitle strip */
+            .overview-context {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.6rem 1.4rem;
+                padding: 0.55rem 0 1rem 0;
+                margin-bottom: 0.75rem;
+                border-bottom: 1px solid #1A4040;
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.74rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #6B9090;
+            }
+            .overview-context strong {
+                color: #E2F0EF;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+            }
+            .overview-context .sep {
+                width: 4px;
+                height: 4px;
+                border-radius: 50%;
+                background: #1A4040;
+                display: inline-block;
+            }
+
+            /* Overview: segment summary cards */
+            .segment-card {
+                background-color: #072C2C;
+                border: 1px solid #1A4040;
+                border-radius: 4px;
+                overflow: hidden;
+                transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+                height: 100%;
+            }
+            .segment-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38);
+                border-color: #254848;
+            }
+            .segment-card-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0.75rem 1.05rem;
+                border-bottom: 1px solid #1A4040;
+                background-color: #051F1F;
+            }
+            .segment-card-title {
+                display: flex;
+                align-items: center;
+                font-family: "Oswald", sans-serif;
+                font-weight: 500;
+                font-size: 0.82rem;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: #E2F0EF;
+            }
+            .segment-dot {
+                width: 9px;
+                height: 9px;
+                border-radius: 50%;
+                display: inline-block;
+                margin-right: 0.6rem;
+                box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
+            }
+            .segment-card-count {
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.72rem;
+                color: #6B9090;
+                letter-spacing: 0.06em;
+            }
+            .segment-card-count strong {
+                color: #C8E0DF;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+            }
+            .segment-metric-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1px;
+                background-color: #1A4040;
+            }
+            .segment-metric {
+                background-color: #072C2C;
+                padding: 1.05rem 1.1rem 1.1rem 1.1rem;
+                min-height: 118px;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+            }
+            .segment-metric-label {
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.68rem;
+                color: #6B9090;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                margin-bottom: 0.35rem;
+            }
+            .segment-metric-value {
+                font-family: "Oswald", sans-serif;
+                font-size: 1.95rem;
+                font-weight: 500;
+                line-height: 1.05;
+                letter-spacing: 0.01em;
+            }
+            .segment-metric-delta {
+                font-family: "Ubuntu", sans-serif;
+                font-size: 0.76rem;
+                margin-top: 0.55rem;
+                color: #6B9090;
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.35rem;
+            }
+            .segment-metric-delta .delta-num {
+                font-family: "Ubuntu Mono", monospace;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+            }
+            .segment-sig-badge {
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.58rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                padding: 1px 6px;
+                border-radius: 2px;
+                border: 1px solid currentColor;
+                line-height: 1.3;
+            }
+            .segment-metric-baseline {
+                font-family: "Ubuntu Mono", monospace;
+                font-size: 0.68rem;
+                color: #6B9090;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                margin-top: 0.55rem;
+            }

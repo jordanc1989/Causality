@@ -471,7 +471,7 @@ def _run_bayesian_pair(df, pair_key):
     log_mu_prior = float(np.mean(log_pooled))
     log_sd_prior = float(np.std(log_pooled))
 
-    with pm.Model() as model:
+    with pm.Model():
         # Conversion probability (Beta(1,1) = uniform)
         p_a = pm.Beta("p_a", alpha=1.0, beta=1.0)
         p_b = pm.Beta("p_b", alpha=1.0, beta=1.0)

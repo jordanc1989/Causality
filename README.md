@@ -5,7 +5,7 @@ Interactive Dash app for comparing causal measurement approaches on a real rando
 This project demonstrates how to:
 - estimate average treatment effects with uncertainty
 - inspect heterogeneity and targeting value
-- communicate assumptions and modeling trade-offs in a decision-friendly format
+- show where each method agrees, where it disagrees and what assumptions drive the result
 
 ## Dashboard Preview
 
@@ -13,11 +13,11 @@ This project demonstrates how to:
 
 ## Why This Project Matters
 
-Teams often ask two different questions:
+Teams can often ask two different questions:
 - "Did the campaign work on average?" (causal effect / ATE)
 - "Who should we target next?" (HTE / uplift policy)
 
-This dashboard puts both views side-by-side so methodological choices and business implications are transparent.
+This dashboard puts both views side-by-side so the methodological choices and any business implications are easily comparable.
 
 ## Methods Covered
 
@@ -89,9 +89,9 @@ Open `http://localhost:8050`.
 - Uplift metrics are useful for ranking policy decisions but should ideally be reported with uncertainty intervals when used for high-stakes targeting.
 - Subgroup interaction findings are exploratory unless multiplicity is explicitly controlled.
 
-## Results Snapshot (What reviewers should look for)
+## Results Snapshot
 
-- Agreement and disagreement across methods for Men's vs Control and Women's vs Control.
+- Agreement and disagreement across methods for Mens vs Control and Womens vs Control.
 - Posterior probability and HDI width in Bayesian A/B (effect magnitude + uncertainty).
 - Whether uplift curves and decile lift indicate actionable ranking value beyond random targeting.
 - Consistency between OLS interaction patterns and uplift heterogeneity signals.
@@ -100,19 +100,45 @@ Open `http://localhost:8050`.
 
 ```text
 .
-├── app.py              # Dash UI, figures, callbacks, interpretation copy
-├── causal_utils.py     # Data prep and causal estimation logic
-├── pyproject.toml      # Project metadata and dependencies
-├── uv.lock             # Locked versions (committed for reproducibility)
-├── .python-version     # Hint for Python 3.13 (optional; used by uv/pyenv)
+├── app.py                 # Thin entrypoint: Dash app, theme registration, layout, callback wiring
+├── causal_utils.py        # Data prep, caching, and all causal estimation logic
+├── dashboard/
+│   ├── theme.py           # Design tokens, Plotly template, shared style dicts
+│   └── data.py            # Loads cache → exposes RESULTS, DF, PSM, BAYESIAN, UPLIFT, OLS
+├── layouts/
+│   ├── shell.py           # Navbar + tab container; imports per-tab layouts
+│   ├── components.py      # Reusable UI helpers (KPI cards, section headers, methodology collapse)
+│   ├── overview.py        # Tab 1 layout
+│   ├── psm.py             # Tab 2 layout
+│   ├── bayesian.py        # Tab 3 layout
+│   ├── uplift.py          # Tab 4 layout
+│   ├── ols.py             # Tab 5 layout
+│   └── comparison.py      # Tab 6 layout
+├── callbacks/
+│   ├── __init__.py        # register_callbacks(app)
+│   ├── overview.py        # Tab 1 callbacks
+│   ├── psm.py             # Tab 2 callbacks
+│   ├── bayesian.py        # Tab 3 callbacks
+│   ├── uplift.py          # Tab 4 callbacks
+│   ├── ols.py             # Tab 5 callbacks
+│   └── comparison.py      # Tab 6 callbacks
+├── figures/
+│   └── overview.py        # Static Plotly helpers for Overview tab
+├── content/
+│   └── methodology.py     # Long-form copy separated from layout code
+├── assets/
+│   └── style.css          # Global styles (Dash serves /assets automatically)
+├── .cache/                # Precomputed outputs (e.g. results.pkl)
+├── pyproject.toml
+├── uv.lock
+├── .python-version
 └── README.md
 ```
 
 ## Roadmap
 
-- Add deployment and public demo link.
-- Add benchmark tests for uplift policy value with uncertainty intervals.
-- Add formal multiplicity-adjusted subgroup reporting mode.
+- Add deployment / public demo link.
+- Add data ingestion wizard
 
 
 ## License
