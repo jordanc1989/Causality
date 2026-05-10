@@ -7,14 +7,18 @@ GOOGLE_FONTS = (
     "&family=Ubuntu+Mono:wght@400;700&display=swap"
 )
 
-# Typography: Ubuntu for UI and body copy; Ubuntu Mono for KPI labels and numeric
-# micro-labels where a fixed-width feel helps. Oswald for numeric “hero” metrics
-# (KPI values, large segment figures) and Plotly chart titles, not for long text.
+# Palette: keep names aligned with assets/style.css :root (--bg → BG, etc.).
+# Typography: Ubuntu for UI, chart titles, and body copy. Ubuntu Mono only for
+# compact numeric/tabular bits (counts, badges, monospace labels). Oswald strictly
+# for large KPI figures (hero numbers), not section titles or Plotly chrome.
 
 BG = "#041818"
+BG_STRONG = "#020E0E"
 SURFACE = "#072C2C"
 SURFACE_2 = "#0D3535"
+SURFACE_3 = "#051F1F"
 BORDER = "#1A4040"
+BORDER_STRONG = "#2A5050"
 ACCENT = "#FF5F03"
 MENS_COLOUR = "#22D3EE"
 WOMENS_COLOUR = "#B1C17E"
@@ -27,7 +31,7 @@ DANGER = "#DC2626"
 
 
 def register_plotly_template():
-    pio.templates["enterprise_dark"] = go.layout.Template(
+    pio.templates["causal_dark"] = go.layout.Template(
         layout=go.Layout(
             paper_bgcolor=SURFACE,
             plot_bgcolor=SURFACE_2,
@@ -36,14 +40,14 @@ def register_plotly_template():
             xaxis=dict(
                 gridcolor=BORDER,
                 linecolor=BORDER,
-                zerolinecolor="#2A5050",
+                zerolinecolor=BORDER_STRONG,
                 tickfont=dict(color=MUTED),
                 title_font=dict(color=MUTED, size=11)
             ),
             yaxis=dict(
                 gridcolor=BORDER,
                 linecolor=BORDER,
-                zerolinecolor="#2A5050",
+                zerolinecolor=BORDER_STRONG,
                 tickfont=dict(color=MUTED),
                 title_font=dict(color=MUTED, size=11)
             ),
@@ -53,14 +57,14 @@ def register_plotly_template():
                 font=dict(color=MUTED)
             ),
             title=dict(
-                font=dict(family="Oswald, sans-serif", color=TEXT, size=14),
+                font=dict(family="Ubuntu, sans-serif", color=TEXT, size=14),
                 pad=dict(l=0)
             ),
         )
     )
 
 
-PLOTLY_TEMPLATE = "enterprise_dark"
+PLOTLY_TEMPLATE = "causal_dark"
 GRAPH_CONFIG = {"toImageButtonOptions": {"format": "png", "scale": 3}}
 
 CARD_STYLE = {
@@ -69,11 +73,10 @@ CARD_STYLE = {
     "borderRadius": "4px",
 }
 KPI_LABEL_STYLE = {
-    "fontSize": "0.8rem",
+    "fontSize": "0.78rem",
     "color": MUTED,
-    "textTransform": "uppercase",
-    "letterSpacing": "0.1em",
-    "fontFamily": "Ubuntu Mono, monospace",
+    "fontFamily": "Ubuntu, sans-serif",
+    "fontWeight": "500",
     "marginBottom": "0.15rem",
 }
 KPI_VALUE_STYLE = {
@@ -91,11 +94,9 @@ KPI_DELTA_STYLE = {
     "marginBottom": "0",
 }
 SECTION_HEADER_STYLE = {
-    "fontFamily": "Oswald, sans-serif",
-    "fontWeight": "500",
-    "fontSize": "0.78rem",
-    "letterSpacing": "0.1em",
-    "textTransform": "uppercase",
+    "fontFamily": "Ubuntu, sans-serif",
+    "fontWeight": "600",
+    "fontSize": "0.86rem",
     "color": MUTED,
     "borderBottom": f"1px solid {BORDER}",
     "paddingBottom": "0.5rem",
@@ -117,8 +118,6 @@ TABLE_HEADER = {
     "color": MUTED,
     "fontFamily": "Ubuntu, sans-serif",
     "fontSize": "0.74rem",
-    "letterSpacing": "0.01em",
-    "textTransform": "none",
     "border": f"1px solid {BORDER}",
 }
 TABLE_SELECTED = [

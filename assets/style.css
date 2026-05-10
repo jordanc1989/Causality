@@ -1,3 +1,5 @@
+/* Core palette mirrors dashboard/theme.py: BG, BG_STRONG, SURFACE, SURFACE_2,
+   SURFACE_3, BORDER, BORDER_STRONG */
 :root {
   --bg: #041818;
   --bg-strong: #020e0e;
@@ -12,7 +14,7 @@
   --text-bright: #e8f1f1;
   --muted: #6b9090;
   --muted-2: #9ababa;
-  --shadow: rgba(0, 0, 0, 0.45);
+  --shadow-tooltip: 0 2px 8px rgba(0, 0, 0, 0.35);
   --hover-wash: rgba(255, 255, 255, 0.04);
   --accent-wash: rgba(255, 95, 3, 0.1);
   --accent-border: rgba(255, 95, 3, 0.35);
@@ -283,10 +285,9 @@ body {
   max-width: 260px;
   padding: 0.45rem 0.7rem;
   background-color: var(--tooltip-surface);
-  backdrop-filter: blur(4px);
   border: 1px solid var(--border);
   border-radius: 4px;
-  box-shadow: 0 4px 16px var(--shadow);
+  box-shadow: var(--shadow-tooltip);
   color: var(--text-soft);
   font-family: var(--font-main);
   font-size: 0.78rem;
@@ -304,6 +305,7 @@ body {
   box-shadow: none !important;
 }
 
+/* Dash DataTable: export control has a noisy default label; hide it and show ours. */
 .dashboard-app .export {
   margin-bottom: 0.5rem;
   padding: 0.3rem 0.85rem;

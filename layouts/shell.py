@@ -1,6 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import html
-from dashboard.theme import ACCENT, TEXT, MUTED, BORDER, BG
+from dashboard.theme import ACCENT, BORDER_STRONG, TEXT, MUTED, BG
 from layouts.overview import tab1_layout
 from layouts.psm import tab2_layout
 from layouts.bayesian import tab3_layout
@@ -73,13 +73,13 @@ def build_layout():
                                         "letterSpacing": "0.04em"
                                     },
                                 ),
-                                html.Span(" · ", style={"color": BORDER, "margin": "0 0.4rem"}),
                                 html.Span(
-                                    "64k customers · 3 arms · 6 causal methods",
+                                    "64k customers, 3 arms, 6 causal methods",
                                     style={
                                         "fontFamily": "Ubuntu Mono, monospace",
                                         "fontSize": "0.7rem",
-                                        "color": "#2A5050"
+                                        "color": BORDER_STRONG,
+                                        "marginLeft": "0.5rem",
                                     },
                                 ),
                             ],
