@@ -88,7 +88,7 @@ def build_layout():
                     ],
                     fluid=True,
                 ),
-                className="enterprise-navbar mb-0",
+                className="dashboard-navbar mb-0",
                 color="dark",
                 dark=True,
                 sticky="top",

@@ -9,9 +9,19 @@
   --accent: #ff5f03;
   --text: #e2f0ef;
   --text-soft: #c8e0df;
+  --text-bright: #e8f1f1;
   --muted: #6b9090;
   --muted-2: #9ababa;
   --shadow: rgba(0, 0, 0, 0.45);
+  --hover-wash: rgba(255, 255, 255, 0.04);
+  --accent-wash: rgba(255, 95, 3, 0.1);
+  --accent-border: rgba(255, 95, 3, 0.35);
+  --accent-soft: rgba(255, 95, 3, 0.06);
+  --focus-ring: rgba(255, 95, 3, 0.25);
+  --focus-ring-tight: rgba(255, 95, 3, 0.2);
+  --focus-outline-strong: rgba(255, 95, 3, 0.5);
+  --tooltip-surface: rgba(13, 53, 53, 0.92);
+  --dot-halo: rgba(255, 255, 255, 0.04);
   --font-main: "Ubuntu", sans-serif;
   --font-mono: "Ubuntu Mono", monospace;
   --font-display: "Oswald", sans-serif;
@@ -49,9 +59,9 @@ body {
   background: var(--accent);
 }
 
-/* Bootstrap + CYBORG set navbar background via utility / CSS vars; override explicitly. */
-.dashboard-app nav.navbar.enterprise-navbar,
-.dashboard-app .navbar.enterprise-navbar {
+/* Navbar */
+.dashboard-app nav.navbar.dashboard-navbar,
+.dashboard-app .navbar.dashboard-navbar {
   --bs-navbar-bg: var(--bg-strong);
   background-color: var(--bg-strong) !important;
   background-image: none !important;
@@ -78,8 +88,6 @@ body {
   font-family: var(--font-main);
   font-size: 0.85rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
-  text-transform: none;
 }
 
 .dashboard-app .dashboard-tabs.nav-tabs {
@@ -98,8 +106,6 @@ body {
   font-family: var(--font-main);
   font-size: 0.84rem;
   font-weight: 500;
-  letter-spacing: 0.01em;
-  text-transform: none;
   transition:
     color 0.15s,
     border-color 0.15s;
@@ -178,9 +184,7 @@ body {
   cursor: pointer;
   font-family: var(--font-main);
   font-size: 0.8rem;
-  letter-spacing: 0.01em;
   line-height: 1.2;
-  text-transform: none;
   transition:
     background-color 0.15s ease,
     color 0.15s ease,
@@ -190,8 +194,8 @@ body {
 }
 
 .dashboard-app .segmented-control .form-check-label:hover {
-  color: #e8f1f1;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-bright);
+  background: var(--hover-wash);
 }
 
 .dashboard-app
@@ -199,15 +203,15 @@ body {
   .form-check-input:checked
   + .form-check-label {
   color: var(--accent);
-  background: rgba(255, 95, 3, 0.1);
-  border-color: rgba(255, 95, 3, 0.35);
+  background: var(--accent-wash);
+  border-color: var(--accent-border);
 }
 
 .dashboard-app
   .segmented-control
   .form-check-input:focus-visible
   + .form-check-label {
-  outline: 2px solid rgba(255, 95, 3, 0.5);
+  outline: 2px solid var(--focus-outline-strong);
   outline-offset: 1px;
 }
 
@@ -220,14 +224,15 @@ body {
   cursor: pointer;
   font-family: var(--font-main);
   font-size: 0.8rem;
-  letter-spacing: 0.01em;
-  text-transform: none;
-  transition: all 0.15s;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .dashboard-app .btn-methodology:hover,
 .dashboard-app .btn-methodology:focus {
-  background: rgba(255, 95, 3, 0.06);
+  background: var(--accent-soft);
   border-color: var(--accent);
   box-shadow: none;
   color: var(--accent);
@@ -240,12 +245,7 @@ body {
 }
 
 .dashboard-app .dashboard-radio-group .form-check-input:focus {
-  box-shadow: 0 0 0 0.2rem rgba(255, 95, 3, 0.25);
-}
-
-.dashboard-app .dashboard-radio-group .form-check-label {
-  color: var(--muted-2);
-  font-size: 0.85rem;
+  box-shadow: 0 0 0 0.2rem var(--focus-ring);
 }
 
 .dashboard-app .dashboard-input {
@@ -257,7 +257,7 @@ body {
 .dashboard-app .dashboard-input:focus {
   background-color: var(--surface-2);
   border-color: var(--accent);
-  box-shadow: 0 0 0 0.15rem rgba(255, 95, 3, 0.2);
+  box-shadow: 0 0 0 0.15rem var(--focus-ring-tight);
   color: var(--text);
 }
 
@@ -282,7 +282,7 @@ body {
 .dashboard-app .tooltip .tooltip-inner {
   max-width: 260px;
   padding: 0.45rem 0.7rem;
-  background-color: rgba(13, 53, 53, 0.92);
+  background-color: var(--tooltip-surface);
   backdrop-filter: blur(4px);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -314,22 +314,21 @@ body {
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 0;
-  letter-spacing: normal;
-  text-transform: none;
-  transition: all 0.15s;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .dashboard-app .export::after {
   content: "Export to CSV";
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  letter-spacing: normal;
-  text-transform: none;
 }
 
 .dashboard-app .export:hover,
 .dashboard-app .export:focus {
-  background: rgba(255, 95, 3, 0.06);
+  background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
   outline: none;
@@ -346,14 +345,11 @@ body {
   color: var(--muted);
   font-family: var(--font-main);
   font-size: 0.8rem;
-  letter-spacing: 0.01em;
-  text-transform: none;
 }
 
 .dashboard-app .overview-context strong {
   color: var(--text);
   font-weight: 600;
-  letter-spacing: 0.01em;
 }
 
 .dashboard-app .overview-context .sep {
@@ -393,8 +389,6 @@ body {
   font-family: var(--font-main);
   font-size: 0.88rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
-  text-transform: none;
 }
 
 .dashboard-app .segment-dot {
@@ -403,20 +397,18 @@ body {
   height: 9px;
   margin-right: 0.6rem;
   border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 0 3px var(--dot-halo);
 }
 
 .dashboard-app .segment-card-count {
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  letter-spacing: 0.01em;
 }
 
 .dashboard-app .segment-card-count strong {
   color: var(--text-soft);
   font-weight: 700;
-  letter-spacing: normal;
 }
 
 .dashboard-app .segment-metric-grid {
@@ -441,15 +433,12 @@ body {
   font-family: var(--font-main);
   font-size: 0.72rem;
   font-weight: 500;
-  letter-spacing: 0.01em;
-  text-transform: none;
 }
 
 .dashboard-app .segment-metric-value {
   font-family: var(--font-display);
   font-size: 1.95rem;
   font-weight: 500;
-  letter-spacing: 0.01em;
   line-height: 1.05;
 }
 
@@ -467,7 +456,6 @@ body {
 .dashboard-app .segment-metric-delta .delta-num {
   font-family: var(--font-mono);
   font-weight: 700;
-  letter-spacing: 0.02em;
 }
 
 .dashboard-app .segment-sig-badge {
@@ -476,9 +464,7 @@ body {
   border-radius: 2px;
   font-family: var(--font-mono);
   font-size: 0.62rem;
-  letter-spacing: 0.02em;
   line-height: 1.3;
-  text-transform: none;
 }
 
 .dashboard-app .segment-metric-baseline {
@@ -486,6 +472,4 @@ body {
   color: var(--muted);
   font-family: var(--font-main);
   font-size: 0.74rem;
-  letter-spacing: 0.01em;
-  text-transform: none;
 }

@@ -7,6 +7,10 @@ GOOGLE_FONTS = (
     "&family=Ubuntu+Mono:wght@400;700&display=swap"
 )
 
+# Typography: Ubuntu for UI and body copy; Ubuntu Mono for KPI labels and numeric
+# micro-labels where a fixed-width feel helps. Oswald for numeric “hero” metrics
+# (KPI values, large segment figures) and Plotly chart titles, not for long text.
+
 BG = "#041818"
 SURFACE = "#072C2C"
 SURFACE_2 = "#0D3535"
