@@ -13,7 +13,7 @@ def tab2_layout():
                     psm_intro_copy()
                 ),
                 style={**CARD_STYLE, "borderLeft": f"3px solid {ACCENT}"},
-                className="mb-3"
+                className="dashboard-card mb-3"
             ),
             dbc.Row(
                 [
@@ -34,7 +34,7 @@ def tab2_layout():
                                 ],
                                 value="mens",
                                 inline=True,
-                                className="mb-3"
+                                className="dashboard-radio-group mb-3"
                             ),
                         ]
                     ),

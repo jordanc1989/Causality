@@ -20,7 +20,7 @@ def tab4_layout():
                                 ],
                                 value="mens",
                                 inline=True,
-                                className="mb-2"
+                                className="dashboard-radio-group mb-2"
                             ),
                         ],
                         md=6,
@@ -36,7 +36,7 @@ def tab4_layout():
                                 ],
                                 value="t",
                                 inline=True,
-                                className="mb-2"
+                                className="dashboard-radio-group mb-2"
                             ),
                         ],
                         md=6

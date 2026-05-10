@@ -82,7 +82,7 @@ def tab3_layout():
                                         ),
                                         dbc.InputGroup(
                                             [
-                                                dbc.InputGroupText("±$"),
+                                                dbc.InputGroupText("±$", className="dashboard-input-group-text"),
                                                 dbc.Input(
                                                     id="rope-slider",
                                                     type="number",
@@ -91,8 +91,9 @@ def tab3_layout():
                                                     step=0.5,
                                                     value=1,
                                                     debounce=True,
+                                                    className="dashboard-input",
                                                 ),
-                                                dbc.InputGroupText("per customer"),
+                                                dbc.InputGroupText("per customer", className="dashboard-input-group-text"),
                                             ],
                                             size="sm",
                                             style={"maxWidth": "240px"},
@@ -113,7 +114,7 @@ def tab3_layout():
                     style={"paddingTop": "1rem", "paddingBottom": "1rem"},
                 ),
                 style={**CARD_STYLE, "borderLeft": f"3px solid {ACCENT}"},
-                className="mb-4",
+                className="dashboard-card mb-4",
             ),
             section_header("Model Diagnostics & Checks"),
             dbc.Row(

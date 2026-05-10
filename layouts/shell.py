@@ -46,19 +46,17 @@ def build_layout():
                                         "fontWeight": "700",
                                         "fontSize": "1.05rem",
                                         "color": ACCENT,
-                                        "letterSpacing": "0.12em",
-                                        "textTransform": "uppercase"
+                                        "letterSpacing": "0.02em",
                                     },
                                 ),
                                 html.Span(
-                                    " Inference",
+                                    " inference",
                                     style={
                                         "fontFamily": "Oswald, sans-serif",
-                                        "fontWeight": "300",
+                                        "fontWeight": "400",
                                         "fontSize": "1.05rem",
                                         "color": TEXT,
-                                        "letterSpacing": "0.12em",
-                                        "textTransform": "uppercase"
+                                        "letterSpacing": "0.02em",
                                     },
                                 ),
                             ],
@@ -91,9 +89,15 @@ def build_layout():
                     fluid=True,
                 ),
                 className="enterprise-navbar mb-0",
+                color="dark",
+                dark=True,
                 sticky="top",
             ),
-            dbc.Container([dbc.Tabs(tabs, id="main-tabs", active_tab="tab-1")], fluid=True),
+            dbc.Container(
+                [dbc.Tabs(tabs, id="main-tabs", active_tab="tab-1", className="dashboard-tabs")],
+                fluid=True,
+            ),
         ],
+        className="dashboard-app",
         style={"backgroundColor": BG, "minHeight": "100vh"},
     )

@@ -85,7 +85,7 @@ def kpi_card(
     return dbc.Card(
         dbc.CardBody(body_children),
         style={**CARD_STYLE, "borderLeft": f"3px solid {left_border}"},
-        className="mb-2"
+        className="dashboard-card mb-2"
     )
 
 def segment_overview_card(
@@ -217,7 +217,7 @@ def methodology_collapse(tab_id, content):
                             "lineHeight": "1.7"
                         },
                     ),
-                    className="methodology-content",
+                    className="dashboard-card methodology-content",
                     style={**CARD_STYLE, "marginTop": "4px"}
                 ),
                 id=f"method-collapse-{tab_id}",

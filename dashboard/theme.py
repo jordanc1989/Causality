@@ -111,10 +111,10 @@ TABLE_HEADER = {
     "backgroundColor": BG,
     "fontWeight": "600",
     "color": MUTED,
-    "fontFamily": "Ubuntu Mono, monospace",
-    "fontSize": "0.7rem",
-    "letterSpacing": "0.06em",
-    "textTransform": "uppercase",
+    "fontFamily": "Ubuntu, sans-serif",
+    "fontSize": "0.74rem",
+    "letterSpacing": "0.01em",
+    "textTransform": "none",
     "border": f"1px solid {BORDER}",
 }
 TABLE_SELECTED = [

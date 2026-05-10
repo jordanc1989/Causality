@@ -73,8 +73,8 @@ def tab1_layout():
             [
             html.Div(
                 [
-                    html.Div(label, style={"fontSize": "0.7rem", "fontFamily": "Ubuntu Mono, monospace",
-                                           "textTransform": "uppercase", "letterSpacing": "0.1em",
+                    html.Div(label, style={"fontSize": "0.72rem", "fontFamily": "Ubuntu, sans-serif",
+                                           "fontWeight": "600", "letterSpacing": "0.01em",
                                            "color": MUTED, "marginBottom": "0.5rem"}),
                     html.Div(
                         [
@@ -95,8 +95,8 @@ def tab1_layout():
                                              "color": MUTED}),
                             html.Span(badge_text,
                                       id=badge_id,
-                                      style={"fontSize": "0.6rem", "fontFamily": "Ubuntu Mono, monospace",
-                                             "textTransform": "uppercase", "letterSpacing": "0.12em",
+                                      style={"fontSize": "0.62rem", "fontFamily": "Ubuntu Mono, monospace",
+                                             "letterSpacing": "0.02em",
                                              "color": badge_color, "border": f"1px solid {badge_color}",
                                              "borderRadius": "2px", "padding": "1px 5px",
                                              "cursor": "help"}),
@@ -106,8 +106,8 @@ def tab1_layout():
                     ),
                     html.Hr(style={"borderColor": BORDER, "margin": "0.7rem 0"}),
                     html.Div("Projected total lift",
-                             style={"fontSize": "0.68rem", "fontFamily": "Ubuntu Mono, monospace",
-                                    "textTransform": "uppercase", "letterSpacing": "0.08em",
+                             style={"fontSize": "0.72rem", "fontFamily": "Ubuntu, sans-serif",
+                                    "fontWeight": "500", "letterSpacing": "0.01em",
                                     "color": MUTED, "marginBottom": "0.3rem"}),
                     html.Div(f"${proj:,.0f}",
                              style={"fontSize": "1.35rem", "fontFamily": "Oswald, sans-serif",
@@ -214,7 +214,7 @@ def tab1_layout():
                                 ),
                             ],
                             style={**CARD_STYLE, "borderLeft": f"3px solid {headline_color}"},
-                            className="h-100"
+                            className="dashboard-card h-100"
                         ),
                         md=6,
                         className="mb-3",

@@ -267,6 +267,7 @@ def update_comparison(tab):
             **CARD_STYLE,
             "borderLeft": f"3px solid {SUCCESS if ('point to' in mens_verdict and 'point to' in womens_verdict) else WARNING}"
         },
+        className="dashboard-card",
     )
 
     return table, mens_fig, womens_fig, takeaway
