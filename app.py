@@ -932,7 +932,7 @@ def tab1_layout():
                     ),
                     html.Div(
                         [
-                            html.Span(f"95% CI  ${lo:.2f}–${hi:.2f}",
+                            html.Span(f"95% CI  ${lo:.2f}-${hi:.2f}",
                                       style={"fontSize": "0.7rem", "fontFamily": "Ubuntu Mono, monospace",
                                              "color": MUTED}),
                             html.Span(badge_text,
@@ -955,7 +955,7 @@ def tab1_layout():
                              style={"fontSize": "1.35rem", "fontFamily": "Oswald, sans-serif",
                                     "fontWeight": "500", "color": color if sig else MUTED,
                                     "lineHeight": "1", "marginBottom": "0.3rem"}),
-                    html.Div(f"${proj_lo:,.0f}–${proj_hi:,.0f}",
+                    html.Div(f"${proj_lo:,.0f}-${proj_hi:,.0f}",
                              style={"fontSize": "0.68rem", "fontFamily": "Ubuntu Mono, monospace",
                                     "color": MUTED}),
                 ],
@@ -1355,7 +1355,7 @@ def tab2_layout():
                             html.Em("propensity score"),
                             ": the modelled probability they would appear in the email arm given those traits.",
                             " Matching is ",
-                            html.Strong("1:1 nearest neighbour on the propensity score"),
+                            html.Strong("1:1 nearest neighbour in logit(propensity-score) metric"),
                             " with replacement.",
                             " A ",
                             html.Strong("caliper"),
@@ -1525,12 +1525,15 @@ def tab3_layout():
                                         [
                                             html.Strong("What this shows: "),
                                             "three hurdle-consistent posterior mimics stacked per arm. Row 1 simulates ",
-                                            html.Code("Bernoulli(p) × LogNormal(μ, σ)"),
+                                            html.Code("Bernoulli(p) x LogNormal(μ, σ)"),
                                             " so the spike at ",
                                             html.Code("$0"),
                                             " enters the replicated spend distribution alongside the skewed positives. ",
                                             "Row 2 conditions on converters only versus observed positive amounts; ",
-                                            "row 3 compares the replicated batch conversion fractions to empirical rates. ",
+                                            "row 3 redraws each posterior slice at the ",
+                                            html.Strong("full observed arm size"),
+                                            " so batch conversion noise lines up with empirical rates (rows 1-2 use ",
+                                            "a smaller synthetic batch only to keep spend histograms lightweight). ",
                                             html.Strong("What to watch for: "),
                                             "overall alignment in mass at zero (row 1), bulk positive-tail shape ",
                                             "(row 2), and calibrated conversion dispersion (row 3). Discrete catalogue ",
@@ -1807,8 +1810,8 @@ def tab5_layout():
                         "correction for this kind of outcome."
                     ),
                     html.P(
-                        "The subgroup heatmap collapses the 3-way (newbie × channel × zip) marginal "
-                        "effects to a 2-way (newbie × channel) view by averaging over zip, weighted "
+                        "The subgroup heatmap collapses the 3-way (newbie x channel x zip) marginal "
+                        "effects to a 2-way (newbie x channel) view by averaging over zip, weighted "
                         "by the actual customer counts in each (newbie, channel, zip) cell. An "
                         "unweighted mean would over-represent rare zip categories."
                     ),
@@ -1845,7 +1848,11 @@ def tab6_layout():
                                     "randomised-design ITT contrasts. ",
                                     "PSM here is an ATT on a caliper-pruned ",
                                     "matched subset—as if treatment were selective—purely ",
-                                    "for diagnostics and observational-method comparison.",
+                                    "for diagnostics and observational-method comparison. ",
+                                    "Tab 2 carries the rematch bootstrap sensitivity band; this table shows the ",
+                                    "PSM ",
+                                    html.Strong("point estimate only"),
+                                    " so its interval is not mistaken for an HC3/HDI-style summary.",
                                 ],
                                 className="text-muted small mb-2",
                             ),
@@ -2039,7 +2046,7 @@ def update_psm(arm):
         if ci_ok
         else "95% CI unavailable (insufficient bootstrap samples)"
     )
-    ps_dist = p.get("avg_ps_distance")
+    ps_dist = p.get("avg_logit_ps_distance", p.get("avg_ps_distance"))
     cal_w = p.get("caliper_width")
     pct_mt = float(p.get("pct_matched", 100.0))
     n_drop = int(p.get("n_dropped_no_caliper", 0))
@@ -2047,7 +2054,7 @@ def update_psm(arm):
 
     if ps_dist is not None and np.isfinite(ps_dist) and cal_w is not None:
         dist_str = (
-            f"{pct_mt:.1f}% paired · mean |Δlogit(P)| = {ps_dist:.4f} (caliper ≤ {cal_w:.4f}) · "
+            f"{pct_mt:.1f}% paired - mean |Δlogit(P)| = {ps_dist:.4f} (caliper ≤ {cal_w:.4f}) - "
             f"{n_drop:,} treated dropped"
         )
     else:
@@ -2077,9 +2084,8 @@ def update_psm(arm):
                 None,
                 accent=ACCENT,
                 info=(
-                    "1:1 nearest-neighbour pairing on propensity scores with replacement. "
-                    "Pairs are discarded if the absolute gap in logit(propensity score) exceeds "
-                    "0.2× pooled SD of logit(PS) among all pooled rows."
+                    "1:1 nearest-neighbour pairing in logit(propensity-score) distance with replacement. "
+                    "Pairs outside a 0.2× pooled-SD logit caliper are pruned."
                 ),
                 info_id="psm-info-pct"
             ),
@@ -2090,8 +2096,8 @@ def update_psm(arm):
                 None,
                 accent=MUTED,
                 info=(
-                    "Matched rows only. Mean |Δlogit(PS)| along accepted pairs summarizes "
-                    "how tight NN matches were before caliper pruning."
+                    "Matched rows only. Mean logit-distance to the paired control summarises tightness "
+                    "(same metric as NN search + caliper)."
                 ),
                 info_id="psm-info-pairs"
             ),
@@ -2100,7 +2106,7 @@ def update_psm(arm):
                 "Common support range",
                 info=(
                     "Overlap window on raw propensity scores across both groups. Wide overlap is "
-                    "expected here; the logit caliper is what enforces pairwise closeness."
+                    "expected here (the logit caliper is what enforces pairwise closeness)."
                 ),
                 info_id="psm-info-cs"
             ),
@@ -2520,17 +2526,21 @@ def toggle_ppc(n, pair_key, is_open):
 
     nd = pack.get("ppc_n_draws", "—")
     nf = pack.get("ppc_n_fake_per_draw", "—")
+    nca = pack.get("ppc_conv_n_a")
+    ncb = pack.get("ppc_conv_n_b")
+    nca_s = f"{nca:,}" if nca is not None else "—"
+    ncb_s = f"{ncb:,}" if ncb is not None else "—"
 
     fig = make_subplots(
         rows=3,
         cols=2,
         subplot_titles=(
-            f"Full spend — {lab_a}",
-            f"Full spend — {lab_b}",
-            f"Amount | spend > 0 — {lab_a}",
-            f"Amount | spend > 0 — {lab_b}",
-            f"Conversion rate mimic — {lab_a}",
-            f"Conversion rate mimic — {lab_b}",
+            f"Full spend — {lab_a} ({nf} synthetic draws / PPC slice)",
+            f"Full spend — {lab_b} ({nf} synthetic draws / PPC slice)",
+            f"Amount | spend > 0 — {lab_a} (same {nf}-draw slices)",
+            f"Amount | spend > 0 — {lab_b} (same {nf}-draw slices)",
+            f"Conversion — {lab_a} (PPC batches of n = {nca_s})",
+            f"Conversion — {lab_b} (PPC batches of n = {ncb_s})",
         ),
         vertical_spacing=0.09,
         horizontal_spacing=0.07,
@@ -2649,9 +2659,11 @@ def toggle_ppc(n, pair_key, is_open):
         barmode="overlay",
         height=980,
         title=(
-            "Hurdle posterior predictive check "
-            f"(Bernoulli × LogNormal draws; {nd} posterior slices × {nf} "
-            "synthetic customers per slice, downsampled for spend histograms)"
+            "Hurdle posterior predictive check · "
+            f"rows 1–2 use {nf} synthetic customers per posterior slice (histogram subsamples). "
+            f"Row 3 uses full arm cohort sizes "
+            f"(n={nca_s}, n={ncb_s}) per slice so conversion mimic noise matches observed scale. "
+            f"({nd} posterior draws.)"
         ),
         margin=dict(t=80, b=46, l=54, r=36),
         legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
@@ -3054,7 +3066,7 @@ def update_ols(tab):
             hovertemplate=(
                 "<b>%{y}</b><br>"
                 "Coef: $%{x:.2f}<br>"
-                "95% CI: $%{customdata[0]:.2f} – $%{customdata[1]:.2f}<br>"
+                "95% CI: $%{customdata[0]:.2f} - $%{customdata[1]:.2f}<br>"
                 "p-value: %{customdata[2]:.3f}"
                 "<extra></extra>"
             ),
@@ -3237,11 +3249,13 @@ def _build_comparison_df():
         p = PSM[arm]
         rows.append(
             {
-                "Method": "PSM (ATT, caliper NN)",
+                # Point estimate here; heuristic rematch bootstrap lives on Tab 2 only so it is
+                # not presented as interchangeable with RCT / Bayesian uncertainty bands.
+                "Method": "PSM (ATT, point est.)",
                 "Arm": arm_label,
                 "Estimate ($)": _rnd_money(p.get("att_point")),
-                "CI Lower ($)": _rnd_money(p.get("att_ci_lo")),
-                "CI Upper ($)": _rnd_money(p.get("att_ci_hi")),
+                "CI Lower ($)": None,
+                "CI Upper ($)": None,
             }
         )
 
@@ -3351,6 +3365,17 @@ def update_comparison(tab):
             if pd.isna(est_cell) or est_cell is None:
                 continue
             has_ci = pd.notna(row["CI Lower ($)"]) and pd.notna(row["CI Upper ($)"])
+            method_name = row["Method"]
+            is_psm = isinstance(method_name, str) and method_name.startswith("PSM")
+            hover_tail = (
+                f"95% CI: ${row['CI Lower ($)']:.2f} – ${row['CI Upper ($)']:.2f}"
+                if has_ci
+                else (
+                    "Heuristic rematch band omitted — see Tab 2"
+                    if is_psm
+                    else "No CI available"
+                )
+            )
             fig.add_trace(
                 go.Scatter(
                     x=[row["Estimate ($)"]],
@@ -3362,16 +3387,12 @@ def update_comparison(tab):
                         symbol="diamond",
                         line=dict(color=BG, width=1)
                     ),
-                    name=row["Method"],
+                    name=method_name,
                     showlegend=False,
                     hovertemplate=(
-                        f"<b>{row['Method']}</b><br>"
+                        f"<b>{method_name}</b><br>"
                         f"Estimate: ${row['Estimate ($)']:.2f}<br>"
-                        + (
-                            f"95% CI: ${row['CI Lower ($)']:.2f} – ${row['CI Upper ($)']:.2f}"
-                            if has_ci
-                            else "No CI available"
-                        )
+                        + hover_tail
                         + "<extra></extra>"
                     ),
                     error_x=dict(

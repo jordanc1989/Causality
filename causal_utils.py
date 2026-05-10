@@ -90,9 +90,9 @@ def _logit_propensity(propensity):
 
 def _fit_propensity_and_match(sub, arm_col, seed, caliper_sds=0.2):
     """
-    Fit logistic propensity, then 1:1 nearest-neighbour matching on PS with a
-    caliper of ``caliper_sds`` times the pooled SD of logit(PS) across all rows.
-    Pairs whose nearest neighbour exceeds the logit-distance caliper are dropped.
+    Fit logistic propensity scores, run 1:1 nearest neighbours in **logit(PS)**
+    space with a ``caliper_sds``-scaled logit pooled-SD band: pairs exceeding the
+    caliper on Euclidean logit-distance are discarded.
     """
     from sklearn.linear_model import LogisticRegression
     from sklearn.preprocessing import StandardScaler
@@ -132,14 +132,15 @@ def _fit_propensity_and_match(sub, arm_col, seed, caliper_sds=0.2):
             meta_base,
         )
 
+    # Nearest neighbours in logit(PS) space so ordering matches caliper thresholds.
+    ctl_l = control[["logit_ps"]].values.reshape(-1, 1)
+    trt_l = treated_all[["logit_ps"]].values.reshape(-1, 1)
     nn = NearestNeighbors(n_neighbors=1, metric="euclidean")
-    nn.fit(control[["propensity"]].values)
-    _, indices_ps = nn.kneighbors(treated_all[["propensity"]].values)
+    nn.fit(ctl_l)
+    dist_nn, indices_ps = nn.kneighbors(trt_l)
 
     match_idx = indices_ps.flatten().astype(np.int64)
-    dist_logit = np.abs(
-        treated_all["logit_ps"].values - control["logit_ps"].iloc[match_idx].values
-    )
+    dist_logit = dist_nn.flatten()
     matched_ok = dist_logit <= caliper_width
 
     if not matched_ok.any():
@@ -201,10 +202,10 @@ def _compute_psm_for_arm(df, arm):
             np.mean(treated_matched["spend"].values)
             - np.mean(matched_control["spend"].values)
         )
-        avg_ps_distance = float(np.mean(distances_logit))
+        avg_logit_ps_distance = float(np.mean(distances_logit))
     else:
         att_point = float("nan")
-        avg_ps_distance = float("nan")
+        avg_logit_ps_distance = float("nan")
 
     # Common support on point-estimate propensities (full treated pool)
     cs_lower = float(
@@ -295,7 +296,9 @@ def _compute_psm_for_arm(df, arm):
         "n_matched": n_matched,
         "n_treated_total": n_treated_total,
         "pct_matched": pct_matched,
-        "avg_ps_distance": avg_ps_distance,
+        "avg_logit_ps_distance": avg_logit_ps_distance,
+        # Backward compatibility for old pickles
+        "avg_ps_distance": avg_logit_ps_distance,
         "cs_lower": cs_lower,
         "cs_upper": cs_upper,
         "n_outside_support": n_outside_support,
@@ -329,10 +332,13 @@ _PPC_N_DRAWS = 400
 _PPC_N_FAKE_CUSTOMERS = 250
 
 
-def _simulate_hurdle_ppc_arrays(idata, seed=RANDOM_SEED):
+def _simulate_hurdle_ppc_arrays(idata, n_arm_a, n_arm_b, seed=RANDOM_SEED):
     """
-    Simulate spend = Bernoulli(p) * LogNormal(mu, sigma) at selected posterior draws.
-    Returns downsampled flattened arrays for dashboards (not full n × draws matrices).
+    Simulate hurdle data at sampled posterior draws.
+
+    * Spend histograms use a capped synthetic cohort each draw (cheap visuals).
+    * Conversion-rate PPC mirrors each arm's **observed** cohort sizes so dispersion
+      matches multinomial-binomial Monte Carlo variance at empirical n.
     """
     rng = np.random.default_rng(seed)
 
@@ -355,13 +361,36 @@ def _simulate_hurdle_ppc_arrays(idata, seed=RANDOM_SEED):
     sa, sb = sig_a[ix], sig_b[ix]
     nk = len(ix)
 
+    # Full-sample conversion mimic per draw (same row counts as each arm model)
+    n_a = max(0, int(n_arm_a))
+    n_b = max(0, int(n_arm_b))
+    ppc_conv_rep_mean_a = (
+        np.zeros(nk, dtype=np.float64)
+        if n_a == 0
+        else ((rng.random((nk, n_a)) < pa[:, None]).mean(axis=1))
+    )
+    ppc_conv_rep_mean_b = (
+        np.zeros(nk, dtype=np.float64)
+        if n_b == 0
+        else ((rng.random((nk, n_b)) < pb[:, None]).mean(axis=1))
+    )
+
+    # Subsample synthetic customers for histogram payload only
     ua = rng.random((nk, _PPC_N_FAKE_CUSTOMERS))
     ub = rng.random((nk, _PPC_N_FAKE_CUSTOMERS))
     conv_a = (ua < pa[:, None]).astype(np.float64)
     conv_b = (ub < pb[:, None]).astype(np.float64)
 
-    amt_a = rng.lognormal(mean=ma[:, None], sigma=sa[:, None], size=(nk, _PPC_N_FAKE_CUSTOMERS))
-    amt_b = rng.lognormal(mean=mb[:, None], sigma=sb[:, None], size=(nk, _PPC_N_FAKE_CUSTOMERS))
+    amt_a = rng.lognormal(
+        mean=ma[:, None],
+        sigma=sa[:, None],
+        size=(nk, _PPC_N_FAKE_CUSTOMERS),
+    )
+    amt_b = rng.lognormal(
+        mean=mb[:, None],
+        sigma=sb[:, None],
+        size=(nk, _PPC_N_FAKE_CUSTOMERS),
+    )
 
     spend_a = conv_a * amt_a
     spend_b = conv_b * amt_b
@@ -371,8 +400,6 @@ def _simulate_hurdle_ppc_arrays(idata, seed=RANDOM_SEED):
     ppc_amount_pos_a = amt_a.ravel()[conv_a.ravel() > 0.5]
     ppc_amount_pos_b = amt_b.ravel()[conv_b.ravel() > 0.5]
 
-    ppc_conv_rep_mean_a = conv_a.mean(axis=1)
-    ppc_conv_rep_mean_b = conv_b.mean(axis=1)
     ppc_rep_mean_spend_a = spend_a.mean(axis=1)
     ppc_rep_mean_spend_b = spend_b.mean(axis=1)
 
@@ -388,6 +415,8 @@ def _simulate_hurdle_ppc_arrays(idata, seed=RANDOM_SEED):
     out = {
         "ppc_n_draws": int(n_pick),
         "ppc_n_fake_per_draw": _PPC_N_FAKE_CUSTOMERS,
+        "ppc_conv_n_a": int(n_a),
+        "ppc_conv_n_b": int(n_b),
         "ppc_conv_rep_mean_a": ppc_conv_rep_mean_a,
         "ppc_conv_rep_mean_b": ppc_conv_rep_mean_b,
         "ppc_rep_mean_spend_a": ppc_rep_mean_spend_a,
@@ -512,7 +541,12 @@ def _run_bayesian_pair(df, pair_key):
     # Hurdle-consistent PPC: simulated full spend (zeros + positive tail)
     ppc_pack = None
     try:
-        ppc_pack = _simulate_hurdle_ppc_arrays(idata, seed=RANDOM_SEED + 11)
+        ppc_pack = _simulate_hurdle_ppc_arrays(
+            idata,
+            len(a_converted),
+            len(b_converted),
+            seed=RANDOM_SEED + 11,
+        )
     except Exception:
         ppc_pack = None
 
