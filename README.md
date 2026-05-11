@@ -17,7 +17,7 @@ Interactive Dash app for comparing causal measurement approaches on a real rando
 This project provides a dashboard to:
 - estimate average treatment effects with uncertainty
 - inspect heterogeneity and targeting value
-- show where each method agrees, where it disagrees and what assumptions drive the result
+- show where each method agrees and disagrees, and what assumptions drive the result
 
 ## Dashboard Preview
 
@@ -46,9 +46,7 @@ This dashboard puts both views side-by-side so the methodological choices and an
 Source: [MineThatData Email Analytics (Hillstrom)](https://blog.minethatdata.com/2008/03/minethatdata-e-mail-analytics-and-data.html)
 
 Randomised experiment across ~64,000 customers:
-- Men's Email: 21,388
-- Women's Email: 21,307
-- Control (No Email): 21,305
+- Men's, Women's and Control (split roughly equal-sized three ways)
 - Primary outcome: 2-week post-campaign spend (USD)
 - Key covariates: recency, history, mens/womens indicators, zip code, newbie, channel
 
@@ -58,8 +56,7 @@ Dependencies are managed with **[uv](https://docs.astral.sh/uv/)** ([`pyproject.
 
 ### Requirements
 - [uv](https://docs.astral.sh/uv/getting-started/) installed
-- Python **3.13+** (see [`requires-python`](pyproject.toml); [`.python-version`](.python-version) pins 3.13 for local development)
-- macOS/Linux/Windows supported
+- Python **3.13+**
 
 ### Install
 
