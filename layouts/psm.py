@@ -102,6 +102,6 @@ def tab2_layout():
             ),
         ],
         fluid=True,
-        className="py-4"
+        className="py-5"
     )
 

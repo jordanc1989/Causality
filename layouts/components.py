@@ -213,8 +213,8 @@ def methodology_collapse(tab_id, content):
                         content,
                         style={
                             "fontSize": "0.85rem",
-                            "color": "#9ABABA",
-                            "lineHeight": "1.7"
+                            "color": MUTED,
+                            "lineHeight": "1.65",
                         },
                     ),
                     className="dashboard-card methodology-content",
@@ -224,6 +224,6 @@ def methodology_collapse(tab_id, content):
                 is_open=False
             ),
         ],
-        className="mt-3"
+        className="methodology-section",
     )
 

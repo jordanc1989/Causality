@@ -3,14 +3,12 @@ import plotly.io as pio
 
 GOOGLE_FONTS = (
     "https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700"
-    "&family=Oswald:wght@400;500;600;700"
     "&family=Ubuntu+Mono:wght@400;700&display=swap"
 )
 
-# Palette: keep names aligned with assets/style.css :root (--bg → BG, etc.).
-# Typography: Ubuntu for UI, chart titles, and body copy. Ubuntu Mono only for
-# compact numeric/tabular bits (counts, badges, monospace labels). Oswald strictly
-# for large KPI figures (hero numbers), not section titles or Plotly chrome.
+# Fonts: Ubuntu everywhere for UI + hero KPIs (bold, tight tracking). Ubuntu Mono
+# only for counts, badges, IDs, CI strings, tabular/table microcopy. Colours mirror
+# assets/style.css :root (single palette, two surfaces).
 
 BG = "#041818"
 BG_STRONG = "#020E0E"
@@ -19,7 +17,7 @@ SURFACE_2 = "#0D3535"
 SURFACE_3 = "#051F1F"
 BORDER = "#1A4040"
 BORDER_STRONG = "#2A5050"
-ACCENT = "#FF5F03"
+ACCENT = "#E86F2A"
 MENS_COLOUR = "#22D3EE"
 WOMENS_COLOUR = "#B1C17E"
 CTRL_COLOUR = "#C6C6C6"
@@ -82,8 +80,8 @@ KPI_LABEL_STYLE = {
 KPI_VALUE_STYLE = {
     "fontSize": "1.7rem",
     "fontWeight": "700",
-    "fontFamily": "Oswald, sans-serif",
-    "letterSpacing": "0.02em",
+    "fontFamily": "Ubuntu, sans-serif",
+    "letterSpacing": "-0.02em",
     "lineHeight": "1.1",
     "marginBottom": "0.25rem",
     "color": TEXT,
@@ -100,7 +98,7 @@ SECTION_HEADER_STYLE = {
     "color": MUTED,
     "borderBottom": f"1px solid {BORDER}",
     "paddingBottom": "0.5rem",
-    "marginBottom": "1rem",
+    "marginBottom": "1.35rem",
 }
 
 TABLE_CELL = {

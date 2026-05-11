@@ -79,8 +79,9 @@ def tab1_layout():
                     html.Div(
                         [
                             html.Span(f"${lift:.2f}",
-                                      style={"fontSize": "1.9rem", "fontFamily": "Oswald, sans-serif",
-                                             "fontWeight": "500",
+                                      style={"fontSize": "1.9rem", "fontFamily": "Ubuntu, sans-serif",
+                                             "fontWeight": "700",
+                                             "letterSpacing": "-0.02em",
                                              "color": color if sig else MUTED, "lineHeight": "1"}),
                             html.Span(" / recipient",
                                       style={"fontSize": "0.73rem", "color": MUTED,
@@ -110,8 +111,9 @@ def tab1_layout():
                                     "fontWeight": "500", "letterSpacing": "0.01em",
                                     "color": MUTED, "marginBottom": "0.3rem"}),
                     html.Div(f"${proj:,.0f}",
-                             style={"fontSize": "1.35rem", "fontFamily": "Oswald, sans-serif",
-                                    "fontWeight": "500", "color": color if sig else MUTED,
+                             style={"fontSize": "1.35rem", "fontFamily": "Ubuntu, sans-serif",
+                                    "fontWeight": "700", "letterSpacing": "-0.02em",
+                                    "color": color if sig else MUTED,
                                     "lineHeight": "1", "marginBottom": "0.3rem"}),
                     html.Div(f"${proj_lo:,.0f}-${proj_hi:,.0f}",
                              style={"fontSize": "0.68rem", "fontFamily": "Ubuntu Mono, monospace",
@@ -279,6 +281,6 @@ def tab1_layout():
             ),
         ],
         fluid=True,
-        className="py-4"
+        className="py-5"
     )
 

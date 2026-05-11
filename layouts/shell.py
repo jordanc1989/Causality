@@ -1,6 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import html
-from dashboard.theme import ACCENT, BORDER_STRONG, TEXT, MUTED, BG
+from dashboard.theme import ACCENT, TEXT, MUTED, BG
 from layouts.overview import tab1_layout
 from layouts.psm import tab2_layout
 from layouts.bayesian import tab3_layout
@@ -42,21 +42,20 @@ def build_layout():
                                 html.Span(
                                     "Causal",
                                     style={
-                                        "fontFamily": "Oswald, sans-serif",
+                                        "fontFamily": "Ubuntu, sans-serif",
                                         "fontWeight": "700",
                                         "fontSize": "1.05rem",
                                         "color": ACCENT,
-                                        "letterSpacing": "0.02em",
+                                        "letterSpacing": "-0.02em",
                                     },
                                 ),
                                 html.Span(
                                     " inference",
                                     style={
-                                        "fontFamily": "Oswald, sans-serif",
-                                        "fontWeight": "400",
+                                        "fontFamily": "Ubuntu, sans-serif",
+                                        "fontWeight": "500",
                                         "fontSize": "1.05rem",
                                         "color": TEXT,
-                                        "letterSpacing": "0.02em",
                                     },
                                 ),
                             ],
@@ -65,25 +64,16 @@ def build_layout():
                         html.Div(
                             [
                                 html.Span(
-                                    "Hillstrom (2008)",
+                                    "Hillstrom randomised email test",
                                     style={
-                                        "fontFamily": "Ubuntu Mono, monospace",
-                                        "fontSize": "0.7rem",
+                                        "fontFamily": "Ubuntu, sans-serif",
+                                        "fontSize": "0.72rem",
+                                        "fontWeight": "500",
                                         "color": MUTED,
-                                        "letterSpacing": "0.04em"
                                     },
-                                ),
-                                html.Span(
-                                    "64k customers, 3 arms, 6 causal methods",
-                                    style={
-                                        "fontFamily": "Ubuntu Mono, monospace",
-                                        "fontSize": "0.7rem",
-                                        "color": BORDER_STRONG,
-                                        "marginLeft": "0.5rem",
-                                    },
-                                ),
+                                )
                             ],
-                            className="ms-auto d-none d-md-flex align-items-center"
+                            className="ms-auto d-none d-md-flex align-items-center",
                         ),
                     ],
                     fluid=True,

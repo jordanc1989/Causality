@@ -155,8 +155,9 @@ def update_bayesian(pair_key, rope_val):
             html.Div(
                 [
                     html.Span(f"{p_outside_rope:.1%}",
-                              style={"fontSize": "2rem", "fontFamily": "Oswald, sans-serif",
-                                     "fontWeight": "500", "color": rope_color, "lineHeight": "1"}),
+                              style={"fontSize": "2rem", "fontFamily": "Ubuntu, sans-serif",
+                                     "fontWeight": "700", "letterSpacing": "-0.02em",
+                                     "color": rope_color, "lineHeight": "1"}),
                     html.Span(
                         [
                             f"  P(|δ| > ${rope_val})",
