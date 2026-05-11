@@ -22,8 +22,7 @@
   --tooltip-surface: rgba(13, 53, 53, 0.92);
   --dot-halo: rgba(255, 255, 255, 0.04);
   --font-main: "Ubuntu", sans-serif;
-  --font-mono: "Ubuntu Mono", monospace;
-}
+  --font-mono: "Ubuntu Mono", monospace;}
 
 *,
 *::before,
