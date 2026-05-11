@@ -8,11 +8,15 @@ app_port: 7860
 license: mit
 ---
 
+[![Live Demo](https://img.shields.io/badge/live-demo-purple)](https://jordancheney89-causality.hf.space/)
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Spaces-causality-yellow)](https://huggingface.co/spaces/jordancheney89/causality)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 # Causal Inference Dashboard
 
 Interactive Dash app for comparing causal measurement approaches on a real randomised marketing experiment (Hillstrom, 2008).
 
-**Live demo:** [Hugging Face Space](https://huggingface.co/spaces/jordancheney89/causality)
+**Live demo:** [Hugging Face Space](https://jordancheney89-causality.hf.space/)
 
 This project provides a dashboard to:
 - estimate average treatment effects with uncertainty
@@ -93,6 +97,11 @@ This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Space
 
 - If you change estimation logic in `causal_utils.py`, delete `.cache/results.pkl` or use `USE_CACHE = False`, then rerun the app once.
 - **`uv.lock`** pins transitive versions; run `uv lock` after changing dependencies in `pyproject.toml`.
+
+### Deployment notes
+
+The live app is deployed on Hugging Face Spaces using Docker.  
+Precomputed model outputs are stored in `.cache/results.pkl` so the app can start quickly without rerunning the Bayesian, PSM and uplift models on every container start.
 
 ## Methodology Notes and Caveats
 
