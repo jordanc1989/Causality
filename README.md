@@ -12,9 +12,9 @@ license: mit
 
 Interactive Dash app for comparing causal measurement approaches on a real randomised marketing experiment (Hillstrom, 2008).
 
-**Live demo:** [Hugging Face Space](https://huggingface.co/spaces/jordancheney89/causality) (Docker; build may take a few minutes on first deploy).
+**Live demo:** [Hugging Face Space](https://huggingface.co/spaces/jordancheney89/causality)
 
-This project demonstrates how to:
+This project provides a dashboard to:
 - estimate average treatment effects with uncertainty
 - inspect heterogeneity and targeting value
 - show where each method agrees, where it disagrees and what assumptions drive the result
@@ -25,7 +25,7 @@ This project demonstrates how to:
 
 ## Why This Project Matters
 
-Teams can often ask two different questions:
+Teams might ask two different questions:
 - "Did the campaign work on average?" (causal effect / ATE)
 - "Who should we target next?" (HTE / uplift policy)
 
