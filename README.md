@@ -19,10 +19,6 @@ This project provides a dashboard to:
 - inspect heterogeneity and targeting value
 - show where each method agrees and disagrees, and what assumptions drive the result
 
-## Dashboard Preview
-
-![Causal Inference Dashboard preview](assets/screenshot.png)
-
 ## Why This Project Matters
 
 Teams might ask two different questions:
