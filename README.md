@@ -1,6 +1,18 @@
+---
+title: Causal Inference Dashboard
+emoji: 📈
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 7860
+license: mit
+---
+
 # Causal Inference Dashboard
 
 Interactive Dash app for comparing causal measurement approaches on a real randomised marketing experiment (Hillstrom, 2008).
+
+**Live demo:** [Hugging Face Space](https://huggingface.co/spaces/jordancheney89/causality) (Docker; build may take a few minutes on first deploy).
 
 This project demonstrates how to:
 - estimate average treatment effects with uncertainty
@@ -77,6 +89,28 @@ Open `http://localhost:8050`.
 - Restart the app once to rebuild the cache.
 - Set `USE_CACHE` back to `True` after a deliberate rebuild (optional; deleting the pickle has the same effect if `USE_CACHE` stays `True`).
 
+## Hugging Face Spaces (Docker)
+
+**Live Space:** [huggingface.co/spaces/jordancheney89/causality](https://huggingface.co/spaces/jordancheney89/causality)
+
+This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Spaces SDK](https://huggingface.co/docs/hub/spaces-sdks-docker) (`app_port: 7860`, non-root user `1000` as recommended by Hugging Face). If you created the Space from Hugging Face’s **Docker / Plotly** starter, the next push from this repository should **replace** the template `Dockerfile` (and other template files) with the ones here so the image matches this dashboard.
+
+### What you need to do
+
+1. **Commit the precomputed cache** (so the Space starts quickly and does not re-fit PyMC on boot): ensure [`.cache/results.pkl`](.cache/results.pkl) is in git (this repo’s [`.gitignore`](.gitignore) keeps that file tracked).
+2. **Push this project** to the Space (install the [`hf` CLI](https://huggingface.co/docs/huggingface_hub/guides/cli) if needed: `pip install -U huggingface_hub` or `uv tool install huggingface_hub`):
+   ```bash
+   hf auth login
+   git remote add space https://huggingface.co/spaces/jordancheney89/causality
+   git push space main
+   ```
+   If you already added a `space` remote, use `git remote set-url space https://huggingface.co/spaces/jordancheney89/causality`. Use the branch name shown on the Space **Files** tab if yours is not `main` (e.g. `master`).
+3. **Wait for the build** — the first image build installs all locked dependencies and can take several minutes on the free CPU tier. If the build times out, try again or enable a paid CPU tier under Space **Settings → Hardware**.
+
+The container runs **`gunicorn app:server`** binding to **`0.0.0.0:7860`**, which matches Hugging Face’s default for Docker Spaces.
+
+On the Space, startup should load the committed **`.cache/results.pkl`** (same as a fast local run with `USE_CACHE = True`).
+
 ## Reproducibility Notes
 
 - If you change estimation logic in `causal_utils.py`, delete `.cache/results.pkl` or use `USE_CACHE = False`, then rerun the app once.
@@ -100,6 +134,8 @@ Open `http://localhost:8050`.
 
 ```text
 .
+├── Dockerfile             # Hugging Face Spaces (Docker SDK); gunicorn on port 7860
+├── .dockerignore          # Smaller build context (excludes .venv, caches of dev tools)
 ├── app.py                 # Thin entrypoint: Dash app, theme registration, layout, callback wiring
 ├── causal_utils.py        # Data prep, caching, and all causal estimation logic
 ├── dashboard/
@@ -137,7 +173,6 @@ Open `http://localhost:8050`.
 
 ## Roadmap
 
-- Add deployment / public demo link.
 - Add data ingestion wizard
 
 

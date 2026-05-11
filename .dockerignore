@@ -1,0 +1,8 @@
+.venv
+.git
+__pycache__
+*.py[cod]
+.ruff_cache
+.vscode
+.DS_Store
+plotly-cloud.toml
