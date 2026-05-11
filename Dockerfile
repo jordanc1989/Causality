@@ -19,9 +19,14 @@ WORKDIR /home/user/app
 RUN python -m pip install --user --no-cache-dir uv
 
 COPY --chown=user pyproject.toml uv.lock ./
-RUN uv export --frozen --no-dev -o requirements.txt \
-    && uv pip install --user --no-cache-dir -r requirements.txt \
+# Python 3.13+ Debian images are "externally managed"; --user installs are blocked.
+# Use a project venv and install into it explicitly.
+RUN uv venv .venv \
+    && uv export --frozen --no-dev -o requirements.txt \
+    && uv pip install --python .venv/bin/python --no-cache-dir -r requirements.txt \
     && rm requirements.txt
+
+ENV PATH="/home/user/app/.venv/bin:/home/user/.local/bin:$PATH"
 
 COPY --chown=user . .
 
