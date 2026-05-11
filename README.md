@@ -1,13 +1,3 @@
----
-title: Causal Inference Dashboard
-emoji: 📈
-colorFrom: indigo
-colorTo: purple
-sdk: docker
-app_port: 7860
-license: mit
----
-
 [![Live Demo](https://img.shields.io/badge/live-demo-purple)](https://jordancheney89-causality.hf.space/)
 [![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Spaces-causality-yellow)](https://huggingface.co/spaces/jordancheney89/causality)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -102,6 +92,38 @@ This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Space
 
 The live app is deployed on Hugging Face Spaces using Docker.  
 Precomputed model outputs are stored in `.cache/results.pkl` so the app can start quickly without rerunning the Bayesian, PSM and uplift models on every container start.
+
+### GitHub `main` vs Hugging Face (`hf-space`)
+
+Hugging Face Spaces reads **YAML front matter at the very top of `README.md`**. This repository keeps that metadata only on branch **`hf-space`**, while **`main`** (GitHub) uses a normal README without front matter.
+
+**Push targets**
+
+- GitHub: `git push origin main`
+- Space (updates the Space repo’s `main`): `git push space hf-space:main`
+
+**After you change code on `main`, refresh the Space branch**
+
+```bash
+git checkout hf-space
+git merge main
+```
+
+If the merge removes or conflicts on the README header, put the Space YAML back as the **first lines** of `README.md` (then save, commit on `hf-space`). Use this block:
+
+```yaml
+---
+title: Causal Inference Dashboard
+emoji: 📈
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 7860
+license: mit
+---
+```
+
+Then push: `git push space hf-space:main` (and optionally `git push origin hf-space` to back the branch up on GitHub).
 
 ## Methodology Notes and Caveats
 
