@@ -1,3 +1,13 @@
+---
+title: Causal Inference Dashboard
+emoji: 📈
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 7860
+license: mit
+---
+
 [![Live Demo](https://img.shields.io/badge/live-demo-purple)](https://jordancheney89-causality.hf.space/)
 [![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Spaces-causality-yellow)](https://huggingface.co/spaces/jordancheney89/causality)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
