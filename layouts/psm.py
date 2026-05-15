@@ -89,16 +89,18 @@ def tab2_layout():
                         "the matching 200 times on resampled data. Each replicate redraws treated and "
                         "control separately at their observed sizes so the arm ratio stays fixed. Read "
                         "the band as a stress test on the matching choices, not as a textbook nearest-"
-                        "neighbour confidence interval — the standard bootstrap is known to be "
+                        "neighbour confidence interval - the standard bootstrap is known to be "
                         "inconsistent for nearest-neighbour matching (Abadie & Imbens 2008)."
                     ),
                     html.P(
-                        "The Love plot compares every attribute in the email arm against the control arm "
-                        "twice. Once across the full groups (before pairing) and once across just the "
-                        "matched pairs (after). In an observational study, a big drop from before to "
-                        "after is the headline result. On this randomised dataset, the ",
-                        html.Em("before"),
-                        " plot is already near zero — that's the randomisation working as expected."
+                        [
+                            "The Love plot compares every attribute in the email arm against the control arm "
+                            "twice. Once across the full groups (before pairing) and once across just the "
+                            "matched pairs (after). In an observational study, a big drop from before to "
+                            "after is the headline result. On this randomised dataset, the ",
+                            html.Em("before"),
+                            " plot is already near zero, so the randomisation is working as expected.",
+                        ]
                     ),
                 ],
             ),
