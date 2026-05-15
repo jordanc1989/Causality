@@ -5,6 +5,7 @@ from plotly.subplots import make_subplots
 from dash import html, Output, Input, State, ctx
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
+from dashboard.theme import hex_to_rgba
 from dashboard.data import BAYESIAN
 from layouts.components import kpi_card
 
@@ -91,12 +92,8 @@ def update_bayesian(pair_key, rope_val):
             )
         )
 
-    fill_rgba = (
-        "rgba(34,211,238,0.15)"
-        if pair_key.startswith("mens")
-        else "rgba(244,114,182,0.15)"
-    )
     line_color = MENS_COLOUR if pair_key.startswith("mens") else WOMENS_COLOUR
+    fill_rgba = hex_to_rgba(line_color, 0.15)
 
     posterior_fig.add_trace(
         go.Scatter(

@@ -45,14 +45,27 @@ def tab1_layout():
     proj_mens_lo, proj_mens_hi = mens_lo * n_mens, mens_hi * n_mens
     proj_wom_lo, proj_wom_hi = wom_lo * n_womens, wom_hi * n_womens
 
-    if wom_sig and not mens_sig:
-        headline = "Women's campaign drove significant lift. Men's result is inconclusive at 95% confidence."
-        headline_color = SUCCESS
-    elif mens_sig and wom_sig:
+    if mens_sig and wom_sig:
         headline = "Both campaigns drove statistically significant incremental revenue."
         headline_color = SUCCESS
+    elif wom_sig and not mens_sig:
+        headline = (
+            "Women's campaign drove significant lift. "
+            "Men's result is inconclusive at 95% confidence."
+        )
+        headline_color = SUCCESS
+    elif mens_sig and not wom_sig:
+        headline = (
+            "Men's campaign drove significant lift. "
+            "Women's result is inconclusive at 95% confidence."
+        )
+        headline_color = SUCCESS
     else:
-        headline = "Results warrant further review across methods — see Tab 6 for cross-method comparison."
+        headline = (
+            "Neither campaign's effect is distinguishable from zero at 95% confidence "
+            "in the raw difference-of-means — see subsequent tabs for precision-adjusted "
+            "and probabilistic readings."
+        )
         headline_color = WARNING
 
     rev_pct_mens = (lift_mens / avg_control * 100) if avg_control else None
@@ -60,14 +73,13 @@ def tab1_layout():
     conv_pct_mens = ((conv_mens - conv_control) / conv_control * 100) if conv_control else None
     conv_pct_womens = ((conv_womens - conv_control) / conv_control * 100) if conv_control else None
 
-    def _hl_col(label, color, sig, lift, lo, hi, proj, proj_lo, proj_hi):
-        badge_text, badge_color = ("SIG", SUCCESS) if sig else ("n.s.", DANGER)
-        badge_id = f"hl-sig-{label.lower().replace(' ', '-').replace(chr(39), '')}"
+    def _hl_col(label, color, sig, proj, proj_lo, proj_hi):
+        """Projected total-revenue extrapolation for one arm, with bootstrap CI band."""
+        ci_id = f"hl-ci-{label.lower().replace(' ', '-').replace(chr(39), '')}"
         tooltip_text = (
-            "95% CI excludes zero: the lift is statistically distinguishable from no effect "
-            "(2,000-resample percentile bootstrap, α = 0.05)."
-            if sig else
-            "95% CI includes zero: the lift cannot be distinguished from chance at the 5% level."
+            "Projected total incremental revenue across the campaign cohort: per-recipient "
+            "lift × number of recipients. Range is a 2,000-resample percentile bootstrap "
+            "on the per-recipient difference of means."
         )
         return dbc.Col(
             [
@@ -76,53 +88,31 @@ def tab1_layout():
                     html.Div(label, style={"fontSize": "0.72rem", "fontFamily": "Ubuntu, sans-serif",
                                            "fontWeight": "600", "letterSpacing": "0.01em",
                                            "color": MUTED, "marginBottom": "0.5rem"}),
-                    html.Div(
-                        [
-                            html.Span(f"${lift:.2f}",
-                                      style={"fontSize": "1.9rem", "fontFamily": "Ubuntu, sans-serif",
-                                             "fontWeight": "700",
-                                             "letterSpacing": "-0.02em",
-                                             "color": color if sig else MUTED, "lineHeight": "1"}),
-                            html.Span(" / recipient",
-                                      style={"fontSize": "0.73rem", "color": MUTED,
-                                             "marginLeft": "5px", "verticalAlign": "middle"}),
-                        ],
-                        style={"marginBottom": "0.3rem"},
-                    ),
-                    html.Div(
-                        [
-                            html.Span(f"95% CI  ${lo:.2f}-${hi:.2f}",
-                                      style={"fontSize": "0.7rem", "fontFamily": "Ubuntu Mono, monospace",
-                                             "color": MUTED}),
-                            html.Span(badge_text,
-                                      id=badge_id,
-                                      style={"fontSize": "0.62rem", "fontFamily": "Ubuntu Mono, monospace",
-                                             "letterSpacing": "0.02em",
-                                             "color": badge_color, "border": f"1px solid {badge_color}",
-                                             "borderRadius": "2px", "padding": "1px 5px",
-                                             "cursor": "help"}),
-                        ],
-                        style={"display": "flex", "alignItems": "center", "gap": "8px",
-                               "marginBottom": "0.8rem"},
-                    ),
-                    html.Hr(style={"borderColor": BORDER, "margin": "0.7rem 0"}),
                     html.Div("Projected total lift",
                              style={"fontSize": "0.72rem", "fontFamily": "Ubuntu, sans-serif",
                                     "fontWeight": "500", "letterSpacing": "0.01em",
                                     "color": MUTED, "marginBottom": "0.3rem"}),
                     html.Div(f"${proj:,.0f}",
-                             style={"fontSize": "1.35rem", "fontFamily": "Ubuntu, sans-serif",
+                             style={"fontSize": "1.7rem", "fontFamily": "Ubuntu, sans-serif",
                                     "fontWeight": "700", "letterSpacing": "-0.02em",
                                     "color": color if sig else MUTED,
-                                    "lineHeight": "1", "marginBottom": "0.3rem"}),
-                    html.Div(f"${proj_lo:,.0f}-${proj_hi:,.0f}",
-                             style={"fontSize": "0.68rem", "fontFamily": "Ubuntu Mono, monospace",
-                                    "color": MUTED}),
+                                    "lineHeight": "1", "marginBottom": "0.35rem"}),
+                    html.Div(
+                        [
+                            html.Span("95% CI  ", style={"color": MUTED}),
+                            html.Span(
+                                f"${proj_lo:,.0f} – ${proj_hi:,.0f}",
+                                id=ci_id,
+                                style={"color": MUTED, "cursor": "help"},
+                            ),
+                        ],
+                        style={"fontSize": "0.7rem", "fontFamily": "Ubuntu Mono, monospace"},
+                    ),
                 ],
                 style={"borderLeft": f"3px solid {color if sig else BORDER}",
                        "paddingLeft": "0.85rem"},
             ),
-            dbc.Tooltip(tooltip_text, target=badge_id, placement="bottom"),
+            dbc.Tooltip(tooltip_text, target=ci_id, placement="bottom"),
             ],
             md=4,
         )
@@ -194,22 +184,21 @@ def tab1_layout():
                                             [
                                                 _hl_col(
                                                     "Men's Email", MENS_COLOUR, mens_sig,
-                                                    lift_mens, mens_lo, mens_hi,
                                                     proj_mens, proj_mens_lo, proj_mens_hi,
                                                 ),
                                                 _hl_col(
                                                     "Women's Email", WOMENS_COLOUR, wom_sig,
-                                                    lift_womens, wom_lo, wom_hi,
                                                     proj_womens, proj_wom_lo, proj_wom_hi,
                                                 ),
                                             ],
                                             className="g-3 mb-3",
                                         ),
                                         html.P(
-                                            "Difference-in-means from the randomised experiment; confidence intervals "
-                                            "use a percentile bootstrap (2k resamples) to account for the "
-                                            "zero-inflated spend distribution. Subsequent tabs test this with "
-                                            "matching, Bayesian and uplift methods.",
+                                            "Per-recipient lift and SIG/n.s. status are shown on the segment "
+                                            "cards above, this card extrapolates that lift to the full campaign "
+                                            "cohort. Confidence intervals use a percentile bootstrap (2k resamples) "
+                                            "on the difference of means. Subsequent tabs test the per-recipient "
+                                            "effect with matching, Bayesian and uplift methods.",
                                             className="text-muted small mb-0",
                                         ),
                                     ]

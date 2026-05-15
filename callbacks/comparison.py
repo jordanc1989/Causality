@@ -24,7 +24,7 @@ def _build_comparison_df():
         p = PSM[arm]
         rows.append(
             {
-                # Point estimate here; heuristic rematch bootstrap lives on Tab 2 only so it is
+                # Point estimate here; heuristic rematch bootstrap lives on the PSM tab only so it is
                 # not presented as interchangeable with RCT / Bayesian uncertainty bands.
                 "Method": "PSM (ATT, point est.)",
                 "Arm": arm_label,
@@ -91,9 +91,13 @@ def _build_comparison_df():
 
     return pd.DataFrame(rows)
 
-def update_comparison(tab):
+def update_comparison(tab, noise_eps):
     if tab != "tab-6":
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    noise_eps = float(noise_eps) if noise_eps is not None else 0.10
+    if noise_eps < 0:
+        noise_eps = 0.0
 
     comp_df = _build_comparison_df()
 
@@ -124,8 +128,21 @@ def update_comparison(tab):
         ],
     )
 
+    # Short labels for the forest-plot y-axis. The full method name (kept as
+    # the table label) is too long to render cleanly at narrow viewport widths
+    # and forces a hard-coded left margin that clips on mobile. yaxis
+    # automargin handles whatever remains.
+    short_label_map = {
+        "PSM (ATT, point est.)": "PSM (point est.)",
+        "Bayesian A/B (posterior mean)": "Bayesian A/B",
+        "T-Learner (avg CATE)": "T-Learner",
+        "S-Learner (avg CATE)": "S-Learner",
+        "OLS (avg marginal effect, HC3)": "OLS (HC3)",
+    }
+
     def forest_plot(arm_label, color):
         sub = comp_df[comp_df["Arm"] == arm_label].copy()
+        sub["short"] = sub["Method"].map(lambda m: short_label_map.get(m, m))
         fig = go.Figure()
         for i, row in sub.iterrows():
             est_cell = row["Estimate ($)"]
@@ -138,7 +155,7 @@ def update_comparison(tab):
                 f"95% CI: ${row['CI Lower ($)']:.2f} – ${row['CI Upper ($)']:.2f}"
                 if has_ci
                 else (
-                    "Heuristic rematch band omitted — see Tab 2"
+                    "Heuristic rematch band omitted — see Tab 5 (PSM)"
                     if is_psm
                     else "No CI available"
                 )
@@ -146,7 +163,7 @@ def update_comparison(tab):
             fig.add_trace(
                 go.Scatter(
                     x=[row["Estimate ($)"]],
-                    y=[row["Method"]],
+                    y=[row["short"]],
                     mode="markers",
                     marker=dict(
                         color=color,
@@ -182,8 +199,10 @@ def update_comparison(tab):
             template=PLOTLY_TEMPLATE,
             title=f"Forest Plot - {arm_label}",
             xaxis_title="Effect on Spend ($)",
-            margin=dict(t=50, b=30, l=210),
+            yaxis=dict(automargin=True),
+            margin=dict(t=50, b=30, l=20, r=20),
             height=350,
+            autosize=True,
         )
         return fig
 
@@ -199,15 +218,14 @@ def update_comparison(tab):
     womens_min = min(womens_valid) if womens_valid else 0.0
     womens_max = max(womens_valid) if womens_valid else 0.0
 
-    # Robust verdict: don't flip on a single near-zero estimate. Treat
-    # |effect| < $0.10 as "noise zone": smaller than any plausible action
-    # threshold in this dataset. "Agree" requires (a) no method in the noise
-    # zone is on the opposite side, AND (b) all material estimates share sign.
-    NOISE_EPS = 0.10
-
+    # Robust verdict: don't flip on a single near-zero estimate. The "noise
+    # zone" threshold is user-controllable via the agreement-threshold input;
+    # the default ($0.10) is smaller than any plausible action threshold in
+    # this dataset. "Agree" requires (a) no method in the noise zone is on
+    # the opposite side, AND (b) all material estimates share sign.
     def _verdict(estimates):
-        material = [v for v in estimates if abs(v) >= NOISE_EPS]
-        near_zero = [v for v in estimates if abs(v) < NOISE_EPS]
+        material = [v for v in estimates if abs(v) >= noise_eps]
+        near_zero = [v for v in estimates if abs(v) < noise_eps]
         if not material:
             return "All methods indistinguishable from zero."
         pos = sum(1 for v in material if v > 0)
@@ -255,7 +273,7 @@ def update_comparison(tab):
                     ),
                     html.P(
                         "Agreement strengthens credibility; divergence surfaces differing assumptions. "
-                        "Randomisation-grounded contrasts are on the Overview and Tab 5 (OLS); "
+                        "Randomisation-grounded contrasts are on the Overview and Tab 3 (OLS); "
                         "Bayesian focuses on posterior uncertainty for distribution shifts; uplift "
                         "prioritises out-of-sample targeting discrimination.",
                         className="text-muted small mb-0"
@@ -282,4 +300,5 @@ def register_comparison_callbacks(app):
         Output("forest-plot-womens", "figure"),
         Output("key-takeaway-card", "children"),
         Input("main-tabs", "active_tab"),
+        Input("comparison-noise-input", "value"),
     )(update_comparison)

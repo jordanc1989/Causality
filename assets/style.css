@@ -10,7 +10,7 @@
   --accent: #e86f2a;
   --text: #e2f0ef;
   --text-soft: #c8e0df;
-  --muted: #6b9090;
+  --muted: #8fb5b5;
   --shadow-tooltip: 0 2px 8px rgba(0, 0, 0, 0.35);
   --hover-wash: rgba(255, 255, 255, 0.04);
   --accent-wash: rgba(232, 111, 42, 0.12);
@@ -20,7 +20,6 @@
   --focus-ring-tight: rgba(232, 111, 42, 0.2);
   --focus-outline-strong: rgba(232, 111, 42, 0.45);
   --tooltip-surface: rgba(13, 53, 53, 0.92);
-  --dot-halo: rgba(255, 255, 255, 0.04);
   --font-main: "Ubuntu", sans-serif;
   --font-mono: "Ubuntu Mono", monospace;}
 
@@ -400,20 +399,23 @@ body {
 
 .dashboard-app .segment-card-title {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   color: var(--text);
   font-family: var(--font-main);
   font-size: 0.88rem;
   font-weight: 600;
 }
 
-.dashboard-app .segment-dot {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  margin-right: 0.6rem;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px var(--dot-halo);
+.dashboard-app .segment-card-name {
+  line-height: 1.2;
+}
+
+.dashboard-app .segment-card-underline {
+  width: 28px;
+  height: 3px;
+  margin-top: 0.4rem;
+  border-radius: 2px;
 }
 
 .dashboard-app .segment-card-count {

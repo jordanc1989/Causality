@@ -88,17 +88,18 @@ def tab4_layout():
                         "outcomes: at rank k, cumulative net revenue captured equals the cumulative "
                         "treated spend minus the cumulative control spend re-weighted by the "
                         "treated/control ratio. The chart overlays a random-targeting baseline "
-                        "line from zero to the full-population gain; ranking quality is the "
+                        "line from zero to the full-population gain, ranking quality is the "
                         "excess area above that baseline. The decile chart shows actual spend lift for "
                         "customers ranked by predicted uplift: good models show declining lift."
                     ),
                     html.P(
-                        "Feature importance is reported as the absolute difference between the "
-                        "T-Learner's treated-outcome and control-outcome random-forest importances. "
-                        "Features the two models use differently are the ones driving heterogeneity "
-                        "in treatment effect — which is the actual object of interest. Raw "
-                        "`estimator_trmnt.feature_importances_` would answer a different question "
-                        "(what predicts spend in the treated group)."
+                        "Feature importance is reported as permutation importance on the predicted "
+                        "CATE surface. For each held-out fold we permute one feature column at a "
+                        "time (5 shuffle repeats), re-predict CATE from the T-Learner, and record "
+                        "the mean absolute change vs the un-permuted prediction. Features that drive "
+                        "heterogeneity show large CATE shifts, irrelevant features show small ones. "
+                        "This is a model-agnostic, fold-honest measure that avoids the high-cardinality "
+                        "/ continuous-feature bias of raw random-forest impurity importance."
                     ),
                     html.P(
                         "S-Learner with a RandomForest and 'treatment x covariate' interactions is known "

@@ -146,13 +146,17 @@ def segment_overview_card(
                 [
                     html.Div(
                         [
-                            html.Span(
-                                className="segment-dot",
-                                style={"backgroundColor": color},
+                            html.Div(
+                                [
+                                    html.Div(name, className="segment-card-name"),
+                                    html.Div(
+                                        className="segment-card-underline",
+                                        style={"backgroundColor": color},
+                                    ),
+                                ],
+                                className="segment-card-title",
                             ),
-                            html.Span(name),
                         ],
-                        className="segment-card-title",
                     ),
                     html.Div(
                         [html.Strong(f"{n:,}"), " users"],

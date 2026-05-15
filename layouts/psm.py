@@ -82,16 +82,17 @@ def tab2_layout():
                     ),
                     html.P(
                         "Because Hillstrom is randomised, treatment assignment is exogenous by design and "
-                        "the primary causal estimand is an ITT/ATE contrast (see Overview bootstrap and Tab 5 "
+                        "the primary causal estimand is an ITT/ATE contrast (see Overview bootstrap and Tab 3 "
                         "population-weighted OLS). "
                         "PSM illustrates observational workflows: overlap tightening, pruning, and covariance "
                         "balance on the matched cohort—not the project's headline estimator."
                     ),
                     html.P(
-                        "Uncertainty is a pooled re-fit/re-match bootstrap (200 replicates): each replicate "
-                        "resamples treated+control, re-estimates propensity, reapplies NN + caliper, and "
-                        "recomputes ATT on surviving pairs. Interpret as a heuristic sensitivity envelope, "
-                        "not textbook nearest-neighbour CIs."
+                        "Uncertainty is a stratified re-fit/re-match bootstrap (200 replicates): each "
+                        "replicate resamples the treated and control pools "
+                        "separately at their observed sizes (preserving the arm ratio), re-estimates "
+                        "propensity, reapplies NN + caliper, and recomputes ATT on surviving pairs. "
+                        "Interpret as a heuristic sensitivity envelope, not textbook nearest-neighbour CIs."
                     ),
                     html.P(
                         "The Love plot contrasts all treated covariates to pooled controls ",

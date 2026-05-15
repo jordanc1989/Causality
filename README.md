@@ -25,10 +25,10 @@ This dashboard puts both views side-by-side so the methodological choices and an
 
 | Tab | Method | Role in this project |
 |-----|--------|----------------------|
-| 2 | PSM sensitivity (propensity matching + caliper) | Observational-style diagnostic; matched ATT on pruned cohort vs control |
-| 3 | Bayesian A/B (PyMC hurdle model) | Probabilistic effect estimation with posterior uncertainty |
+| 2 | Bayesian A/B (PyMC hurdle model) | Probabilistic effect estimation with posterior uncertainty |
+| 3 | Multi-Arm OLS with interactions | Precision-adjusted average effects and subgroup patterns |
 | 4 | Uplift / HTE (T-Learner, S-Learner) | Ranking customers by estimated incremental value |
-| 5 | Multi-Arm OLS with interactions | Precision-adjusted average effects and subgroup patterns |
+| 5 | PSM sensitivity (propensity matching + caliper) | Observational-style diagnostic, matched ATT on pruned cohort vs control |
 | 6 | Method Comparison | Side-by-side estimate reconciliation and takeaway |
 
 ## Dataset
@@ -74,7 +74,7 @@ Open `http://localhost:8050`.
 ### Force recompute
 - Delete `.cache/results.pkl`, or set `USE_CACHE = False` in `causal_utils.py`.
 - Restart the app once to rebuild the cache.
-- Set `USE_CACHE` back to `True` after a deliberate rebuild (optional; deleting the pickle has the same effect if `USE_CACHE` stays `True`).
+- Set `USE_CACHE` back to `True` after a deliberate rebuild (optional, deleting the pickle has the same effect if `USE_CACHE` stays `True`).
 
 ## Hugging Face Spaces (Docker)
 
@@ -86,7 +86,7 @@ This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Space
 ## Reproducibility Notes
 
 - If you change estimation logic in `causal_utils.py`, delete `.cache/results.pkl` or use `USE_CACHE = False`, then rerun the app once.
-- **`uv.lock`** pins transitive versions; run `uv lock` after changing dependencies in `pyproject.toml`.
+- **`uv.lock`** pins transitive versions, run `uv lock` after changing dependencies in `pyproject.toml`.
 
 ### Deployment notes
 
@@ -143,7 +143,7 @@ Then push: `git push space hf-space:main` (and optionally `git push origin hf-sp
 
 ```text
 .
-├── Dockerfile             # Hugging Face Spaces (Docker SDK); gunicorn on port 7860
+├── Dockerfile             # Hugging Face Spaces (Docker SDK), gunicorn on port 7860
 ├── .dockerignore          # Smaller build context (excludes .venv, caches of dev tools)
 ├── app.py                 # Thin entrypoint: Dash app, theme registration, layout, callback wiring
 ├── causal_utils.py        # Data prep, caching, and all causal estimation logic
@@ -151,7 +151,7 @@ Then push: `git push space hf-space:main` (and optionally `git push origin hf-sp
 │   ├── theme.py           # Design tokens, Plotly template, shared style dicts
 │   └── data.py            # Loads cache → exposes RESULTS, DF, PSM, BAYESIAN, UPLIFT, OLS
 ├── layouts/
-│   ├── shell.py           # Navbar + tab container; imports per-tab layouts
+│   ├── shell.py           # Navbar + tab container, imports per-tab layouts
 │   ├── components.py      # Reusable UI helpers (KPI cards, section headers, methodology collapse)
 │   ├── overview.py        # Tab 1 layout
 │   ├── psm.py             # Tab 2 layout

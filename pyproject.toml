@@ -5,17 +5,25 @@ description = "Causality measurement dashboard"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "arviz>=0.23.4",
+    "arviz>=1.1.0",
     "dash>=4.1.0",
     "dash-bootstrap-components>=2.0.4",
     "gunicorn>=26.0.0",
     "numpy>=2.4.4",
-    "nutpie[pymc]>=0.16.9",
-    "pandas>=3.0.2",
+    "nutpie[pymc]>=0.16.10",
+    "pandas>=3.0.3",
     "plotly>=6.7.0",
-    "pymc>=5.28.5",
+    "pymc>=6.0.0",
     "scikit-learn>=1.8.0",
     "scikit-uplift>=0.5.1",
     "scipy>=1.17.1",
     "statsmodels>=0.14.6",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# `from dashboard.theme import *` is the deliberate convention for design tokens
+# across every view and callback; silence the star-import warnings there so real
+# issues stay visible. Any new star-import outside these dirs will still flag.
+"layouts/*.py" = ["F403", "F405"]
+"callbacks/*.py" = ["F403", "F405"]
+"figures/*.py" = ["F403", "F405"]

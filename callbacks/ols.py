@@ -18,9 +18,27 @@ def update_ols(tab):
     plot_df = coef_df[coef_df["term"].isin(keep_terms)].copy()
     plot_df = plot_df.sort_values("coef")
 
+    # Holm-Bonferroni step-down adjustment across all displayed terms. We
+    # colour only terms that survive the family-wise α=0.05 threshold, so a
+    # quick scan can't read incidental sub-0.05 p-values as confirmatory
+    # findings when ~14 coefficients are being inspected.
+    alpha = 0.05
+    pvals = plot_df["pvalue"].values.astype(float)
+    order = np.argsort(pvals)
+    m = len(pvals)
+    holm_sig = np.zeros(m, dtype=bool)
+    survived = True
+    for rank, idx in enumerate(order):
+        threshold = alpha / (m - rank)
+        if survived and pvals[idx] <= threshold:
+            holm_sig[idx] = True
+        else:
+            survived = False
+    plot_df = plot_df.assign(holm_sig=holm_sig)
+
     colors = [
-        SUCCESS if v > 0 and p < 0.05 else DANGER if v < 0 and p < 0.05 else MUTED
-        for v, p in zip(plot_df["coef"], plot_df["pvalue"])
+        SUCCESS if v > 0 and sig else DANGER if v < 0 and sig else MUTED
+        for v, sig in zip(plot_df["coef"], plot_df["holm_sig"])
     ]
 
     coef_fig = go.Figure()
@@ -51,14 +69,16 @@ def update_ols(tab):
     coef_fig.add_vline(x=0, line_color=DANGER, line_dash="dash")
     coef_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"OLS Coefficients (n={OLS['n_obs']:,}, R²={OLS['r_squared']:.4f})",
+        title=(
+            f"OLS Coefficients (n={OLS['n_obs']:,}, R²={OLS['r_squared']:.4f})"
+            "<br><sup>Coloured terms survive Holm-Bonferroni α=0.05 across all "
+            "displayed coefficients</sup>"
+        ),
         xaxis_title="Effect on Spend ($)",
-        margin=dict(t=50, b=30, l=260)
+        margin=dict(t=70, b=30, l=260)
     )
 
-    # Weight the zip-level marginal effects by actual population shares when
-    # collapsing to (newbie, channel). The raw dataset has wildly uneven zip
-    # distributions; an unweighted mean would over-represent rare zip cells.
+    # Weight the zip-level marginal effects by actual population shares when collapsing to (newbie, channel). 
     zip_spell = {"Urban": "Urban", "Surburban": "Suburban", "Rural": "Rural"}  # raw data misspells "Suburban"
     _cell_counts = (
         DF.assign(

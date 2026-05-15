@@ -87,7 +87,6 @@ def tab3_layout():
                                                     id="rope-slider",
                                                     type="number",
                                                     min=0,
-                                                    max=10,
                                                     step=0.5,
                                                     value=1,
                                                     debounce=True,
@@ -137,7 +136,7 @@ def tab3_layout():
                                             " so the spike at ",
                                             html.Code("$0"),
                                             " enters the replicated spend distribution alongside the skewed positives. ",
-                                            "Row 2 conditions on converters only versus observed positive amounts; ",
+                                            "Row 2 conditions on converters only versus observed positive amounts, ",
                                             "row 3 redraws each posterior slice at the ",
                                             html.Strong("full observed arm size"),
                                             " so batch conversion noise lines up with empirical rates (rows 1-2 use ",
@@ -145,7 +144,7 @@ def tab3_layout():
                                             html.Strong("What to watch for: "),
                                             "overall alignment in mass at zero (row 1), bulk positive-tail shape ",
                                             "(row 2), and calibrated conversion dispersion (row 3). Discrete catalogue ",
-                                            "price ladders still spike the observed converters; judge LogNormal ",
+                                            "price ladders still spike the observed converters, judge LogNormal ",
                                             "fit on the smoothed analogue, not every SKU notch.",
                                         ],
                                         className="text-muted small mb-2",
@@ -208,10 +207,19 @@ def tab3_layout():
                         "delta is the difference in expected spend between the two arms."
                     ),
                     html.P(
-                        "Priors: Beta(1, 1) (uniform) on conversion probability; Normal on "
-                        "log-mean centred on the pooled log-amount; HalfNormal on log-sigma. "
-                        "MCMC is run with PyMC via the nutpie NUTS sampler (2,000 draws, 2 chains) "
-                        "on the full arm data — no subsampling."
+                        [
+                            "Priors: Beta(1, 1) (uniform) on conversion probability. ",
+                            "Normal(μ = mean(log positive spend), σ = 2 x SD(log positive spend)) "
+                            "on the log-mean of the amount component, HalfNormal(σ = SD(log positive spend)) "
+                            "on the log-sigma. The Normal and HalfNormal priors are weakly informative ",
+                            html.Strong("but data-derived"),
+                            " (an empirical-Bayes choice): the prior location and scale are read off the ",
+                            "pooled positive-spend log-distribution rather than fixed in advance. With ",
+                            "~21k positive observations per arm the priors are dominated by the likelihood, ",
+                            "but readers comparing to a textbook fully-subjective prior should know the ",
+                            "scale was tuned to this dataset. MCMC is run with PyMC via the nutpie NUTS ",
+                            "sampler (2,000 draws, 2 chains) on the full arm data — no subsampling.",
+                        ]
                     ),
                     html.P(
                         "The 95% Highest Density Interval (HDI) is the shortest interval containing "

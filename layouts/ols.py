@@ -59,7 +59,7 @@ def tab5_layout():
                     html.P(
                         "Standard errors use the HC3 heteroscedasticity-robust (White) estimator. "
                         "Spend is right-skewed and its variance scales with the treatment means, so "
-                        "default OLS SEs would be biased — HC3 is the recommended small-sample "
+                        "default OLS SEs would be biased. HC3 is the recommended small-sample "
                         "correction for this kind of outcome."
                     ),
                     html.P(
@@ -69,9 +69,11 @@ def tab5_layout():
                         "unweighted mean would over-represent rare zip categories."
                     ),
                     html.P(
-                        "Key assumption: linearity of the conditional expectation function. The model is estimated "
-                        "by OLS (not IV or 2SLS). P-values for many interaction terms are exploratory unless "
-                        "you apply a multiplicity adjustment (e.g., Holm/FDR) for confirmatory claims."
+                        "Key assumption: linearity of the conditional expectation function. The model is "
+                        "estimated by OLS (not IV or 2SLS). Coefficient colouring on the chart above is "
+                        "thresholded against a Holm-Bonferroni-adjusted α=0.05 across all displayed terms "
+                        "to control family-wise error. Raw p-values remain in the hover for inspection but "
+                        "shouldn't be read as confirmatory without the multiplicity adjustment."
                     ),
                 ],
             ),

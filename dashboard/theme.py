@@ -6,10 +6,6 @@ GOOGLE_FONTS = (
     "&family=Ubuntu+Mono:wght@400;700&display=swap"
 )
 
-# Fonts: Ubuntu everywhere for UI + hero KPIs (bold, tight tracking). Ubuntu Mono
-# only for counts, badges, IDs, CI strings, tabular/table microcopy. Colours mirror
-# assets/style.css :root (single palette, two surfaces).
-
 BG = "#041818"
 BG_STRONG = "#020E0E"
 SURFACE = "#072C2C"
@@ -18,11 +14,20 @@ SURFACE_3 = "#051F1F"
 BORDER = "#1A4040"
 BORDER_STRONG = "#2A5050"
 ACCENT = "#E86F2A"
-MENS_COLOUR = "#22D3EE"
-WOMENS_COLOUR = "#B1C17E"
+MENS_COLOUR = "#7DD3FC"
+WOMENS_COLOUR = "#A78BFA"
 CTRL_COLOUR = "#C6C6C6"
+
+
+def hex_to_rgba(hex_color, alpha=1.0):
+    """`#RRGGBB` → `rgba(r,g,b,alpha)` string for Plotly fillcolor / shape fills."""
+    h = hex_color.lstrip("#")
+    r = int(h[0:2], 16)
+    g = int(h[2:4], 16)
+    b = int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
 TEXT = "#E2F0EF"
-MUTED = "#6B9090"
+MUTED = "#8FB5B5"
 SUCCESS = "#16A34A"
 WARNING = "#D97706"
 DANGER = "#DC2626"
@@ -34,7 +39,7 @@ def register_plotly_template():
             paper_bgcolor=SURFACE,
             plot_bgcolor=SURFACE_2,
             font=dict(family="Ubuntu, sans-serif", color=TEXT, size=12),
-            colorway=[MENS_COLOUR, WOMENS_COLOUR, CTRL_COLOUR, ACCENT, "#A78BFA", "#FBBF24"],
+            colorway=[MENS_COLOUR, WOMENS_COLOUR, CTRL_COLOUR, ACCENT, "#5EEAD4", "#FBBF24"],
             xaxis=dict(
                 gridcolor=BORDER,
                 linecolor=BORDER,

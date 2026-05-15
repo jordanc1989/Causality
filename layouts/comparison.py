@@ -14,18 +14,13 @@ def tab6_layout():
                             section_header("All Methods Summary"),
                             html.P(
                                 [
-                                    html.Strong("RCT-first read: "),
-                                    "Difference-in-means on the Overview (bootstrap) and ",
-                                    html.Strong("OLS population-weighted ATE"),
-                                    " with HC3 robust errors align with ",
-                                    "randomised-design ITT contrasts. ",
-                                    "PSM here is an ATT on a caliper-pruned ",
-                                    "matched subset—as if treatment were selective—purely ",
-                                    "for diagnostics and observational-method comparison. ",
-                                    "Tab 2 carries the rematch bootstrap sensitivity band; this table shows the ",
-                                    "PSM ",
-                                    html.Strong("point estimate only"),
-                                    " so its interval is not mistaken for an HC3/HDI-style summary.",
+                                    "Each row is one method's estimate of the average lift in spend "
+                                    "per recipient, with its confidence range. The Overview, Bayesian "
+                                    "and OLS rows are the trustworthy headline numbers because they "
+                                    "use the random assignment directly. The PSM row is included as a "
+                                    "diagnostic, its uncertainty band is shown on the PSM tab and "
+                                    "deliberately left blank here so it isn't read as comparable to the "
+                                    "other intervals.",
                                 ],
                                 className="text-muted small mb-2",
                             ),
@@ -44,7 +39,62 @@ def tab6_layout():
             ),
             dbc.Row(
                 [
-                    dbc.Col(html.Div(id="key-takeaway-card"), md=5),
+                    dbc.Col(
+                        [
+                            html.Div(
+                                [
+                                    html.Span(
+                                        "Agreement threshold ",
+                                        className="small text-muted",
+                                    ),
+                                    html.Span(
+                                        " ⓘ",
+                                        id="comparison-noise-info",
+                                        style={
+                                            "cursor": "help",
+                                            "color": "var(--muted)",
+                                            "fontSize": "0.85em",
+                                        },
+                                    ),
+                                ],
+                                className="mb-1",
+                            ),
+                            dbc.InputGroup(
+                                [
+                                    dbc.InputGroupText(
+                                        "|effect| <",
+                                        className="dashboard-input-group-text",
+                                    ),
+                                    dbc.Input(
+                                        id="comparison-noise-input",
+                                        type="number",
+                                        min=0,
+                                        step=0.05,
+                                        value=0.10,
+                                        debounce=True,
+                                        className="dashboard-input",
+                                    ),
+                                    dbc.InputGroupText(
+                                        "treated as zero",
+                                        className="dashboard-input-group-text",
+                                    ),
+                                ],
+                                size="sm",
+                                style={"maxWidth": "320px"},
+                                className="mb-3",
+                            ),
+                            dbc.Tooltip(
+                                "Estimates with absolute value below this threshold are "
+                                "treated as 'near zero' and excluded from the cross-method "
+                                "directional verdict, so a single noise-zone estimate "
+                                "doesn't flip the conclusion.",
+                                target="comparison-noise-info",
+                                placement="right",
+                            ),
+                            html.Div(id="key-takeaway-card"),
+                        ],
+                        md=5,
+                    ),
                     dbc.Col(
                         [
                             dbc.Accordion(

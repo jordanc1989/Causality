@@ -43,7 +43,7 @@ def load_data():
     for col in target_df.columns:
         df[col] = target_df[col].values
 
-    # One-hot encode categoricals (drop_first=False so all levels are explicit;
+    # One-hot encode categoricals (drop_first=False so all levels are explicit,
     # we drop one reference level manually to avoid perfect multicollinearity)
     # zip_code: reference = Urban
     df["zip_suburban"] = (df["zip_code"] == "Surburban").astype(int)
@@ -244,32 +244,41 @@ def _compute_psm_for_arm(df, arm):
             smd_after[cov] = float("nan")
             smd_after_caliper_match[cov] = float("nan")
 
-    # Causal bootstrap: resample the pooled sub-sample with replacement,
-    # re-fit propensity and re-match on each replicate. 200 reps gives
-    # stable 95% percentile CIs at reasonable compute cost (~2-4 min/arm).
+    # Causal bootstrap: stratified resample (treated and control drawn separately
+    # with replacement at their observed sizes) so each replicate preserves the
+    # treated/control ratio. An unstratified pooled resample lets the ratio
+    # drift, which inflates the CI for reasons unrelated to matching uncertainty.
+    # 200 reps gives stable 95% percentile CIs at reasonable compute cost
+    # (~2-4 min/arm).
     rng = np.random.default_rng(RANDOM_SEED)
     n_boot = 200
-    n_total = len(sub)
     min_matched_boot = 15
+    treated_pool = sub[sub[arm_col] == 1]
+    control_pool = sub[sub[arm_col] == 0]
+    n_treated_pool = len(treated_pool)
+    n_control_pool = len(control_pool)
     att_boot = []
-    for b in range(n_boot):
-        idx = rng.integers(0, n_total, size=n_total)
-        boot_sub = sub.iloc[idx].reset_index(drop=True)
-        if boot_sub[arm_col].sum() < 10 or (boot_sub[arm_col] == 0).sum() < 10:
-            continue
-        try:
-            _, _, t_b_matched, mc_b, _, _ = _fit_propensity_and_match(
-                boot_sub, arm_col, RANDOM_SEED + b
+    if n_treated_pool >= 10 and n_control_pool >= 10:
+        for b in range(n_boot):
+            t_idx = rng.integers(0, n_treated_pool, size=n_treated_pool)
+            c_idx = rng.integers(0, n_control_pool, size=n_control_pool)
+            boot_sub = pd.concat(
+                [treated_pool.iloc[t_idx], control_pool.iloc[c_idx]],
+                ignore_index=True,
             )
-            if len(t_b_matched) >= min_matched_boot:
-                att_boot.append(
-                    float(
-                        np.mean(t_b_matched["spend"].values)
-                        - np.mean(mc_b["spend"].values)
-                    )
+            try:
+                _, _, t_b_matched, mc_b, _, _ = _fit_propensity_and_match(
+                    boot_sub, arm_col, RANDOM_SEED + b
                 )
-        except Exception:
-            continue
+                if len(t_b_matched) >= min_matched_boot:
+                    att_boot.append(
+                        float(
+                            np.mean(t_b_matched["spend"].values)
+                            - np.mean(mc_b["spend"].values)
+                        )
+                    )
+            except Exception:
+                continue
 
     att_boot = np.asarray(att_boot, dtype=float)
     if len(att_boot) > 0:
@@ -513,7 +522,11 @@ def _run_bayesian_pair(df, pair_key):
         )
 
     delta_samples = idata.posterior["delta"].values.flatten()
-    hdi = az.hdi(idata, var_names=["delta"], hdi_prob=0.95)["delta"].values
+    # arviz_stats >=1.0 renamed `hdi_prob` to `prob`; fall back for older envs.
+    try:
+        hdi = az.hdi(idata, var_names=["delta"], prob=0.95)["delta"].values
+    except TypeError:
+        hdi = az.hdi(idata, var_names=["delta"], hdi_prob=0.95)["delta"].values
 
     report_vars = ["delta", "exp_spend_a", "exp_spend_b", "p_a", "p_b",
                    "mu_log_a", "mu_log_b", "sigma_log_a", "sigma_log_b"]
@@ -641,11 +654,16 @@ def _run_uplift_arm(df, arm):
     fold has both arms represented, which matters for small-sample fold fits.
     CATE estimates are out-of-sample for every observation.
 
-    Feature importance is reported as |treated-model importance - control-model
-    importance| from the T-Learner: features the two outcome models use
-    differently are the ones driving heterogeneous treatment effects. Plain
-    `estimator_trmnt.feature_importances_` would instead tell you what predicts
-    spend in the treated group (a different question).
+    Heterogeneity importance is computed by **permutation importance on the
+    predicted CATE**: for each fold and feature, the column is shuffled in
+    the held-out X_test, the T-Learner re-predicts CATE on the permuted
+    inputs, and the mean absolute change in CATE relative to the unpermuted
+    prediction is recorded. Features that drive heterogeneity show large
+    shifts, features irrelevant to the treatment-effect surface show small
+    ones. This is a model-agnostic, bias-free alternative to RF impurity
+    importance, which is biased toward high-cardinality / continuous
+    features regardless of treatment heterogeneity. Permutation is repeated
+    `n_perm_repeats` times per (fold, feature) to reduce shuffle noise.
     """
     from sklift.models import TwoModels, SoloModel
     from sklearn.ensemble import RandomForestRegressor
@@ -662,7 +680,9 @@ def _run_uplift_arm(df, arm):
     kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
     cate_t = np.zeros(len(sub))
     cate_s = np.zeros(len(sub))
-    feat_imp_diff_accum = np.zeros(len(COVARIATES))
+    perm_imp_accum = np.zeros(len(COVARIATES))
+    n_perm_repeats = 5
+    perm_rng = np.random.default_rng(RANDOM_SEED)
 
     for _, (train_idx, test_idx) in enumerate(kf.split(X, treatment)):
         X_train, X_test = X[train_idx], X[test_idx]
@@ -683,11 +703,18 @@ def _run_uplift_arm(df, arm):
             method="vanilla",
         )
         t_model.fit(X_train_df, y_train, t_train)
-        cate_t[test_idx] = t_model.predict(X_test_df)
-        feat_imp_diff_accum += np.abs(
-            t_model.estimator_trmnt.feature_importances_
-            - t_model.estimator_ctrl.feature_importances_
-        )
+        cate_t_fold = t_model.predict(X_test_df)
+        cate_t[test_idx] = cate_t_fold
+
+        # Permutation importance on the predicted CATE surface
+        for j, _col in enumerate(COVARIATES):
+            shifts = np.zeros(n_perm_repeats)
+            for r in range(n_perm_repeats):
+                X_perm = X_test_df.copy()
+                X_perm.iloc[:, j] = perm_rng.permutation(X_perm.iloc[:, j].values)
+                cate_perm = t_model.predict(X_perm)
+                shifts[r] = float(np.mean(np.abs(cate_perm - cate_t_fold)))
+            perm_imp_accum[j] += shifts.mean()
 
         # S-Learner
         s_model = SoloModel(
@@ -697,7 +724,7 @@ def _run_uplift_arm(df, arm):
         s_model.fit(X_train_df, y_train, t_train)
         cate_s[test_idx] = s_model.predict(X_test_df)
 
-    feat_imp_diff = feat_imp_diff_accum / kf.get_n_splits()
+    feat_imp_diff = perm_imp_accum / kf.get_n_splits()
     # Normalise to sum to 1 for display consistency with the old chart
     feat_imp_norm = (
         feat_imp_diff / feat_imp_diff.sum() if feat_imp_diff.sum() > 0 else feat_imp_diff
@@ -706,21 +733,40 @@ def _run_uplift_arm(df, arm):
     sub["cate_t"] = cate_t
     sub["cate_s"] = cate_s
 
-    def _decile_lift(sub_sorted):
-        """Compute actual spend lift per decile for a population sorted by predicted CATE."""
+    def _decile_lift(sub_sorted, n_boot=500):
+        """
+        Actual spend lift per decile for a population sorted by predicted CATE,
+        with stratified bootstrap 95% CIs on the difference-in-means within
+        each decile. Within-decile treated and control are resampled separately
+        with replacement so the CI reflects sampling uncertainty in the lift
+        estimate, not the decile boundaries.
+        """
         sub_sorted = sub_sorted.reset_index(drop=True)
         sub_sorted["decile"] = pd.qcut(sub_sorted.index, q=10, labels=False)
+        rng = np.random.default_rng(RANDOM_SEED)
         rows = []
         for d in range(10):
             dec = sub_sorted[sub_sorted["decile"] == d]
-            t_mean = dec[dec[arm_col] == 1]["spend"].mean()
-            c_mean = dec[dec[arm_col] == 0]["spend"].mean()
-            lift = (
-                t_mean - c_mean
-                if not (np.isnan(t_mean) or np.isnan(c_mean))
-                else 0.0
-            )
-            rows.append({"decile": d + 1, "lift": lift})
+            t_vals = dec[dec[arm_col] == 1]["spend"].values
+            c_vals = dec[dec[arm_col] == 0]["spend"].values
+            if len(t_vals) == 0 or len(c_vals) == 0:
+                rows.append({
+                    "decile": d + 1, "lift": 0.0,
+                    "ci_lo": float("nan"), "ci_hi": float("nan"),
+                })
+                continue
+            lift = float(t_vals.mean() - c_vals.mean())
+            boot = np.empty(n_boot, dtype=float)
+            for b in range(n_boot):
+                t_b = rng.choice(t_vals, size=len(t_vals), replace=True).mean()
+                c_b = rng.choice(c_vals, size=len(c_vals), replace=True).mean()
+                boot[b] = t_b - c_b
+            rows.append({
+                "decile": d + 1,
+                "lift": lift,
+                "ci_lo": float(np.percentile(boot, 2.5)),
+                "ci_hi": float(np.percentile(boot, 97.5)),
+            })
         return rows
 
     sub_sorted_t = sub.sort_values("cate_t", ascending=False)
@@ -736,7 +782,6 @@ def _run_uplift_arm(df, arm):
     def _qini_auc(xs, ys):
         if len(xs) < 2:
             return 0.0
-        # `trapezoid` replaced `trapz` in numpy 2.0; fall back for older envs
         trapz = getattr(np, "trapezoid", None) or np.trapz
         return float(trapz(ys, xs))
 
@@ -756,7 +801,7 @@ def _run_uplift_arm(df, arm):
         "cate_t": cate_t,
         "cate_s": cate_s,
         "feat_imp": dict(zip(COVARIATES, feat_imp_norm)),
-        "feat_imp_label": "Heterogeneity importance (|treat - ctrl| model diff)",
+        "feat_imp_label": "Heterogeneity importance (CATE permutation, T-Learner)",
         "decile_lift": decile_lift,
         "decile_lift_s": decile_lift_s,
         "qini_x": qini_x,

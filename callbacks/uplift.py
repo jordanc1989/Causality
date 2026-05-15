@@ -2,12 +2,11 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 from dash import html, Output, Input, State
 from dashboard.theme import *
+from dashboard.theme import COVARIATE_LABELS, hex_to_rgba
 from dashboard.data import UPLIFT
 from layouts.components import kpi_card
-from dashboard.theme import COVARIATE_LABELS
 
 def update_uplift(arm, model):
     u = UPLIFT[arm]
@@ -50,7 +49,7 @@ def update_uplift(arm, model):
                 info=(
                     "Share of customers for whom the model predicts a positive treatment effect. A "
                     "ceiling on the profitable targetable audience: customers with negative predicted "
-                    "uplift should not be mailed regardless of cost."
+                    "uplift shouldn't be mailed regardless of cost."
                 ),
                 info_id="uplift-kpi-ppos-info",
             ),
@@ -95,7 +94,7 @@ def update_uplift(arm, model):
     )
     fi_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title="Heterogeneity importance (|treated - control| model diff)",
+        title="Heterogeneity importance (CATE permutation, T-Learner)",
         xaxis_title="Relative importance (normalised)",
         margin=dict(t=50, b=30, l=130),
     )
@@ -108,6 +107,7 @@ def update_uplift(arm, model):
     qini_yd = u.get(qini_y_key, u["qini_y"])
     overall_ate = dec_df["lift"].mean()
 
+    has_ci = "ci_lo" in dec_df.columns and "ci_hi" in dec_df.columns
     decile_fig = go.Figure()
     decile_fig.add_trace(
         go.Bar(
@@ -116,7 +116,31 @@ def update_uplift(arm, model):
             marker_color=[color if v > 0 else DANGER for v in dec_df["lift"]],
             opacity=0.6,
             showlegend=False,
-            hovertemplate="Decile %{x}<br>Actual lift: $%{y:.2f}<extra></extra>",
+            hovertemplate=(
+                "Decile %{x}<br>Actual lift: $%{y:.2f}"
+                + (
+                    "<br>95% CI: $%{customdata[0]:.2f} – $%{customdata[1]:.2f}"
+                    if has_ci
+                    else ""
+                )
+                + "<extra></extra>"
+            ),
+            customdata=(
+                dec_df[["ci_lo", "ci_hi"]].values if has_ci else None
+            ),
+            error_y=(
+                dict(
+                    type="data",
+                    symmetric=False,
+                    array=(dec_df["ci_hi"] - dec_df["lift"]).values,
+                    arrayminus=(dec_df["lift"] - dec_df["ci_lo"]).values,
+                    color=MUTED,
+                    thickness=1.2,
+                    width=4,
+                )
+                if has_ci
+                else None
+            ),
         )
     )
     decile_fig.add_trace(
@@ -160,9 +184,7 @@ def update_uplift(arm, model):
 
     # Plotly fill colours don't accept hex+alpha directly so convert to rgba string
     qini_fill = (
-        f"rgba({','.join(str(int(c * 255)) for c in px.colors.hex_to_rgb(color))},0.15)"
-        if color.startswith("#")
-        else "rgba(34,211,238,0.15)"
+        hex_to_rgba(color, 0.15) if color.startswith("#") else hex_to_rgba(MENS_COLOUR, 0.15)
     )
     qini_fig = go.Figure()
     qini_fig.add_trace(
