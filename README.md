@@ -99,34 +99,6 @@ This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Space
 The live app is deployed on Hugging Face Spaces using Docker.  
 Precomputed model outputs are stored in `.cache/results.pkl` so the app can start quickly without rerunning the Bayesian, PSM and uplift models on every container start.
 
-**Push targets**
-
-- GitHub: `git push origin main`
-- Space (updates the Space repo’s `main`): `git push space hf-space:main`
-
-**After you change code on `main`, refresh the Space branch**
-
-```bash
-git checkout hf-space
-git merge main
-```
-
-If the merge removes or conflicts on the README header, put the Space YAML back as the **first lines** of `README.md` (then save, commit on `hf-space`). Use this block:
-
-```yaml
----
-title: Causal Inference Dashboard
-emoji: 📈
-colorFrom: indigo
-colorTo: purple
-sdk: docker
-app_port: 7860
-license: mit
----
-```
-
-Then push: `git push space hf-space:main` (and optionally `git push origin hf-space` to back the branch up on GitHub).
-
 ## Methodology Notes and Caveats
 
 - The underlying dataset is randomized, so causal identification of average effects comes from random assignment.
