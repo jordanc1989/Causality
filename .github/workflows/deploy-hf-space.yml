@@ -1,0 +1,51 @@
+name: Deploy to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main (with LFS)
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+
+      - name: Prepend HF Space frontmatter to README
+        run: |
+          cat > /tmp/frontmatter.md <<'EOF'
+          ---
+          title: Causal Inference Dashboard
+          emoji: 📈
+          colorFrom: indigo
+          colorTo: purple
+          sdk: docker
+          app_port: 7860
+          license: mit
+          ---
+
+          EOF
+          cat /tmp/frontmatter.md README.md > /tmp/README.md
+          mv /tmp/README.md README.md
+          git add README.md
+          git commit -m "Add HF Space frontmatter for deployment"
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USER: ${{ secrets.HF_USER }}
+          HF_SPACE: ${{ secrets.HF_SPACE }}
+        run: |
+          git push --force \
+            "https://${HF_USER}:${HF_TOKEN}@huggingface.co/spaces/${HF_USER}/${HF_SPACE}" \
+            HEAD:main
