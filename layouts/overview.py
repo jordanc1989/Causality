@@ -212,16 +212,15 @@ def tab1_layout():
                             section_header("About this Dataset"),
                             html.P(
                                 "The Hillstrom dataset is a real email marketing experiment run across "
-                                "64,000 US retail customers. A third received a Men's catalogue email, "
-                                "a third received a Women's catalogue email, and a third received nothing. "
+                                "64k US retail customers. A third received a Men's catalogue email, "
+                                "a third received a Women's email, and a third was the control. "
                                 "Spend was recorded for the two weeks after the send. Every customer comes "
                                 "with a few attributes about how recently they bought and how they usually shop.",
                                 className="small text-muted"
                             ),
                             html.P(
                                 "The question this dashboard answers is whether the email itself caused "
-                                "extra spend, and if so, where. Random assignment makes the headline "
-                                "number trustworthy on its own. The later tabs still add value, as they show "
+                                "extra spend (and if so, where). The later tabs add value by showing "
                                 "how confident we can be, which customers respond most, and whether "
                                 "different statistical approaches all land in the same place.",
                                 className="small text-muted"

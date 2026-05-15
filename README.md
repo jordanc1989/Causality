@@ -1,6 +1,11 @@
 [![Live Demo](https://img.shields.io/badge/live-demo-purple)](https://jordancheney89-causality.hf.space/)
 [![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Spaces-causality-yellow)](https://huggingface.co/spaces/jordancheney89/causality)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.13+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![uv](https://img.shields.io/badge/managed%20by-uv-DE5FE9.svg)](https://docs.astral.sh/uv/)
+[![Dash](https://img.shields.io/badge/Dash-4.x-2bb6f6.svg?logo=plotly&logoColor=white)](https://dash.plotly.com/)
+[![PyMC](https://img.shields.io/badge/PyMC-6.x-1f77b4.svg)](https://www.pymc.io/)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker&logoColor=white)](Dockerfile)
 
 # Causal Inference Dashboard
 
@@ -9,7 +14,7 @@ Interactive Dash app for comparing causal measurement approaches on a real rando
 **Live demo:** [Hugging Face Space](https://jordancheney89-causality.hf.space/)
 
 This project provides a dashboard to:
-- estimate average treatment effects with uncertainty
+- estimate average treatment effects (ATE) with uncertainty
 - inspect heterogeneity and targeting value
 - show where each method agrees and disagrees, and what assumptions drive the result
 
@@ -25,6 +30,7 @@ This dashboard puts both views side-by-side so the methodological choices and an
 
 | Tab | Method | Role in this project |
 |-----|--------|----------------------|
+| 1 | Overview | Dataset summary, arm balance, headline effects |
 | 2 | Bayesian A/B (PyMC hurdle model) | Probabilistic effect estimation with posterior uncertainty |
 | 3 | Multi-Arm OLS with interactions | Precision-adjusted average effects and subgroup patterns |
 | 4 | Uplift / HTE (T-Learner, S-Learner) | Ranking customers by estimated incremental value |
@@ -92,10 +98,6 @@ This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Space
 
 The live app is deployed on Hugging Face Spaces using Docker.  
 Precomputed model outputs are stored in `.cache/results.pkl` so the app can start quickly without rerunning the Bayesian, PSM and uplift models on every container start.
-
-### GitHub `main` vs Hugging Face (`hf-space`)
-
-Hugging Face Spaces reads **YAML front matter at the very top of `README.md`**. This repository keeps that metadata only on branch **`hf-space`**, while **`main`** (GitHub) uses a normal README without front matter.
 
 **Push targets**
 
