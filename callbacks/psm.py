@@ -43,14 +43,15 @@ def update_psm(arm):
         [
             kpi_card(
                 f"${att_pt:.2f}" if att_ok else "—",
-                f"ATT — {arm_label}",
+                f"ATT, {arm_label}",
                 ci_str,
                 (att_pt > 0) if att_ok else None,
                 color=arm_color,
                 accent=arm_color,
                 info=(
-                    "Average Treatment Effect on the Treated (ATT): mean spend difference between "
-                    "each caliper-retained treated row and its nearest matched control."
+                    "Average lift in spend across the matched pairs. Each email recipient that "
+                    "found a close enough lookalike control is compared to that control, and we "
+                    "report the mean difference."
                 ),
                 info_id="psm-info-att"
             ),
@@ -61,8 +62,9 @@ def update_psm(arm):
                 None,
                 accent=ACCENT,
                 info=(
-                    "1:1 nearest-neighbour pairing in logit(propensity-score) distance with replacement. "
-                    "Pairs outside a 0.2× pooled-SD logit caliper are pruned."
+                    "How many email recipients found a close enough lookalike in the control "
+                    "group. The rest are dropped from this view rather than forced into a "
+                    "poor pairing."
                 ),
                 info_id="psm-info-pct"
             ),
@@ -73,8 +75,8 @@ def update_psm(arm):
                 None,
                 accent=MUTED,
                 info=(
-                    "Matched rows only. Mean logit-distance to the paired control summarises tightness "
-                    "(same metric as NN search + caliper)."
+                    "Number of pairs kept after matching. The distance figure shows how tight "
+                    "the average match is, measured on the propensity-score scale."
                 ),
                 info_id="psm-info-pairs"
             ),
@@ -82,8 +84,9 @@ def update_psm(arm):
                 cs_str,
                 "Common support range",
                 info=(
-                    "Overlap window on raw propensity scores across both groups. Wide overlap is "
-                    "expected here (the logit caliper is what enforces pairwise closeness)."
+                    "The propensity-score range where both groups have customers. A wide range "
+                    "means the two groups overlap well, which is expected when assignment was "
+                    "random."
                 ),
                 info_id="psm-info-cs"
             ),
@@ -115,7 +118,8 @@ def update_psm(arm):
         template=PLOTLY_TEMPLATE,
         title=(
             "Propensity score distribution<br>"
-            f"<sup>Overlap diagnostic - {pct_mt:.1f}% retained after 0.2 SD logit caliper</sup>"
+            f"<sup>Overlap between the two groups. {pct_mt:.1f}% of recipients found "
+            "a close enough lookalike to keep.</sup>"
         ),
         xaxis_title="Propensity score",
         yaxis_title="Count",
@@ -196,7 +200,7 @@ def update_psm(arm):
     )
     stats_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title="ATT with pooled re-fit/rematch bootstrap (200 reps)",
+        title="ATT with stress-test confidence band (200 rematch bootstraps)",
         yaxis_title="Effect on spend ($)",
         margin=dict(t=50, b=30)
     )

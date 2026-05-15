@@ -25,9 +25,9 @@ def update_uplift(arm, model):
                 color=color,
                 accent=color,
                 info=(
-                    "Average Conditional Average Treatment Effect: the mean individual-level uplift "
-                    "predicted by the model across all customers. This should be close to the overall "
-                    "ATE seen on other tabs. Divergence suggests heavy tails or modelling artefacts."
+                    "The average predicted lift in spend per customer. This should be close to the "
+                    "overall lift on the other tabs. A big gap usually means heavy tails or a model "
+                    "quirk."
                 ),
                 info_id="uplift-kpi-avg-info",
             ),
@@ -37,9 +37,8 @@ def update_uplift(arm, model):
                 "High-responder threshold",
                 accent=ACCENT,
                 info=(
-                    "The uplift threshold above which the top 10% of customers sit. Useful for sizing "
-                    "a high-value targeting segment: mailing only customers with predicted uplift above "
-                    "this value captures the strongest responders."
+                    "The predicted uplift you'd see at the cutoff for the top 10% of customers. "
+                    "Useful for sizing a high-value targeting segment."
                 ),
                 info_id="uplift-kpi-p90-info",
             ),
@@ -47,9 +46,9 @@ def update_uplift(arm, model):
                 f"{np.mean(cate > 0):.1%}",
                 "% customers with positive uplift",
                 info=(
-                    "Share of customers for whom the model predicts a positive treatment effect. A "
-                    "ceiling on the profitable targetable audience: customers with negative predicted "
-                    "uplift shouldn't be mailed regardless of cost."
+                    "Share of customers the model expects to spend more if mailed. A ceiling on "
+                    "the audience worth targeting. Customers with negative predicted uplift "
+                    "shouldn't be mailed."
                 ),
                 info_id="uplift-kpi-ppos-info",
             ),
@@ -215,7 +214,7 @@ def update_uplift(arm, model):
     qini_excess = u.get(qini_excess_key, 0.0)
     qini_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"Qini Curve — {model_label} (AUUC = ${qini_auc:,.0f}, Excess vs random = ${qini_excess:,.0f})",
+        title=f"Qini Curve · {model_label} (AUUC = ${qini_auc:,.0f}, excess vs random = ${qini_excess:,.0f})",
         xaxis_title="Fraction of population targeted",
         yaxis_title="Cumulative incremental spend ($)",
         margin=dict(t=50, b=70),

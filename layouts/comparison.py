@@ -102,31 +102,46 @@ def tab6_layout():
                                     dbc.AccordionItem(
                                         [
                                             html.P(
-                                                "Matched-sample ATT with a 0.2 SD (logit propensity) caliper: unmatched treated rows are discarded. Bootstrapped CIs reflect re-fit/rematch variability, not textbook NN match CIs."
+                                                "Pairs each email recipient with a lookalike control "
+                                                "customer and compares them. Useful as a sanity check, "
+                                                "and as a demo of what you'd do if there was no random "
+                                                "assignment. The confidence band on the PSM tab is a "
+                                                "stress test on the matching, not a textbook interval."
                                             ),
                                         ],
-                                        title="PSM sensitivity (observational-style)"
+                                        title="PSM (matching)"
                                     ),
                                     dbc.AccordionItem(
                                         [
                                             html.P(
-                                                "Provides a full posterior distribution over treatment effects. Best for communicating uncertainty and making probabilistic decisions. Uses a hurdle model (Bernoulli conversion x LogNormal amount)."
+                                                "Fits a probabilistic model to the spend data and "
+                                                "produces a full posterior over the per-customer effect. "
+                                                "Best for talking about uncertainty (HDI, P(effect > 0)) "
+                                                "and for setting a threshold of practical significance "
+                                                "via the ROPE control on that tab."
                                             ),
                                         ],
-                                        title="Bayesian A/B Test"
+                                        title="Bayesian A/B"
                                     ),
                                     dbc.AccordionItem(
                                         [
                                             html.P(
-                                                "Estimates individual-level CATEs, ideal for targeting campaigns to the most responsive customers. Higher variance than ATE estimates. Treat as directional."
+                                                "Estimates the lift for each individual customer "
+                                                "rather than the average. Best for ranking, so you can "
+                                                "target the most responsive shoppers. Individual "
+                                                "estimates are noisier than the overall average, so "
+                                                "treat them as directional."
                                             ),
                                         ],
-                                        title="Uplift / HTE (T-Learner, S-Learner)"
+                                        title="Uplift (T-Learner, S-Learner)"
                                     ),
                                     dbc.AccordionItem(
                                         [
                                             html.P(
-                                                "Efficient parametric estimate with explicit interaction terms. Assumes linearity. Best for understanding which subgroups drive heterogeneity in a transparent, auditable way."
+                                                "Linear regression with interaction terms. Best for a "
+                                                "clean, auditable read of the average effect and how "
+                                                "it varies by customer type. Assumes the relationship "
+                                                "between attributes and spend is roughly linear."
                                             ),
                                         ],
                                         title="Multi-Arm OLS"

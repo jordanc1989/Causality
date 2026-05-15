@@ -68,50 +68,50 @@ def tab4_layout():
                 "tab4",
                 [
                     html.P(
-                        "Uplift modelling estimates Conditional Average Treatment Effects (CATE): the expected "
-                        "causal effect for each individual customer, given their characteristics."
+                        "Uplift modelling estimates a customer-by-customer treatment effect: the "
+                        "lift in spend the model expects for each individual if they receive the "
+                        "email, based on what we know about them. That estimate is called CATE."
                     ),
                     html.P(
-                        "T-Learner trains two separate models: one on treated customers & one on control, "
-                        "and computes CATE as the difference in predictions. "
-                        "S-Learner trains a single model with treatment as a feature and computes CATE "
-                        "by differencing predictions under treatment vs non-treatment."
+                        "The T-Learner fits two separate models, one on the email group and one "
+                        "on control, and then subtracts their predictions. The S-Learner fits a "
+                        "single model with treatment as an input feature, and reads off the "
+                        "difference between predictions with treatment on and off. The two often "
+                        "disagree on individual customers, which is itself a useful signal."
                     ),
                     html.P(
-                        "Both models use 5-fold stratified cross-fitting (stratified on treatment, "
-                        "so every fold has both arms represented). Each observation's CATE is "
-                        "predicted by a model trained on the other four folds. This avoids "
-                        "in-sample overfitting and gives honest out-of-sample estimates."
+                        "Both models use 5-fold cross-fitting. Each customer's CATE comes from a "
+                        "model that never saw them during training, which keeps the estimates "
+                        "honest rather than overfit to in-sample noise."
                     ),
                     html.P(
-                        "The Qini curve uses the canonical Radcliffe (2007) definition for continuous "
-                        "outcomes: at rank k, cumulative net revenue captured equals the cumulative "
-                        "treated spend minus the cumulative control spend re-weighted by the "
-                        "treated/control ratio. The chart overlays a random-targeting baseline "
-                        "line from zero to the full-population gain, ranking quality is the "
-                        "excess area above that baseline. The decile chart shows actual spend lift for "
-                        "customers ranked by predicted uplift: good models show declining lift."
+                        "The Qini curve shows how much extra revenue you'd capture if you mailed "
+                        "customers in order of predicted uplift, starting with the most promising. "
+                        "The dashed diagonal is what random targeting would deliver. The area "
+                        "above it is the value the ranking adds. The decile chart bucketed view "
+                        "carries error bars from a within-decile bootstrap. A model with real "
+                        "targeting value should show higher lift in the top deciles than the bottom."
                     ),
                     html.P(
-                        "Feature importance is reported as permutation importance on the predicted "
-                        "CATE surface. For each held-out fold we permute one feature column at a "
-                        "time (5 shuffle repeats), re-predict CATE from the T-Learner, and record "
-                        "the mean absolute change vs the un-permuted prediction. Features that drive "
-                        "heterogeneity show large CATE shifts, irrelevant features show small ones. "
-                        "This is a model-agnostic, fold-honest measure that avoids the high-cardinality "
-                        "/ continuous-feature bias of raw random-forest impurity importance."
+                        "Feature importance is measured by shuffling one feature at a time and "
+                        "checking how much the predicted CATE moves. A feature that drives real "
+                        "heterogeneity shifts the prediction a lot. A feature that doesn't matter "
+                        "barely moves it. This is more honest than the default random-forest "
+                        "importance, which gets fooled by continuous features and high-cardinality "
+                        "categoricals."
                     ),
                     html.P(
-                        "S-Learner with a RandomForest and 'treatment x covariate' interactions is known "
-                        "to shrink CATE toward zero when outcome variance is large relative to the "
-                        "treatment signal: a pattern we see here, where the T-Learner's average "
-                        "CATE tends to be larger in magnitude than the S-Learner's."
+                        "A known quirk of the S-Learner: when outcome noise is large relative to "
+                        "the treatment signal, as it is here, the model shrinks individual CATE "
+                        "estimates toward zero. That's why the S-Learner's average CATE is "
+                        "typically smaller in magnitude than the T-Learner's."
                     ),
                     html.P(
-                        "Because assignment is randomised, these models focus on treatment-effect heterogeneity "
-                        "and policy ranking rather than confounding control. HTE estimates typically carry "
-                        "more sampling uncertainty than ATE estimates and should be treated as directional "
-                        "unless accompanied by explicit uncertainty intervals."
+                        "Because assignment was random, these models focus on ranking and on which "
+                        "kinds of customers respond more, rather than on correcting for "
+                        "confounding. Individual CATE estimates carry more uncertainty than the "
+                        "overall average, so treat them as directional rather than precise "
+                        "per-customer numbers."
                     ),
                 ],
             ),

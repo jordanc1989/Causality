@@ -15,11 +15,11 @@ ENV HOME=/home/user \
 
 WORKDIR /home/user/app
 
-# Install locked dependencies (app is not an installable package, use uv export + uv pip).
+# Install locked dependencies (app isn't an installable package, use uv export + uv pip).
 RUN python -m pip install --user --no-cache-dir uv
 
 COPY --chown=user pyproject.toml uv.lock ./
-# Python 3.13+ Debian images are "externally managed"; --user installs are blocked.
+# Python 3.13+ Debian images are "externally managed", --user installs are blocked.
 # Use a project venv and install into it explicitly.
 RUN uv venv .venv \
     && uv export --frozen --no-dev -o requirements.txt \

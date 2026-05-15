@@ -59,45 +59,37 @@ def tab2_layout():
                 [
                     html.P(
                         [
-                            html.Strong("Statistical machinery (matching): "),
-                            "A logistic regression uses nine pre-treatment covariates—recency, history, men's and "
-                            "women's catalogue interest flags, two zip-type indicators (suburban/rural vs urban), "
-                            "two channel indicators (web / multichannel vs phone), and the newbie flag—to estimate "
-                            "each customer's ",
+                            html.Strong("How the matching works. "),
+                            "A logistic regression on nine pre-treatment attributes (recency, history, "
+                            "the two catalogue-interest flags, two zip-type flags, two channel flags, and "
+                            "the new-customer flag) produces a ",
                             html.Em("propensity score"),
-                            ": the modelled probability they would appear in the email arm given those traits.",
-                            " Matching is ",
-                            html.Strong("1:1 nearest neighbour in logit(propensity-score) metric"),
-                            " with replacement.",
-                            " A ",
-                            html.Strong("caliper"),
-                            " trims pairs where the ",
-                            html.Em("absolute gap in logit(propensity)"),
-                            " exceeds ",
-                            html.Strong("0.2 times the pooled standard deviation"),
-                            " of logit(PS) across all rows in that arm-vs-control subset.",
-                            " Unmatched treated customers are omitted from ATT and balance diagnostics on the ",
-                            "\"after\" cohort."
+                            " for each customer. That score is the modelled probability that the customer "
+                            "would end up in the email arm given those attributes. We then pair each email "
+                            "recipient with the control customer whose score is closest to theirs. A caliper "
+                            "trims any pair where the gap on the logit of the propensity score is more than "
+                            "0.2 standard deviations. Unmatched recipients are dropped from the post-match "
+                            "comparison rather than forced into a poor pairing."
                         ]
                     ),
                     html.P(
-                        "Because Hillstrom is randomised, treatment assignment is exogenous by design and "
-                        "the primary causal estimand is an ITT/ATE contrast (see Overview bootstrap and Tab 3 "
-                        "population-weighted OLS). "
-                        "PSM illustrates observational workflows: overlap tightening, pruning, and covariance "
-                        "balance on the matched cohort—not the project's headline estimator."
+                        "Because the original assignment was random, the trustworthy headline estimates "
+                        "live on the Overview and the OLS tab. PSM is included here as a sanity check that "
+                        "would also work in settings where there was no random assignment to lean on. The "
+                        "value of this tab is the diagnostic view (overlap, balance, matched cohort), "
+                        "not the point estimate."
                     ),
                     html.P(
-                        "Uncertainty is a stratified re-fit/re-match bootstrap (200 replicates): each "
-                        "replicate resamples the treated and control pools "
-                        "separately at their observed sizes (preserving the arm ratio), re-estimates "
-                        "propensity, reapplies NN + caliper, and recomputes ATT on surviving pairs. "
-                        "Interpret as a heuristic sensitivity envelope, not textbook nearest-neighbour CIs."
+                        "The confidence band on the bar chart comes from redoing the propensity fit and "
+                        "the matching 200 times on resampled data. Each replicate redraws treated and "
+                        "control separately at their observed sizes so the arm ratio stays fixed. Read "
+                        "the band as a stress test on the matching choices, not as a textbook nearest-"
+                        "neighbour confidence interval."
                     ),
                     html.P(
-                        "The Love plot contrasts all treated covariates to pooled controls ",
-                        "(before pairing) versus caliper-kept treated units to their ",
-                        "matched controls."
+                        "The Love plot compares every attribute in the email arm against the control arm "
+                        "twice. Once across the full groups (before pairing) and once across just the "
+                        "matched pairs (after). Closer to zero means more comparable groups."
                     ),
                 ],
             ),

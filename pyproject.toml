@@ -22,7 +22,7 @@ dependencies = [
 
 [tool.ruff.lint.per-file-ignores]
 # `from dashboard.theme import *` is the deliberate convention for design tokens
-# across every view and callback; silence the star-import warnings there so real
+# across every view and callback. silence the star-import warnings there so real
 # issues stay visible. Any new star-import outside these dirs will still flag.
 "layouts/*.py" = ["F403", "F405"]
 "callbacks/*.py" = ["F403", "F405"]

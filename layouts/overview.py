@@ -46,25 +46,24 @@ def tab1_layout():
     proj_wom_lo, proj_wom_hi = wom_lo * n_womens, wom_hi * n_womens
 
     if mens_sig and wom_sig:
-        headline = "Both campaigns drove statistically significant incremental revenue."
+        headline = "Both campaigns produced a lift in spend that's very unlikely to be chance."
         headline_color = SUCCESS
     elif wom_sig and not mens_sig:
         headline = (
-            "Women's campaign drove significant lift. "
-            "Men's result is inconclusive at 95% confidence."
+            "The Women's campaign produced a clear lift in spend. "
+            "The Men's result is too close to call."
         )
         headline_color = SUCCESS
     elif mens_sig and not wom_sig:
         headline = (
-            "Men's campaign drove significant lift. "
-            "Women's result is inconclusive at 95% confidence."
+            "The Men's campaign produced a clear lift in spend. "
+            "The Women's result is too close to call."
         )
         headline_color = SUCCESS
     else:
         headline = (
-            "Neither campaign's effect is distinguishable from zero at 95% confidence "
-            "in the raw difference-of-means — see subsequent tabs for precision-adjusted "
-            "and probabilistic readings."
+            "Neither campaign's effect is large enough to separate from chance on the raw "
+            "averages. The later tabs use stronger methods to check the same question."
         )
         headline_color = WARNING
 
@@ -77,9 +76,8 @@ def tab1_layout():
         """Projected total-revenue extrapolation for one arm, with bootstrap CI band."""
         ci_id = f"hl-ci-{label.lower().replace(' ', '-').replace(chr(39), '')}"
         tooltip_text = (
-            "Projected total incremental revenue across the campaign cohort: per-recipient "
-            "lift × number of recipients. Range is a 2,000-resample percentile bootstrap "
-            "on the per-recipient difference of means."
+            "Per-recipient lift multiplied by the number of recipients in this arm. "
+            "The range is a 95% confidence interval from a 2,000-resample bootstrap."
         )
         return dbc.Col(
             [
@@ -194,11 +192,10 @@ def tab1_layout():
                                             className="g-3 mb-3",
                                         ),
                                         html.P(
-                                            "Per-recipient lift and SIG/n.s. status are shown on the segment "
-                                            "cards above, this card extrapolates that lift to the full campaign "
-                                            "cohort. Confidence intervals use a percentile bootstrap (2k resamples) "
-                                            "on the difference of means. Subsequent tabs test the per-recipient "
-                                            "effect with matching, Bayesian and uplift methods.",
+                                            "The segment cards above show the lift per recipient. This card "
+                                            "scales it up to the full campaign. Confidence ranges come from a "
+                                            "bootstrap of 2,000 resamples. Later tabs re-test the same lift "
+                                            "with matching, Bayesian and uplift methods.",
                                             className="text-muted small mb-0",
                                         ),
                                     ]
@@ -214,19 +211,19 @@ def tab1_layout():
                         [
                             section_header("About this Dataset"),
                             html.P(
-                                "The Hillstrom MineThatData dataset captures a randomised email marketing "
-                                "experiment across 64k US retail customers. Two treatment groups received "
-                                "targeted email campaigns (Men's or Women's catalogue), while the control "
-                                "group received nothing. The groups were split around 33% each, and the "
-                                "experiment ran for 30 days. The dataset includes customer attributes "
-                                "(recency, frequency, monetary value, channel) and outcomes (conversion, spend).",
+                                "The Hillstrom dataset is a real email marketing experiment run across "
+                                "64,000 US retail customers. A third received a Men's catalogue email, "
+                                "a third received a Women's catalogue email, and a third received nothing. "
+                                "Spend was recorded for the two weeks after the send. Every customer comes "
+                                "with a few attributes about how recently they bought and how they usually shop.",
                                 className="small text-muted"
                             ),
                             html.P(
-                                "The causal question: does receiving an email cause customers to spend more? "
-                                "Even in a randomised experiment, causal analysis adds value by quantifying "
-                                "uncertainty, identifying which customers respond most (HTE), and stress-testing "
-                                "results across different methodologies.",
+                                "The question this dashboard answers is whether the email itself caused "
+                                "extra spend, and if so, where. Random assignment makes the headline "
+                                "number trustworthy on its own. The later tabs still add value: they show "
+                                "how confident we can be, which customers respond most, and whether "
+                                "different statistical approaches all land in the same place.",
                                 className="small text-muted"
                             ),
                         ],

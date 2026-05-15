@@ -24,7 +24,7 @@ def _build_comparison_df():
         p = PSM[arm]
         rows.append(
             {
-                # Point estimate here; heuristic rematch bootstrap lives on the PSM tab only so it is
+                # Point estimate here, heuristic rematch bootstrap lives on the PSM tab only so it is
                 # not presented as interchangeable with RCT / Bayesian uncertainty bands.
                 "Method": "PSM (ATT, point est.)",
                 "Arm": arm_label,
@@ -155,7 +155,7 @@ def update_comparison(tab, noise_eps):
                 f"95% CI: ${row['CI Lower ($)']:.2f} – ${row['CI Upper ($)']:.2f}"
                 if has_ci
                 else (
-                    "Heuristic rematch band omitted — see Tab 5 (PSM)"
+                    "Heuristic rematch band shown on the PSM tab"
                     if is_psm
                     else "No CI available"
                 )
@@ -219,30 +219,29 @@ def update_comparison(tab, noise_eps):
     womens_max = max(womens_valid) if womens_valid else 0.0
 
     # Robust verdict: don't flip on a single near-zero estimate. The "noise
-    # zone" threshold is user-controllable via the agreement-threshold input;
+    # zone" threshold is user-controllable via the agreement-threshold input,
     # the default ($0.10) is smaller than any plausible action threshold in
-    # this dataset. "Agree" requires (a) no method in the noise zone is on
-    # the opposite side, AND (b) all material estimates share sign.
+    # this dataset.
     def _verdict(estimates):
         material = [v for v in estimates if abs(v) >= noise_eps]
         near_zero = [v for v in estimates if abs(v) < noise_eps]
         if not material:
-            return "All methods indistinguishable from zero."
+            return "Every method sits close to zero."
         pos = sum(1 for v in material if v > 0)
         neg = sum(1 for v in material if v < 0)
         if pos > 0 and neg == 0:
             tail = (
-                f" ({len(near_zero)} method[s] near zero.)" if near_zero else ""
+                f" ({len(near_zero)} sat near zero.)" if near_zero else ""
             )
-            return "All methods point to a positive effect." + tail
+            return "Every method points to a positive lift." + tail
         if neg > 0 and pos == 0:
             tail = (
-                f" ({len(near_zero)} method[s] near zero.)" if near_zero else ""
+                f" ({len(near_zero)} sat near zero.)" if near_zero else ""
             )
-            return "All methods point to a negative effect." + tail
+            return "Every method points to a negative effect." + tail
         return (
-            f"Methods disagree on direction ({pos} positive, {neg} negative): "
-            "inspect assumptions carefully."
+            f"Methods disagree on direction ({pos} positive, {neg} negative). "
+            "Worth a closer look at the assumptions behind each one."
         )
 
     mens_verdict = _verdict(mens_valid)
@@ -272,10 +271,11 @@ def update_comparison(tab, noise_eps):
                         ]
                     ),
                     html.P(
-                        "Agreement strengthens credibility; divergence surfaces differing assumptions. "
-                        "Randomisation-grounded contrasts are on the Overview and Tab 3 (OLS); "
-                        "Bayesian focuses on posterior uncertainty for distribution shifts; uplift "
-                        "prioritises out-of-sample targeting discrimination.",
+                        "When the methods agree, you can lean on the headline number with confidence. "
+                        "When they disagree, the gap usually points to where the assumptions of one "
+                        "method are doing more work. The Overview and OLS tabs lean directly on the "
+                        "random assignment. The Bayesian tab adds a richer picture of uncertainty. "
+                        "The Uplift tab focuses on who responds most, rather than the average.",
                         className="text-muted small mb-0"
                     ),
                 ]
@@ -283,7 +283,7 @@ def update_comparison(tab, noise_eps):
         ],
         style={
             **CARD_STYLE,
-            "borderLeft": f"3px solid {SUCCESS if ('point to' in mens_verdict and 'point to' in womens_verdict) else WARNING}"
+            "borderLeft": f"3px solid {SUCCESS if ('points to' in mens_verdict and 'points to' in womens_verdict) else WARNING}"
         },
         className="dashboard-card",
     )

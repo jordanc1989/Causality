@@ -34,7 +34,7 @@ def build_tabs():
     # Visual ordering puts the randomisation-grounded estimators (Bayesian, OLS)
     # before the heterogeneity / observational diagnostics (Uplift, PSM).
     # `tab_id`s stay stable to the method they identify so callbacks and element
-    # IDs do not need to be renumbered alongside the visual order.
+    # IDs don't need to be renumbered alongside the visual order.
     return [
         dbc.Tab(tab1_layout(), label="1 Overview", tab_id="tab-1"),
         dbc.Tab(tab3_layout(), label="2 Bayesian A/B", tab_id="tab-3"),

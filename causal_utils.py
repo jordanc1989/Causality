@@ -522,7 +522,7 @@ def _run_bayesian_pair(df, pair_key):
         )
 
     delta_samples = idata.posterior["delta"].values.flatten()
-    # arviz_stats >=1.0 renamed `hdi_prob` to `prob`; fall back for older envs.
+    # arviz_stats >=1.0 renamed `hdi_prob` to `prob`; fallback for older envs.
     try:
         hdi = az.hdi(idata, var_names=["delta"], prob=0.95)["delta"].values
     except TypeError:

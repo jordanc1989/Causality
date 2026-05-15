@@ -25,9 +25,9 @@ def update_bayesian(pair_key, rope_val):
                 f"Treatment effect: {b['arm_a_label']} vs {b['arm_b_label']}",
                 accent=arm_color,
                 info=(
-                    "95% Highest Density Interval: the narrowest range containing 95% of the "
-                    "posterior probability. These are the most credible values of the per-customer "
-                    "treatment effect."
+                    "The 95% Highest Density Interval is the narrowest range that holds 95% of "
+                    "the posterior. Given the model and the data, there's a 95% probability the "
+                    "true per-customer effect sits inside it."
                 ),
                 info_id="bayes-kpi-hdi-info",
             ),
@@ -37,9 +37,9 @@ def update_bayesian(pair_key, rope_val):
                 color=SUCCESS if p_pos > 0.9 else WARNING,
                 accent=SUCCESS if p_pos > 0.9 else WARNING,
                 info=(
-                    "Posterior probability that the treatment truly lifts per-customer spend above zero. "
-                    "Values above 95% are strong evidence of a positive effect. Values near 50% mean "
-                    "the data is indifferent about the direction."
+                    "The probability that the true per-customer effect is positive. Above 95% is "
+                    "strong evidence of a lift. Near 50% means the data can't tell which way the "
+                    "effect points."
                 ),
                 info_id="bayes-kpi-ppos-info",
             ),
@@ -48,8 +48,8 @@ def update_bayesian(pair_key, rope_val):
                 f"Mean spend - {b['arm_a_label']}",
                 accent=arm_color,
                 info=(
-                    "Posterior mean of expected per-customer spend for this arm, combining the "
-                    "conversion probability and the log-normal amount component of the hurdle model."
+                    "The model's estimate of the average per-customer spend for this arm, "
+                    "combining the chance of any spend with the size of the spend when it happens."
                 ),
                 info_id="bayes-kpi-meana-info",
             ),
@@ -58,8 +58,8 @@ def update_bayesian(pair_key, rope_val):
                 f"Mean spend - {b['arm_b_label']}",
                 accent=CTRL_COLOUR,
                 info=(
-                    "Posterior mean of expected per-customer spend for this arm, combining the "
-                    "conversion probability and the log-normal amount component of the hurdle model."
+                    "The model's estimate of the average per-customer spend for this arm, "
+                    "combining the chance of any spend with the size of the spend when it happens."
                 ),
                 info_id="bayes-kpi-meanb-info",
             ),
@@ -143,9 +143,9 @@ def update_bayesian(pair_key, rope_val):
     p_outside_rope = float(np.mean((delta > rope_val) | (delta < -rope_val)))
     rope_color = SUCCESS if p_outside_rope > 0.9 else WARNING
     verdict = (
-        "Strong evidence the effect is practically non-zero."
+        "Strong evidence the effect is big enough to matter."
         if p_outside_rope > 0.9
-        else "Not yet decisive, treat as practically equivalent to zero for now."
+        else "Not decisive yet. The effect could still be too small to act on."
     )
     rope_card = html.Div(
         [
@@ -173,9 +173,9 @@ def update_bayesian(pair_key, rope_val):
             html.Div(verdict, className="small text-muted",
                      style={"fontStyle": "italic", "marginBottom": 0}),
             dbc.Tooltip(
-                f"Posterior probability that the true per-customer treatment effect exceeds ±${rope_val} "
-                f"in magnitude. Values inside the ROPE are treated as practically equivalent to zero. "
-                f"Probability outside is the evidence the effect is large enough to matter.",
+                f"How much of the posterior sits outside ±${rope_val} per customer. Values "
+                f"inside that range are treated as practically equivalent to zero, so the "
+                f"probability outside it is the evidence the effect is big enough to act on.",
                 target="bayes-rope-info",
                 placement="top",
                 style={"fontFamily": "Ubuntu, sans-serif", "fontSize": "0.8rem"},
@@ -239,7 +239,6 @@ def toggle_method_tab3(n, is_open):
     return not is_open
 
 def toggle_ppc(n, pair_key, is_open):
-    # Toggle is_open only on button click; pair changes only refresh the figure.
     new_is_open = not is_open if ctx.triggered_id == "ppc-btn" else is_open
     b = BAYESIAN[pair_key]
     lab_a = b["arm_a_label"]
@@ -267,12 +266,12 @@ def toggle_ppc(n, pair_key, is_open):
         rows=3,
         cols=2,
         subplot_titles=(
-            f"Full spend — {lab_a} ({nf} synthetic draws / PPC slice)",
-            f"Full spend — {lab_b} ({nf} synthetic draws / PPC slice)",
-            f"Amount | spend > 0 — {lab_a} (same {nf}-draw slices)",
-            f"Amount | spend > 0 — {lab_b} (same {nf}-draw slices)",
-            f"Conversion — {lab_a} (PPC batches of n = {nca_s})",
-            f"Conversion — {lab_b} (PPC batches of n = {ncb_s})",
+            f"Full spend ·{lab_a} ({nf} synthetic draws / PPC slice)",
+            f"Full spend ·{lab_b} ({nf} synthetic draws / PPC slice)",
+            f"Amount | spend > 0 ·{lab_a} (same {nf}-draw slices)",
+            f"Amount | spend > 0 ·{lab_b} (same {nf}-draw slices)",
+            f"Conversion ·{lab_a} (PPC batches of n = {nca_s})",
+            f"Conversion ·{lab_b} (PPC batches of n = {ncb_s})",
         ),
         vertical_spacing=0.09,
         horizontal_spacing=0.07,
@@ -322,19 +321,19 @@ def toggle_ppc(n, pair_key, is_open):
         )
 
     _add_hist_pair(
-        1, 1, obs_sa, ppc_sa, f"Observed — {lab_a}", f"PPC mimic — {lab_a}",
+        1, 1, obs_sa, ppc_sa, f"Observed:{lab_a}", f"PPC mimic:{lab_a}",
         MENS_COLOUR, ACCENT,
     )
     _add_hist_pair(
-        1, 2, obs_sb, ppc_sb, f"Observed — {lab_b}", f"PPC mimic — {lab_b}",
+        1, 2, obs_sb, ppc_sb, f"Observed:{lab_b}", f"PPC mimic:{lab_b}",
         WOMENS_COLOUR, CTRL_COLOUR,
     )
     _add_hist_pair(
-        2, 1, obs_pa, ppc_pa, f"Obs converters — {lab_a}", f"PPC | spend>0 — {lab_a}",
+        2, 1, obs_pa, ppc_pa, f"Obs converters:{lab_a}", f"PPC | spend>0:{lab_a}",
         MENS_COLOUR, ACCENT,
     )
     _add_hist_pair(
-        2, 2, obs_pb, ppc_pb, f"Obs converters — {lab_b}", f"PPC | spend>0 — {lab_b}",
+        2, 2, obs_pb, ppc_pb, f"Obs converters:{lab_b}", f"PPC | spend>0:{lab_b}",
         WOMENS_COLOUR, CTRL_COLOUR,
     )
 
@@ -391,11 +390,11 @@ def toggle_ppc(n, pair_key, is_open):
         barmode="overlay",
         height=980,
         title=(
-            "Hurdle posterior predictive check · "
-            f"rows 1–2 use {nf} synthetic customers per posterior slice (histogram subsamples). "
-            f"Row 3 uses full arm cohort sizes "
-            f"(n={nca_s}, n={ncb_s}) per slice so conversion mimic noise matches observed scale. "
-            f"({nd} posterior draws.)"
+            "Posterior predictive check · "
+            f"rows 1 and 2 simulate {nf} customers per posterior draw. "
+            f"Row 3 simulates at the full arm size "
+            f"(n={nca_s}, n={ncb_s}) so the conversion-rate spread matches reality. "
+            f"({nd} posterior draws total.)"
         ),
         margin=dict(t=80, b=46, l=54, r=36),
         legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),

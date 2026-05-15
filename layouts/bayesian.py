@@ -49,7 +49,7 @@ def tab3_layout():
                     ),
                     dbc.Col(
                         [
-                            section_header("Posterior Distribution — Treatment Effect δ"),
+                            section_header("Posterior Distribution · Treatment Effect δ"),
                             dcc.Graph(id="bayes-posterior-plot", config=GRAPH_CONFIG, className="mt-2"),
                         ],
                         md=8,
@@ -73,8 +73,8 @@ def tab3_layout():
                                                                  "marginBottom": "0.3rem",
                                                                  "display": "block"}),
                                                 html.Span(
-                                                    "Posterior mass outside the Region of Practical Equivalence. "
-                                                    "Set ±$X to the smallest per-customer lift worth acting on.",
+                                                    "Set this to the smallest per-customer lift worth acting on. "
+                                                    "The result is how much of the posterior sits beyond that threshold.",
                                                     className="small text-muted",
                                                     style={"display": "block", "marginBottom": "0.6rem"},
                                                 ),
@@ -130,22 +130,17 @@ def tab3_layout():
                                 [
                                     html.P(
                                         [
-                                            html.Strong("What this shows: "),
-                                            "three hurdle-consistent posterior mimics stacked per arm. Row 1 simulates ",
-                                            html.Code("Bernoulli(p) x LogNormal(μ, σ)"),
-                                            " so the spike at ",
-                                            html.Code("$0"),
-                                            " enters the replicated spend distribution alongside the skewed positives. ",
-                                            "Row 2 conditions on converters only versus observed positive amounts, ",
-                                            "row 3 redraws each posterior slice at the ",
-                                            html.Strong("full observed arm size"),
-                                            " so batch conversion noise lines up with empirical rates (rows 1-2 use ",
-                                            "a smaller synthetic batch only to keep spend histograms lightweight). ",
-                                            html.Strong("What to watch for: "),
-                                            "overall alignment in mass at zero (row 1), bulk positive-tail shape ",
-                                            "(row 2), and calibrated conversion dispersion (row 3). Discrete catalogue ",
-                                            "price ladders still spike the observed converters, judge LogNormal ",
-                                            "fit on the smoothed analogue, not every SKU notch.",
+                                            html.Strong("What this shows. "),
+                                            "Three stacked checks per arm that compare the model's simulated data "
+                                            "against the real data. The first row covers the full spend distribution "
+                                            "including the spike at $0. The second row focuses on the size of "
+                                            "purchases among customers who did spend. The third row checks the "
+                                            "conversion rate at the actual arm size. ",
+                                            html.Strong("What to look for. "),
+                                            "The simulated and observed distributions should sit roughly on top of "
+                                            "each other. Small spikes in the observed data come from real catalogue "
+                                            "price points, so judge the fit on the overall shape rather than every "
+                                            "individual bump.",
                                         ],
                                         className="text-muted small mb-2",
                                     ),
@@ -199,43 +194,43 @@ def tab3_layout():
                 "tab3",
                 [
                     html.P(
-                        "Spend is ~99% zeros with a right-skewed positive tail, so a plain Normal "
-                        "likelihood is a severe misspecification. Instead the model uses a "
-                        "two-part (hurdle) specification: a Bernoulli on whether the customer "
-                        "spends at all, and a LogNormal on the amount among converters. The "
-                        "expected per-customer spend is P(convert) · E[amount | convert], and "
-                        "delta is the difference in expected spend between the two arms."
+                        "Spend is mostly zero with a long right tail. A plain Normal model would "
+                        "fit badly because it puts weight on negative spend and can't represent "
+                        "the spike at zero. The model splits the problem in two instead. A "
+                        "Bernoulli decides whether the customer spends at all. A LogNormal "
+                        "decides how much they spend if they do. The expected per-customer spend "
+                        "is the product of those two pieces, and delta is the difference between "
+                        "the two arms."
                     ),
                     html.P(
                         [
-                            "Priors: Beta(1, 1) (uniform) on conversion probability. ",
-                            "Normal(μ = mean(log positive spend), σ = 2 x SD(log positive spend)) "
-                            "on the log-mean of the amount component, HalfNormal(σ = SD(log positive spend)) "
-                            "on the log-sigma. The Normal and HalfNormal priors are weakly informative ",
-                            html.Strong("but data-derived"),
-                            " (an empirical-Bayes choice): the prior location and scale are read off the ",
-                            "pooled positive-spend log-distribution rather than fixed in advance. With ",
-                            "~21k positive observations per arm the priors are dominated by the likelihood, ",
-                            "but readers comparing to a textbook fully-subjective prior should know the ",
-                            "scale was tuned to this dataset. MCMC is run with PyMC via the nutpie NUTS ",
-                            "sampler (2,000 draws, 2 chains) on the full arm data — no subsampling.",
+                            "Priors. Beta(1, 1) (uniform) on conversion probability. The Normal "
+                            "on log-mean and HalfNormal on log-sigma are centred and scaled on "
+                            "the pooled positive-spend distribution, which makes them weakly "
+                            "informative but ",
+                            html.Strong("data-derived"),
+                            ". With about 21,000 positive observations per arm the data dominates "
+                            "the priors, so this choice has very little influence on the result. "
+                            "Sampling uses PyMC's nutpie NUTS sampler, 2,000 draws across 2 chains, "
+                            "on the full arm data."
                         ]
                     ),
                     html.P(
-                        "The 95% Highest Density Interval (HDI) is the shortest interval containing "
-                        "95% of the posterior probability, i.e. a 95% probability the true expected "
-                        "spend difference lies in this range (given the model and data)."
+                        "The 95% Highest Density Interval is the narrowest range that holds 95% "
+                        "of the posterior. Given the model and the data, there's a 95% probability "
+                        "the true per-customer effect sits inside it."
                     ),
                     html.P(
-                        "The ROPE (Region of Practical Equivalence) lets you define a minimum effect "
-                        "size that matters for business decisions. The dashboard shows the probability "
-                        "mass outside the ROPE."
+                        "The ROPE (Region of Practical Equivalence) is a range around zero that "
+                        "you treat as 'not big enough to act on'. Set it to the smallest "
+                        "per-customer lift that would change a decision and the tab reports how "
+                        "much of the posterior sits beyond it."
                     ),
                     html.P(
-                        "Posterior predictive checks draw Monte Carlo batches where each replicated "
-                        "customer spends zero or samples a fresh LogNormal amount conditional on "
-                        "conversion — mirroring the generative hurdle story rather than extrapolating "
-                        "only the conditional tail likelihood."
+                        "The posterior predictive check simulates customers from the fitted model "
+                        "and compares the simulated distribution to the real one. A good fit shows "
+                        "the two distributions sitting on top of each other across the zero spike, "
+                        "the positive tail, and the conversion rate."
                     ),
                 ],
             ),

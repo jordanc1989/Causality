@@ -46,34 +46,36 @@ def tab5_layout():
                 "tab5",
                 [
                     html.P(
-                        "OLS regression estimates population-average treatment effects while controlling for "
-                        "observed baseline covariates. In this randomised experiment, covariate adjustment "
-                        "is primarily for precision. All three arms (Men, Women, Control) are estimated in "
-                        "one model via treatment indicators."
+                        "Linear regression estimates the average effect of the email while adjusting "
+                        "for a few customer attributes (recency, spend history, channel, postcode type, "
+                        "and whether the customer is new). Because assignment was random to begin with, "
+                        "this adjustment isn't fixing bias. It tightens the confidence range. All three "
+                        "arms are fitted in one model using treatment indicators."
                     ),
                     html.P(
-                        "Interaction terms (treatment x newbie, treatment x channel, treatment x zip code) capture "
-                        "treatment effect heterogeneity at the subgroup level, complementing the "
-                        "non-parametric uplift models in Tab 4."
+                        "Interaction terms let the effect of the email vary by customer type "
+                        "(new vs existing, channel, postcode). They surface subgroup patterns "
+                        "that back up the uplift models on the previous tab."
                     ),
                     html.P(
-                        "Standard errors use the HC3 heteroscedasticity-robust (White) estimator. "
-                        "Spend is right-skewed and its variance scales with the treatment means, so "
-                        "default OLS SEs would be biased. HC3 is the recommended small-sample "
-                        "correction for this kind of outcome."
+                        "Standard errors use the HC3 robust estimator. Spend is right-skewed and "
+                        "its variance grows with the treatment mean, so the default standard "
+                        "errors would be too narrow. HC3 is the standard fix for this kind of "
+                        "outcome."
                     ),
                     html.P(
-                        "The subgroup heatmap collapses the 3-way (newbie x channel x zip) marginal "
-                        "effects to a 2-way (newbie x channel) view by averaging over zip, weighted "
-                        "by the actual customer counts in each (newbie, channel, zip) cell. An "
-                        "unweighted mean would over-represent rare zip categories."
+                        "The subgroup heatmap collapses the (customer type) by (channel) by "
+                        "(postcode) view down to (customer type) by (channel), averaging over "
+                        "postcode using each cell's actual customer share. An unweighted average "
+                        "would give rare postcode categories too much weight."
                     ),
                     html.P(
-                        "Key assumption: linearity of the conditional expectation function. The model is "
-                        "estimated by OLS (not IV or 2SLS). Coefficient colouring on the chart above is "
-                        "thresholded against a Holm-Bonferroni-adjusted α=0.05 across all displayed terms "
-                        "to control family-wise error. Raw p-values remain in the hover for inspection but "
-                        "shouldn't be read as confirmatory without the multiplicity adjustment."
+                        "Key assumption: the relationship between attributes and spend is roughly "
+                        "linear. Coefficient colouring on the chart above uses a Holm-Bonferroni "
+                        "adjustment to α = 0.05, so a coefficient only lights up if it survives "
+                        "the correction for testing many terms at once. Raw p-values are still in "
+                        "the hover for reference but shouldn't be read as confirmatory without "
+                        "that adjustment."
                     ),
                 ],
             ),
