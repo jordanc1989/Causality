@@ -73,13 +73,6 @@ def tab2_layout():
                         ]
                     ),
                     html.P(
-                        "Because the original assignment was random, the trustworthy headline estimates "
-                        "live on the Overview and the OLS tab. PSM is included here as a sanity check that "
-                        "would also work in settings where there was no random assignment to lean on. The "
-                        "value of this tab is the diagnostic view (overlap, balance, matched cohort), "
-                        "not the point estimate."
-                    ),
-                    html.P(
                         "The confidence band on the bar chart comes from redoing the propensity fit and "
                         "the matching 200 times on resampled data. Each replicate redraws treated and "
                         "control separately at their observed sizes so the arm ratio stays fixed. Read "

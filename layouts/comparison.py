@@ -16,7 +16,7 @@ def tab6_layout():
                                 [
                                     "Each row is one method's estimate of the average lift in spend "
                                     "per recipient, with its confidence range. The Overview, Bayesian "
-                                    "and OLS rows are the trustworthy headline numbers because they "
+                                    "and OLS rows are the headline numbers because they "
                                     "use the random assignment directly. The PSM row is included as a "
                                     "diagnostic, its uncertainty band is shown on the PSM tab and "
                                     "deliberately left blank here so it isn't read as comparable to the "

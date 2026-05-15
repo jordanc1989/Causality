@@ -221,7 +221,7 @@ def tab1_layout():
                             html.P(
                                 "The question this dashboard answers is whether the email itself caused "
                                 "extra spend, and if so, where. Random assignment makes the headline "
-                                "number trustworthy on its own. The later tabs still add value: they show "
+                                "number trustworthy on its own. The later tabs still add value, as they show "
                                 "how confident we can be, which customers respond most, and whether "
                                 "different statistical approaches all land in the same place.",
                                 className="small text-muted"
