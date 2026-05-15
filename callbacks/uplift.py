@@ -215,11 +215,19 @@ def update_uplift(arm, model):
         "s": "qini_excess_auc_s",
         "x": "qini_excess_auc_x",
     }[model]
+    qini_p_key = {"t": "qini_p_t", "s": "qini_p_s", "x": "qini_p_x"}[model]
+    qini_p = u.get(qini_p_key)
     qini_auc = u.get(qini_auc_key, 0.0)
     qini_excess = u.get(qini_excess_key, 0.0)
+    p_str = (
+        f", permutation p = {qini_p:.3f}" if qini_p is not None else ""
+    )
     qini_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"Qini Curve · {model_label} (AUUC = ${qini_auc:,.0f}, excess vs random = ${qini_excess:,.0f})",
+        title=(
+            f"Qini Curve · {model_label} (AUUC = ${qini_auc:,.0f}, "
+            f"excess vs random = ${qini_excess:,.0f}{p_str})"
+        ),
         xaxis_title="Fraction of population targeted",
         yaxis_title="Cumulative incremental spend ($)",
         margin=dict(t=50, b=70),
@@ -257,6 +265,192 @@ def update_uplift(arm, model):
 
     return kpis, hist_fig, fi_fig, decile_fig, qini_fig, seg_fig
 
+
+def update_policy(arm, model, cost_per_email, margin):
+    """
+    Cost-aware targeting policy curve.
+
+    The Qini curve gives cumulative incremental spend `g(p)` as a function of
+    the fraction `p` of the list targeted (sorted by predicted CATE desc).
+    Net contribution at policy `p` is:
+
+        N_total * [ margin * g(p) - cost_per_email * p ]
+
+    where `g` and the population fraction `p` both come from the Qini arrays
+    and `N_total` is the eligible audience for this arm. We report the optimal
+    targeting share, the expected net contribution there, and a curve that
+    sweeps `p` from 0 to 1 so users can see the tradeoff.
+
+    Cost defaults to $0.05 / send and margin defaults to 0.40. Both are
+    user-tunable from the layout's input controls.
+    """
+    cost_per_email = 0.0 if cost_per_email is None else float(cost_per_email)
+    margin = 0.40 if margin is None else float(margin)
+    margin = max(0.0, min(1.0, margin))
+    u = UPLIFT[arm]
+    arm_label = "Men's Email" if arm == "mens" else "Women's Email"
+    color = MENS_COLOUR if arm == "mens" else WOMENS_COLOUR
+
+    qini_x_key = {"t": "qini_x", "s": "qini_x_s", "x": "qini_x_x"}[model]
+    qini_y_key = {"t": "qini_y", "s": "qini_y_s", "x": "qini_y_x"}[model]
+    qini_xd = np.asarray(u.get(qini_x_key, u["qini_x"]), dtype=float)
+    qini_yd = np.asarray(u.get(qini_y_key, u["qini_y"]), dtype=float)
+    cate_key = {"t": "cate_t", "s": "cate_s", "x": "cate_x"}[model]
+    n_total = len(u[cate_key])
+
+    if len(qini_xd) < 2:
+        empty = go.Figure()
+        empty.update_layout(template=PLOTLY_TEMPLATE, title="Policy curve unavailable")
+        return html.Div("Policy curve unavailable."), empty
+
+    # The Qini curve already aggregates over the matched-evaluation cohort.
+    # Convert to per-arm totals: gross revenue = qini_y (already in $), and
+    # cost = cost_per_email * fraction_targeted * n_total.
+    n_targeted = qini_xd * n_total
+    gross_contribution = margin * qini_yd
+    total_cost = cost_per_email * n_targeted
+    net_contribution = gross_contribution - total_cost
+
+    # Optimal policy: pick p* where net_contribution is maximised. Guard the
+    # all-negative case by always also reporting "target nobody = $0".
+    idx_opt = int(np.argmax(net_contribution))
+    p_opt = float(qini_xd[idx_opt])
+    net_opt = float(net_contribution[idx_opt])
+    n_opt = int(round(qini_xd[idx_opt] * n_total))
+    rev_opt = float(qini_yd[idx_opt])
+    cost_opt = float(total_cost[idx_opt])
+    margin_per_targeted = (gross_contribution[idx_opt] / max(n_opt, 1)) if n_opt > 0 else 0.0
+
+    # If targeting nobody is the best choice (e.g. cost > gross), surface that.
+    if net_opt <= 0:
+        p_opt = 0.0
+        net_opt = 0.0
+        n_opt = 0
+        verdict = "Do not target. At this cost and margin, no portion of the list returns a positive net contribution."
+        verdict_color = WARNING
+    elif p_opt >= 0.999:
+        verdict = "Target the entire list. Margin per send exceeds cost at every point on the ranking."
+        verdict_color = SUCCESS
+    else:
+        verdict = (
+            f"Target the top {p_opt:.0%} of the {arm_label} list (ranked by {model.upper()}-Learner uplift). "
+            f"Net contribution peaks at ${net_opt:,.0f}; mailing more dilutes margin, mailing less leaves money on the table."
+        )
+        verdict_color = SUCCESS
+
+    kpis = html.Div(
+        [
+            kpi_card(
+                f"{p_opt:.0%}",
+                "Optimal target share",
+                f"≈ {n_opt:,} customers",
+                color=verdict_color,
+                accent=verdict_color,
+                info=(
+                    "The fraction of the ranked list to mail that maximises net "
+                    "incremental contribution. Above this fraction, additional sends cost "
+                    "more than the incremental margin they bring in."
+                ),
+                info_id="policy-kpi-opt-info",
+            ),
+            kpi_card(
+                f"${net_opt:,.0f}",
+                "Net incremental contribution",
+                f"Gross ${margin * rev_opt:,.0f} − cost ${cost_opt:,.0f}",
+                accent=color,
+                info=(
+                    "Gross incremental margin from the targeted segment minus the cost of sending. "
+                    "Calculated from the Qini curve at the optimal targeting share."
+                ),
+                info_id="policy-kpi-net-info",
+            ),
+            kpi_card(
+                f"${margin_per_targeted:.2f}",
+                "Avg margin per email sent",
+                "At the optimal threshold",
+                info=(
+                    "Average gross margin per email at the optimal targeting share. "
+                    "Useful for justifying spend on richer creative or paid touchpoints "
+                    "for the same audience."
+                ),
+                info_id="policy-kpi-marg-info",
+            ),
+        ]
+    )
+
+    # Sweep the Qini grid and plot net contribution vs fraction targeted, with
+    # the optimal point marked and a verdict below the chart.
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=qini_xd,
+            y=net_contribution,
+            mode="lines",
+            line=dict(color=color, width=2),
+            fill="tozeroy",
+            fillcolor=hex_to_rgba(color, 0.12),
+            name="Net contribution",
+            hovertemplate=(
+                "Target top %{x:.0%}<br>"
+                "Net contribution: $%{y:,.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=qini_xd,
+            y=gross_contribution,
+            mode="lines",
+            line=dict(color=MUTED, width=1, dash="dot"),
+            name=f"Gross margin (×{margin:.0%})",
+            hovertemplate="Target top %{x:.0%}<br>Gross margin: $%{y:,.0f}<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=qini_xd,
+            y=-total_cost,
+            mode="lines",
+            line=dict(color=DANGER, width=1, dash="dot"),
+            name="Send cost",
+            hovertemplate="Target top %{x:.0%}<br>Cost: −$%{y:,.0f}<extra></extra>",
+        )
+    )
+    if 0 < p_opt < 1:
+        fig.add_vline(
+            x=p_opt,
+            line_color=SUCCESS,
+            line_dash="dash",
+            line_width=1.5,
+            annotation_text=f"Optimal: top {p_opt:.0%}",
+            annotation_position="top right",
+            annotation_font_color=SUCCESS,
+        )
+    fig.add_hline(y=0, line_color=BORDER, line_width=1)
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        title=f"Targeting Policy Curve — {arm_label} ({model.upper()}-Learner)",
+        xaxis=dict(title="Fraction of list targeted", tickformat=".0%"),
+        yaxis_title="Net incremental contribution ($)",
+        margin=dict(t=50, b=80),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+        annotations=[
+            dict(
+                x=0.5,
+                y=-0.42,
+                xref="paper",
+                yref="paper",
+                text=verdict,
+                showarrow=False,
+                font=dict(size=11, color=verdict_color),
+                xanchor="center",
+            )
+        ],
+    )
+    return kpis, fig
+
+
 def toggle_method_tab4(n, is_open):
     return not is_open
 
@@ -274,6 +468,14 @@ def register_uplift_callbacks(app):
         Input("uplift-arm-selector", "value"),
         Input("uplift-model-selector", "value"),
     )(update_uplift)
+    app.callback(
+        Output("policy-kpi-cards", "children"),
+        Output("policy-curve", "figure"),
+        Input("uplift-arm-selector", "value"),
+        Input("uplift-model-selector", "value"),
+        Input("policy-cost", "value"),
+        Input("policy-margin", "value"),
+    )(update_policy)
     app.callback(
         Output("method-collapse-tab4", "is_open"),
         Input("method-btn-tab4", "n_clicks"),

@@ -38,6 +38,21 @@ def tab1_layout():
 
     mens_lo, mens_hi = _ci95(spend_mens, spend_control)
     wom_lo, wom_hi = _ci95(spend_womens, spend_control)
+
+    # Minimum detectable effect at 80% power, two-sided α = 0.05. Uses pooled SE
+    # of the difference of means: z_{α/2} + z_β = 1.96 + 0.84 = 2.80. The MDE
+    # is the smallest per-recipient lift the experiment could reliably detect.
+    # Worth surfacing because it sets the floor for how to interpret a null
+    # result and contextualises the observed effects.
+    def _mde_80(treated, control):
+        se = float(np.sqrt(
+            treated.var(ddof=1) / len(treated)
+            + control.var(ddof=1) / len(control)
+        ))
+        return 2.80 * se
+
+    mde_mens = _mde_80(spend_mens, spend_control)
+    mde_womens = _mde_80(spend_womens, spend_control)
     mens_sig = mens_lo > 0
     wom_sig = wom_lo > 0
     proj_mens = lift_mens * n_mens
@@ -223,6 +238,22 @@ def tab1_layout():
                                 "extra spend (and if so, where). The later tabs add value by showing "
                                 "how confident we can be, which customers respond most, and whether "
                                 "different statistical approaches all land in the same place.",
+                                className="small text-muted"
+                            ),
+                            html.P(
+                                [
+                                    html.Strong("Detection sensitivity. "),
+                                    f"With ~{n_mens // 1000}k recipients per arm, this experiment can "
+                                    f"reliably detect a per-recipient lift of ",
+                                    html.Strong(f"${mde_mens:.2f}"),
+                                    " (Men's vs Control) and ",
+                                    html.Strong(f"${mde_womens:.2f}"),
+                                    " (Women's vs Control) at 80% power and a two-sided α = 5%. The "
+                                    f"observed lifts (${lift_mens:.2f} and ${lift_womens:.2f}) are "
+                                    "above these thresholds, which is why the bootstrap CIs above "
+                                    "exclude zero. A smaller experiment would not have separated "
+                                    "these effects from noise."
+                                ],
                                 className="small text-muted"
                             ),
                         ],

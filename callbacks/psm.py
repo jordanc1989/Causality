@@ -14,14 +14,17 @@ def update_psm(arm):
     arm_color = MENS_COLOUR if arm == "mens" else WOMENS_COLOUR
 
     att_pt = p.get("att_point", float("nan"))
-    ci_lo = p.get("att_ci_lo", float("nan"))
-    ci_hi = p.get("att_ci_hi", float("nan"))
+    # Default to matched-pair (Abadie-Imbens style) CI when available — the
+    # nonparametric bootstrap is inconsistent for NN matching, so we report it
+    # only as a sensitivity band lower in the page.
+    ci_lo = p.get("att_ci_lo_matched", p.get("att_ci_lo", float("nan")))
+    ci_hi = p.get("att_ci_hi_matched", p.get("att_ci_hi", float("nan")))
     att_ok = bool(np.isfinite(att_pt))
     ci_ok = bool(np.isfinite(ci_lo) and np.isfinite(ci_hi))
     ci_str = (
-        f"95% CI: ${ci_lo:.2f} – ${ci_hi:.2f}"
+        f"95% CI: ${ci_lo:.2f} – ${ci_hi:.2f} (matched-pair SE)"
         if ci_ok
-        else "95% CI unavailable (insufficient bootstrap samples)"
+        else "95% CI unavailable"
     )
     ps_dist = p.get("avg_logit_ps_distance", p.get("avg_ps_distance"))
     cal_w = p.get("caliper_width")
@@ -180,29 +183,78 @@ def update_psm(arm):
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
     )
 
-    if att_ok and ci_ok:
-        bar_y = [att_pt, ci_lo, ci_hi]
-        bar_text = [f"${v:.2f}" for v in bar_y]
-    else:
-        bar_y = [0.0, 0.0, 0.0]
-        bar_text = ["—", "—", "—"]
+    # Side-by-side comparison: matched-pair analytical CI (default, defensible)
+    # vs the rematch bootstrap CI (sensitivity stress test). The two should
+    # roughly agree if the bootstrap behaviour is well-behaved on this data.
+    boot_lo = p.get("att_ci_lo", float("nan"))
+    boot_hi = p.get("att_ci_hi", float("nan"))
+    pair_lo = p.get("att_ci_lo_matched", float("nan"))
+    pair_hi = p.get("att_ci_hi_matched", float("nan"))
+    has_pair = bool(np.isfinite(pair_lo) and np.isfinite(pair_hi))
+    has_boot = bool(np.isfinite(boot_lo) and np.isfinite(boot_hi))
 
-    stats_fig = go.Figure(
-        go.Bar(
-            x=["ATT estimate", "CI lower", "CI upper"],
-            y=bar_y,
-            marker_color=[arm_color, BORDER, BORDER],
-            text=bar_text,
-            textposition="outside",
-            textfont=dict(color=TEXT),
-            hovertemplate="%{x}: $%{y:.2f}<extra></extra>",
+    stats_fig = go.Figure()
+    if att_ok:
+        stats_fig.add_trace(
+            go.Scatter(
+                x=["ATT (matched-pair CI)"],
+                y=[att_pt],
+                mode="markers+text",
+                marker=dict(color=arm_color, size=14),
+                error_y=(
+                    dict(
+                        type="data",
+                        symmetric=False,
+                        array=[pair_hi - att_pt],
+                        arrayminus=[att_pt - pair_lo],
+                        color=arm_color,
+                        thickness=2,
+                        width=8,
+                    )
+                    if has_pair
+                    else None
+                ),
+                text=[f"${att_pt:.2f}"],
+                textposition="top center",
+                hovertemplate=(
+                    "ATT: $%{y:.2f}"
+                    + (f"<br>95% CI: ${pair_lo:.2f} – ${pair_hi:.2f}" if has_pair else "")
+                    + "<extra></extra>"
+                ),
+                name="Matched-pair SE",
+            )
         )
-    )
+    if att_ok and has_boot:
+        stats_fig.add_trace(
+            go.Scatter(
+                x=["ATT (rematch-bootstrap band)"],
+                y=[att_pt],
+                mode="markers+text",
+                marker=dict(color=BORDER, size=14),
+                error_y=dict(
+                    type="data",
+                    symmetric=False,
+                    array=[boot_hi - att_pt],
+                    arrayminus=[att_pt - boot_lo],
+                    color=BORDER,
+                    thickness=2,
+                    width=8,
+                ),
+                text=[f"${att_pt:.2f}"],
+                textposition="top center",
+                hovertemplate=(
+                    f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f} – ${boot_hi:.2f}<extra></extra>"
+                ),
+                name="Rematch bootstrap (sensitivity)",
+            )
+        )
+    stats_fig.add_hline(y=0, line_color=BORDER, line_dash="dot")
     stats_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title="ATT with stress-test confidence band (200 rematch bootstraps)",
+        title="ATT estimate — analytical CI vs bootstrap sensitivity band",
         yaxis_title="Effect on spend ($)",
-        margin=dict(t=50, b=30)
+        showlegend=False,
+        margin=dict(t=50, b=30),
     )
 
     return kpis, ps_fig, love_fig, stats_fig

@@ -65,6 +65,96 @@ def tab4_layout():
                 ],
                 className="mb-3"
             ),
+            dbc.Card(
+                dbc.CardBody(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Div(
+                                            "Targeting Policy",
+                                            style={
+                                                **SECTION_HEADER_STYLE,
+                                                "borderBottom": "none",
+                                                "paddingBottom": 0,
+                                                "marginBottom": "0.3rem",
+                                                "display": "block",
+                                            },
+                                        ),
+                                        html.Div(
+                                            "Combine the uplift ranking with send cost and gross margin "
+                                            "to find the percentage of the list worth mailing. The optimal "
+                                            "point maximises net incremental contribution.",
+                                            className="small text-muted mb-3",
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    [
+                                                        html.Label(
+                                                            "Send cost per email",
+                                                            className="small text-muted",
+                                                        ),
+                                                        dbc.InputGroup(
+                                                            [
+                                                                dbc.InputGroupText("$", className="dashboard-input-group-text"),
+                                                                dbc.Input(
+                                                                    id="policy-cost",
+                                                                    type="number",
+                                                                    min=0,
+                                                                    step=0.01,
+                                                                    value=0.05,
+                                                                    debounce=True,
+                                                                    className="dashboard-input",
+                                                                ),
+                                                            ],
+                                                            size="sm",
+                                                        ),
+                                                    ],
+                                                    md=6,
+                                                ),
+                                                dbc.Col(
+                                                    [
+                                                        html.Label(
+                                                            "Gross margin on incremental spend",
+                                                            className="small text-muted",
+                                                        ),
+                                                        dbc.InputGroup(
+                                                            [
+                                                                dbc.Input(
+                                                                    id="policy-margin",
+                                                                    type="number",
+                                                                    min=0,
+                                                                    max=1,
+                                                                    step=0.05,
+                                                                    value=0.40,
+                                                                    debounce=True,
+                                                                    className="dashboard-input",
+                                                                ),
+                                                                dbc.InputGroupText("(0-1)", className="dashboard-input-group-text"),
+                                                            ],
+                                                            size="sm",
+                                                        ),
+                                                    ],
+                                                    md=6,
+                                                ),
+                                            ],
+                                            className="g-2",
+                                        ),
+                                    ],
+                                    md=4,
+                                ),
+                                dbc.Col(html.Div(id="policy-kpi-cards"), md=8),
+                            ],
+                            className="g-3 mb-3",
+                        ),
+                        dcc.Graph(id="policy-curve", config=GRAPH_CONFIG),
+                    ]
+                ),
+                style={**CARD_STYLE, "borderLeft": f"3px solid {ACCENT}"},
+                className="dashboard-card mb-4",
+            ),
             methodology_collapse(
                 "tab4",
                 [
@@ -102,6 +192,31 @@ def tab4_layout():
                         "above it is the value the ranking adds. The decile chart bucketed view "
                         "carries error bars from a within-decile bootstrap. A model with real "
                         "targeting value should show higher lift in the top deciles than the bottom."
+                    ),
+                    html.P(
+                        [
+                            html.Strong("Is the AUUC real? "),
+                            "The Qini chart shows a permutation p-value alongside the AUUC. "
+                            "It comes from shuffling the treatment labels 500 times while keeping "
+                            "the predicted ranking fixed, then asking how often the random AUUC "
+                            "reaches the observed one. Small p means the ranking is picking out "
+                            "real responders rather than coincidence. This is a refit-free test, "
+                            "so it conditions on the trained model — it's the right null for "
+                            "\"does this ranking work?\" rather than \"would a fresh model on "
+                            "different data also find a ranking?\""
+                        ]
+                    ),
+                    html.P(
+                        [
+                            html.Strong("Decile CI caveat. "),
+                            "The error bars come from resampling treated and control within each "
+                            "fixed decile. That captures within-decile sampling noise but ",
+                            html.Em("not"),
+                            " uncertainty in the decile boundaries themselves — those boundaries "
+                            "depend on the predicted CATE, which is itself noisy. A fully honest "
+                            "CI would bootstrap the entire fit → rank → decile loop. Read these "
+                            "intervals as a lower bound on the true uncertainty."
+                        ]
                     ),
                     html.P(
                         "Feature importance is measured by shuffling one feature at a time and "

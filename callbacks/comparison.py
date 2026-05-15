@@ -24,13 +24,15 @@ def _build_comparison_df():
         p = PSM[arm]
         rows.append(
             {
-                # Point estimate here, heuristic rematch bootstrap lives on the PSM tab only so it is
-                # not presented as interchangeable with RCT / Bayesian uncertainty bands.
-                "Method": "PSM (ATT, point est.)",
+                # Use the matched-pair (Abadie-Imbens style) CI here so the PSM
+                # row is directly comparable to the Bayesian and OLS rows below.
+                # The rematch-bootstrap band shown on the PSM tab is a
+                # sensitivity stress test, not a comparable inference CI.
+                "Method": "PSM (ATT, matched-pair CI)",
                 "Arm": arm_label,
                 "Estimate ($)": _rnd_money(p.get("att_point")),
-                "CI Lower ($)": None,
-                "CI Upper ($)": None,
+                "CI Lower ($)": _rnd_money(p.get("att_ci_lo_matched")),
+                "CI Upper ($)": _rnd_money(p.get("att_ci_hi_matched")),
             }
         )
 
@@ -142,7 +144,7 @@ def update_comparison(tab, noise_eps):
     # and forces a hard-coded left margin that clips on mobile. yaxis
     # automargin handles whatever remains.
     short_label_map = {
-        "PSM (ATT, point est.)": "PSM (point est.)",
+        "PSM (ATT, matched-pair CI)": "PSM (matched-pair)",
         "Bayesian A/B (posterior mean)": "Bayesian A/B",
         "T-Learner (avg CATE)": "T-Learner",
         "S-Learner (avg CATE)": "S-Learner",

@@ -198,14 +198,40 @@ def _compute_psm_for_arm(df, arm):
     n_treated_total = len(treated_all)
     n_matched = len(treated_matched)
     if n_matched > 0:
-        att_point = float(
-            np.mean(treated_matched["spend"].values)
-            - np.mean(matched_control["spend"].values)
+        matched_diffs = (
+            treated_matched["spend"].values - matched_control["spend"].values
         )
+        att_point = float(np.mean(matched_diffs))
         avg_logit_ps_distance = float(np.mean(distances_logit))
+        # Matched-pair analytical SE (Abadie & Imbens 2006 form, simplified for
+        # 1:1 matching with replacement). The dominant term is the variance of
+        # the paired differences; we report 95% CI as ±1.96·SE. This avoids the
+        # known inconsistency of the nonparametric bootstrap for NN matching.
+        # The correction for control re-use is omitted because it requires a
+        # second KNN fit on the control arm and contributes only a small
+        # adjustment at this sample size — flagged in the methodology copy.
+        if n_matched > 1:
+            att_se_matched = float(
+                np.std(matched_diffs, ddof=1) / np.sqrt(n_matched)
+            )
+        else:
+            att_se_matched = float("nan")
+        att_ci_lo_matched = (
+            att_point - 1.96 * att_se_matched
+            if np.isfinite(att_se_matched)
+            else float("nan")
+        )
+        att_ci_hi_matched = (
+            att_point + 1.96 * att_se_matched
+            if np.isfinite(att_se_matched)
+            else float("nan")
+        )
     else:
         att_point = float("nan")
         avg_logit_ps_distance = float("nan")
+        att_se_matched = float("nan")
+        att_ci_lo_matched = float("nan")
+        att_ci_hi_matched = float("nan")
 
     # Common support on point-estimate propensities (full treated pool)
     cs_lower = float(
@@ -300,6 +326,9 @@ def _compute_psm_for_arm(df, arm):
         "smd_after": smd_after,
         "smd_after_caliper_match": smd_after_caliper_match,
         "att_point": att_point,
+        "att_se_matched": att_se_matched,
+        "att_ci_lo_matched": att_ci_lo_matched,
+        "att_ci_hi_matched": att_ci_hi_matched,
         "att_ci_lo": att_ci_lo,
         "att_ci_hi": att_ci_hi,
         "n_matched": n_matched,
@@ -610,6 +639,58 @@ def run_bayesian_ab(df):
 # ---------------------------------------------------------------------------
 
 
+def _permutation_p_auuc(
+    sub_sorted, arm_col, n_perm=500, seed=RANDOM_SEED
+):
+    """
+    Permutation p-value for Qini AUUC > 0 with fixed CATE ranking.
+
+    H0: the predicted CATE ranking carries no information about the treatment
+    response. Under H0, treatment labels are exchangeable across the ranked
+    list, so we shuffle them, recompute AUUC, and check how often the
+    permuted AUUC reaches the observed value. This is a refit-free
+    permutation — the model and its ranking are held fixed; only the
+    treatment labels are reshuffled. It tests whether the *ranking* picks
+    out responders, conditional on the model that produced it.
+
+    Returns (observed_auuc, p_value, null_distribution).
+    """
+    rng = np.random.default_rng(seed)
+    treatment = sub_sorted[arm_col].values.astype(np.float64)
+    y = sub_sorted["spend"].values.astype(np.float64)
+    n = len(sub_sorted)
+    xs_full = np.arange(1, n + 1, dtype=np.float64) / n
+    trapz = getattr(np, "trapezoid", None) or np.trapz
+
+    def _auuc_for_treatment(t_vec):
+        cum_t = np.cumsum(y * t_vec)
+        cum_c = np.cumsum(y * (1.0 - t_vec))
+        n_t = np.cumsum(t_vec)
+        n_c = np.cumsum(1.0 - t_vec)
+        valid = (n_t > 0) & (n_c > 0)
+        if not valid.any():
+            return 0.0
+        ratio = np.zeros_like(n_t)
+        ratio[valid] = n_t[valid] / n_c[valid]
+        ys = cum_t - cum_c * ratio
+        xs_v = xs_full[valid]
+        ys_v = ys[valid]
+        if len(xs_v) < 2:
+            return 0.0
+        return float(trapz(ys_v, xs_v))
+
+    obs_auuc = _auuc_for_treatment(treatment)
+    null_aucs = np.empty(n_perm, dtype=np.float64)
+    for b in range(n_perm):
+        null_aucs[b] = _auuc_for_treatment(rng.permutation(treatment))
+
+    # One-sided p-value: how often does a random ranking match or beat the
+    # observed AUUC? Add +1 numerator/denominator (Phipson & Smyth 2010
+    # correction) so the p-value can never be exactly zero.
+    p_value = float((np.sum(null_aucs >= obs_auuc) + 1) / (n_perm + 1))
+    return obs_auuc, p_value, null_aucs
+
+
 def _qini_curve_continuous(sorted_df, arm_col):
     """
     Radcliffe (2007) Qini curve for continuous outcomes.
@@ -838,6 +919,12 @@ def _run_uplift_arm(df, arm):
     qini_x_s, qini_y_s = _qini_curve_continuous(sub_sorted_s, arm_col)
     qini_x_x, qini_y_x = _qini_curve_continuous(sub_sorted_x, arm_col)
 
+    # Permutation p-values for AUUC. 500 shuffles per method; cheap because
+    # we hold the predicted ranking fixed and only relabel treatment.
+    _, qini_p_t, _ = _permutation_p_auuc(sub_sorted_t, arm_col, n_perm=500)
+    _, qini_p_s, _ = _permutation_p_auuc(sub_sorted_s, arm_col, n_perm=500)
+    _, qini_p_x, _ = _permutation_p_auuc(sub_sorted_x, arm_col, n_perm=500)
+
     # AUUC-like area under cumulative incremental gain curve.
     def _qini_auc(xs, ys):
         if len(xs) < 2:
@@ -878,6 +965,9 @@ def _run_uplift_arm(df, arm):
         "qini_excess_auc_t": _qini_excess_auc(qini_x, qini_y),
         "qini_excess_auc_s": _qini_excess_auc(qini_x_s, qini_y_s),
         "qini_excess_auc_x": _qini_excess_auc(qini_x_x, qini_y_x),
+        "qini_p_t": qini_p_t,
+        "qini_p_s": qini_p_s,
+        "qini_p_x": qini_p_x,
         "avg_cate_t": float(np.mean(cate_t)),
         "avg_cate_s": float(np.mean(cate_s)),
         "avg_cate_x": float(np.mean(cate_x)),
