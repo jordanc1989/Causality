@@ -3,8 +3,14 @@ from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from layouts.components import section_header, methodology_collapse
+from callbacks.ols import build_ols_figures
+
 
 def tab5_layout():
+    # OLS outputs depend only on cached `OLS` + `DF`, not on any user input,
+    # so build the figures here and embed them rather than going through a
+    # callback. Layout is lazily rendered when the user navigates to /ols.
+    coef_fig, marginal_table, mens_heat, womens_heat = build_ols_figures()
     return dbc.Container(
         [
             dbc.Row(
@@ -14,7 +20,7 @@ def tab5_layout():
                             section_header(
                                 "OLS Coefficient Plot: Treatment Effects & Interactions"
                             ),
-                            dcc.Graph(id="ols-coef-plot", config=GRAPH_CONFIG)
+                            dcc.Graph(figure=coef_fig, id="ols-coef-plot", config=GRAPH_CONFIG)
                         ]
                     ),
                 ],
@@ -25,7 +31,7 @@ def tab5_layout():
                     dbc.Col(
                         [
                             section_header("Marginal Effects by Subgroup"),
-                            html.Div(id="ols-marginal-table")
+                            html.Div(marginal_table, id="ols-marginal-table")
                         ]
                     ),
                 ],
@@ -38,8 +44,8 @@ def tab5_layout():
             ),
             dbc.Row(
                 [
-                    dbc.Col(dcc.Graph(id="ols-heatmap-mens", config=GRAPH_CONFIG), md=6),
-                    dbc.Col(dcc.Graph(id="ols-heatmap-womens", config=GRAPH_CONFIG), md=6)
+                    dbc.Col(dcc.Graph(figure=mens_heat, id="ols-heatmap-mens", config=GRAPH_CONFIG), md=6),
+                    dbc.Col(dcc.Graph(figure=womens_heat, id="ols-heatmap-womens", config=GRAPH_CONFIG), md=6)
                 ]
             ),
             methodology_collapse(

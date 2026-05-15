@@ -2,15 +2,19 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import dash
 from dash import dash_table, Output, Input, State
 from dashboard.theme import *
 from dashboard.data import OLS, DF
 from dashboard.theme import TABLE_CELL, TABLE_HEADER, TABLE_SELECTED
 
-def update_ols(tab):
-    if tab != "tab-5":
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+def build_ols_figures():
+    """Compute the OLS-tab figures from cached results.
+
+    This is intentionally a plain function, not a Dash callback: the outputs
+    only depend on the static `OLS` cache plus `DF`, so the figures can be
+    embedded directly in the page layout when the user navigates to /ols.
+    """
     coef_df = OLS["coef_df"].copy()
     subgroup_df = OLS["subgroup_df"].copy()
 
@@ -221,13 +225,8 @@ def toggle_method_tab5(n, is_open):
 
 
 def register_ols_callbacks(app):
-    app.callback(
-        Output("ols-coef-plot", "figure"),
-        Output("ols-marginal-table", "children"),
-        Output("ols-heatmap-mens", "figure"),
-        Output("ols-heatmap-womens", "figure"),
-        Input("main-tabs", "active_tab"),
-    )(update_ols)
+    # OLS figures are baked into the layout itself (see layouts/ols.py), so
+    # only the methodology-collapse toggle remains on the callback side.
     app.callback(
         Output("method-collapse-tab5", "is_open"),
         Input("method-btn-tab5", "n_clicks"),

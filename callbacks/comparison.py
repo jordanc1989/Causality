@@ -2,8 +2,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import dash
-from dash import html, dash_table, Output, Input
+from dash import html, dash_table, Output, Input, State
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from dashboard.data import PSM, BAYESIAN, UPLIFT, OLS
@@ -102,10 +101,7 @@ def _build_comparison_df():
 
     return pd.DataFrame(rows)
 
-def update_comparison(tab, noise_eps):
-    if tab != "tab-6":
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
-
+def update_comparison(noise_eps):
     noise_eps = float(noise_eps) if noise_eps is not None else 0.10
     if noise_eps < 0:
         noise_eps = 0.0
@@ -306,11 +302,13 @@ def update_comparison(tab, noise_eps):
 
 
 def register_comparison_callbacks(app):
+    # With Dash Pages, the comparison layout only mounts when the user navigates
+    # to /comparison, so the tab-active gate that used to short-circuit this
+    # callback is no longer needed.
     app.callback(
         Output("comparison-table", "children"),
         Output("forest-plot-mens", "figure"),
         Output("forest-plot-womens", "figure"),
         Output("key-takeaway-card", "children"),
-        Input("main-tabs", "active_tab"),
         Input("comparison-noise-input", "value"),
     )(update_comparison)

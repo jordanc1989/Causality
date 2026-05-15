@@ -66,7 +66,7 @@ def tab2_layout():
                             "This tab is included to show ",
                             html.Em("how the workflow would look on observational data"),
                             ", where you can't lean on random assignment. The Overview, "
-                            "Bayesian, and OLS tabs are the load-bearing estimates."
+                            "Bayesian and OLS tabs are the load-bearing estimates."
                         ]
                     ),
                     html.P(

@@ -1,12 +1,14 @@
+"""App shell: navbar (with one nav link per registered page) and a
+`dash.page_container` placeholder where the active page renders.
+
+Dash Pages handles URL → layout routing automatically; this file just defines
+the chrome and the page-link list driven by `dash.page_registry`.
+"""
+
+import dash
 import dash_bootstrap_components as dbc
-from dash import html, dcc
+from dash import html
 from dashboard.theme import ACCENT, TEXT, MUTED, BG
-from layouts.overview import tab1_layout
-from layouts.psm import tab2_layout
-from layouts.bayesian import tab3_layout
-from layouts.uplift import tab4_layout
-from layouts.ols import tab5_layout
-from layouts.comparison import tab6_layout
 
 # Inline SVG mark — a "cause → effect" node-link icon, themed for the dashboard.
 # Inlining as a data URI keeps the navbar logo self-contained (no LFS asset,
@@ -30,23 +32,26 @@ def _logo_data_uri():
     return f"data:image/svg+xml;charset=utf-8,{encoded}"
 
 
-def build_tabs():
-    # Visual ordering puts the randomisation-grounded estimators (Bayesian, OLS)
-    # before the heterogeneity / observational diagnostics (Uplift, PSM).
-    # `tab_id`s stay stable to the method they identify so callbacks and element
-    # IDs don't need to be renumbered alongside the visual order.
-    return [
-        dbc.Tab(tab1_layout(), label="1 Overview", tab_id="tab-1"),
-        dbc.Tab(tab3_layout(), label="2 Bayesian A/B", tab_id="tab-3"),
-        dbc.Tab(tab5_layout(), label="3 Multi-Arm OLS", tab_id="tab-5"),
-        dbc.Tab(tab4_layout(), label="4 Uplift / HTE", tab_id="tab-4"),
-        dbc.Tab(tab2_layout(), label="5 PSM sensitivity", tab_id="tab-2"),
-        dbc.Tab(tab6_layout(), label="6 Method Comparison", tab_id="tab-6"),
-    ]
+def _page_nav_links():
+    """Build NavLinks ordered by each page's `order` value."""
+    ordered = sorted(
+        (p for p in dash.page_registry.values() if p.get("path")),
+        key=lambda p: p.get("order", 99),
+    )
+    links = []
+    for i, page in enumerate(ordered, start=1):
+        links.append(
+            dbc.NavLink(
+                f"{i} {page['name']}",
+                href=page["relative_path"],
+                active="exact",
+                className="dashboard-nav-link",
+            )
+        )
+    return links
 
 
 def build_layout():
-    tabs = build_tabs()
     return html.Div(
         [
             dbc.Navbar(
@@ -83,7 +88,7 @@ def build_layout():
                                     },
                                 ),
                             ],
-                            style={"display": "flex", "alignItems": "center"}
+                            style={"display": "flex", "alignItems": "center"},
                         ),
                         html.Div(
                             [
@@ -108,20 +113,17 @@ def build_layout():
                 sticky="top",
             ),
             dbc.Container(
-                [
-                    dcc.Location(id="url", refresh=False),
-                    dcc.Loading(
-                        id="tabs-loading",
-                        type="circle",
-                        color=ACCENT,
-                        children=dbc.Tabs(
-                            tabs,
-                            id="main-tabs",
-                            active_tab="tab-1",
-                            className="dashboard-tabs",
-                        ),
-                    ),
-                ],
+                dbc.Nav(
+                    _page_nav_links(),
+                    pills=False,
+                    className="dashboard-tabs",
+                    id="page-nav",
+                ),
+                fluid=True,
+                className="pt-2",
+            ),
+            dbc.Container(
+                dash.page_container,
                 fluid=True,
             ),
         ],

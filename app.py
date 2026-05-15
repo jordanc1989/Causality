@@ -18,6 +18,8 @@ app = dash.Dash(
     external_stylesheets=[dbc.themes.CYBORG, GOOGLE_FONTS],
     suppress_callback_exceptions=True,
     title="Causal Inference Dashboard",
+    use_pages=True,
+    pages_folder="pages",
 )
 server = app.server
 
