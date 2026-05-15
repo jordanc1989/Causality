@@ -32,9 +32,10 @@ def tab4_layout():
                                 id="uplift-model-selector",
                                 options=[
                                     {"label": "T-Learner", "value": "t"},
-                                    {"label": "S-Learner", "value": "s"}
+                                    {"label": "S-Learner", "value": "s"},
+                                    {"label": "X-Learner", "value": "x"},
                                 ],
-                                value="t",
+                                value="x",
                                 inline=True,
                                 className="dashboard-radio-group mb-2"
                             ),
@@ -76,13 +77,23 @@ def tab4_layout():
                         "The T-Learner fits two separate models, one on the email group and one "
                         "on control, and then subtracts their predictions. The S-Learner fits a "
                         "single model with treatment as an input feature, and reads off the "
-                        "difference between predictions with treatment on and off. The two often "
-                        "disagree on individual customers, which is itself a useful signal."
+                        "difference between predictions with treatment on and off. The X-Learner "
+                        "(Künzel et al. 2019) extends the T-Learner: it imputes the missing "
+                        "counterfactual outcome for each customer, regresses those imputed "
+                        "treatment effects on covariates, and combines the two arms with a "
+                        "propensity-weighted average. X-Learner handles arm imbalance better "
+                        "than T- or S-Learners and is the recommended default in modern uplift "
+                        "practice. The three often disagree on individual customers, which is "
+                        "itself a useful signal."
                     ),
                     html.P(
-                        "Both models use 5-fold cross-fitting. Each customer's CATE comes from a "
-                        "model that never saw them during training, which keeps the estimates "
-                        "honest rather than overfit to in-sample noise."
+                        "All three models use 5-fold cross-fitting and the same tuned random "
+                        "forest base learner (depth 8, leaf size 50, feature subsampling). The "
+                        "tuning is deliberate: spend is ~99% zeros with a right-skewed positive "
+                        "tail, and the default forest will memorise individual converters. "
+                        "Each customer's CATE comes from a model that never saw them during "
+                        "training, which keeps the estimates honest rather than overfit to "
+                        "in-sample noise."
                     ),
                     html.P(
                         "The Qini curve shows how much extra revenue you'd capture if you mailed "

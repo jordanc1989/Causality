@@ -69,6 +69,15 @@ def _build_comparison_df():
                 "CI Upper ($)": None
             }
         )
+        rows.append(
+            {
+                "Method": "X-Learner (avg CATE)",
+                "Arm": arm_label,
+                "Estimate ($)": round(u.get("avg_cate_x", float("nan")), 2),
+                "CI Lower ($)": None,
+                "CI Upper ($)": None
+            }
+        )
 
     # OLS: report the *population-weighted ATE* (average marginal effect over
     # the sample's actual covariate distribution) with its HC3 delta-method CI.
@@ -137,6 +146,7 @@ def update_comparison(tab, noise_eps):
         "Bayesian A/B (posterior mean)": "Bayesian A/B",
         "T-Learner (avg CATE)": "T-Learner",
         "S-Learner (avg CATE)": "S-Learner",
+        "X-Learner (avg CATE)": "X-Learner",
         "OLS (avg marginal effect, HC3)": "OLS (HC3)",
     }
 

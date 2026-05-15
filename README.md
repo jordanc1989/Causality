@@ -5,11 +5,10 @@
 [![uv](https://img.shields.io/badge/managed%20by-uv-DE5FE9.svg)](https://docs.astral.sh/uv/)
 [![Dash](https://img.shields.io/badge/Dash-4.x-2bb6f6.svg?logo=plotly&logoColor=white)](https://dash.plotly.com/)
 [![PyMC](https://img.shields.io/badge/PyMC-6.x-1f77b4.svg)](https://www.pymc.io/)
-[![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker&logoColor=white)](Dockerfile)
 
 # Causal Inference Dashboard
 
-Interactive Dash app for comparing causal measurement approaches on a real randomised marketing experiment (Hillstrom, 2008).
+Interactive Dash app for comparing a suite of causal measurement approaches using a publicly available randomised marketing experiment as an example (Hillstrom, 2008).
 
 **Live demo:** [Hugging Face Space](https://jordancheney89-causality.hf.space/)
 
@@ -18,7 +17,7 @@ This project provides a dashboard to:
 - inspect heterogeneity and targeting value
 - show where each method agrees and disagrees, and what assumptions drive the result
 
-## Why This Project Matters
+## What this dashboard shows
 
 Teams might ask two different questions:
 - "Did the campaign work on average?" (causal effect / ATE)
@@ -33,8 +32,8 @@ This dashboard puts both views side-by-side so the methodological choices and an
 | 1 | Overview | Dataset summary, arm balance, headline effects |
 | 2 | Bayesian A/B (PyMC hurdle model) | Probabilistic effect estimation with posterior uncertainty |
 | 3 | Multi-Arm OLS with interactions | Precision-adjusted average effects and subgroup patterns |
-| 4 | Uplift / HTE (T-Learner, S-Learner) | Ranking customers by estimated incremental value |
-| 5 | PSM sensitivity (propensity matching + caliper) | Observational-style diagnostic, matched ATT on pruned cohort vs control |
+| 4 | Uplift / HTE (T-Learner, S-Learner, X-Learner) | Ranking customers by estimated incremental value |
+| 5 | PSM (propensity matching + caliper) | Pedagogical: the workflow you'd use on observational data, run on this RCT for comparison |
 | 6 | Method Comparison | Side-by-side estimate reconciliation and takeaway |
 
 ## Dataset
@@ -48,7 +47,7 @@ Randomised experiment across ~64,000 customers:
 
 ## Quick Start
 
-Dependencies are managed with **[uv](https://docs.astral.sh/uv/)** ([`pyproject.toml`](pyproject.toml) + [`uv.lock`](uv.lock)).
+Dependencies are managed with **[uv](https://docs.astral.sh/uv/)**.
 
 ### Requirements
 - [uv](https://docs.astral.sh/uv/getting-started/) installed
@@ -67,7 +66,7 @@ This creates `.venv` (if needed) and installs the locked dependency set.
 ### Run
 
 ```bash
-uv run python app.py
+uv run app.py
 ```
 
 Open `http://localhost:8050`.
@@ -87,17 +86,6 @@ Open `http://localhost:8050`.
 **Live Space:** [huggingface.co/spaces/jordancheney89/causality](https://huggingface.co/spaces/jordancheney89/causality)
 
 This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Spaces SDK](https://huggingface.co/docs/hub/spaces-sdks-docker)
-
-
-## Reproducibility Notes
-
-- If you change estimation logic in `causal_utils.py`, delete `.cache/results.pkl` or use `USE_CACHE = False`, then rerun the app once.
-- **`uv.lock`** pins transitive versions, run `uv lock` after changing dependencies in `pyproject.toml`.
-
-### Deployment notes
-
-The live app is deployed on Hugging Face Spaces using Docker.  
-Precomputed model outputs are stored in `.cache/results.pkl` so the app can start quickly without rerunning the Bayesian, PSM and uplift models on every container start.
 
 ## Methodology Notes and Caveats
 

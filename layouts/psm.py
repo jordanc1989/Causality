@@ -59,6 +59,18 @@ def tab2_layout():
                 [
                     html.P(
                         [
+                            html.Strong("Pedagogical framing. "),
+                            "On a randomised experiment, propensity matching is not a separate "
+                            "estimator — it produces a noisier version of the simple "
+                            "difference-in-means and discards observations along the way. "
+                            "This tab is included to show ",
+                            html.Em("how the workflow would look on observational data"),
+                            ", where you can't lean on random assignment. The Overview, "
+                            "Bayesian, and OLS tabs are the load-bearing estimates."
+                        ]
+                    ),
+                    html.P(
+                        [
                             html.Strong("How the matching works. "),
                             "A logistic regression on nine pre-treatment attributes (recency, history, "
                             "the two catalogue-interest flags, two zip-type flags, two channel flags, and "
@@ -77,12 +89,16 @@ def tab2_layout():
                         "the matching 200 times on resampled data. Each replicate redraws treated and "
                         "control separately at their observed sizes so the arm ratio stays fixed. Read "
                         "the band as a stress test on the matching choices, not as a textbook nearest-"
-                        "neighbour confidence interval."
+                        "neighbour confidence interval — the standard bootstrap is known to be "
+                        "inconsistent for nearest-neighbour matching (Abadie & Imbens 2008)."
                     ),
                     html.P(
                         "The Love plot compares every attribute in the email arm against the control arm "
                         "twice. Once across the full groups (before pairing) and once across just the "
-                        "matched pairs (after). Closer to zero means more comparable groups."
+                        "matched pairs (after). In an observational study, a big drop from before to "
+                        "after is the headline result. On this randomised dataset, the ",
+                        html.Em("before"),
+                        " plot is already near zero — that's the randomisation working as expected."
                     ),
                 ],
             ),

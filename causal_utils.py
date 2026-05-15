@@ -646,9 +646,66 @@ def _qini_curve_continuous(sorted_df, arm_col):
     return xs, ys
 
 
+def _make_rf():
+    """
+    Random forest hyperparameters tuned for ~99%-zero, right-skewed spend.
+
+    The defaults (`n_estimators=100`, no depth cap, `min_samples_leaf=1`) memorise
+    individual converters because positive spend is rare. We cap depth, force
+    leaves to span many customers, and subsample features per split so trees
+    decorrelate. This trades some in-sample fit for honest CATE generalisation.
+    """
+    from sklearn.ensemble import RandomForestRegressor
+
+    return RandomForestRegressor(
+        n_estimators=200,
+        max_depth=8,
+        min_samples_leaf=50,
+        max_features=0.5,
+        random_state=RANDOM_SEED,
+        n_jobs=-1,
+    )
+
+
+def _x_learner_predict(X_train_df, y_train, t_train, X_test_df):
+    """
+    X-Learner CATE (Künzel et al. 2019).
+
+    Stage 1: fit outcome models μ̂₀, μ̂₁ on control and treated arms.
+    Stage 2: impute counterfactual treatment effects on training data:
+        D̃¹_i = Y_i - μ̂₀(X_i)   for treated i
+        D̃⁰_i = μ̂₁(X_i) - Y_i   for control i
+    Stage 3: fit τ̂₁, τ̂₀ regressing the imputed effects on covariates,
+    then combine with the propensity-weighted average
+        τ̂(x) = e * τ̂₀(x) + (1 - e) * τ̂₁(x)
+    where e is the observed treated share (≈0.5 for this RCT).
+
+    X-Learner handles arm imbalance better than T- and S-Learners because
+    the minority arm's τ estimate gets up-weighted via the propensity weights.
+    """
+    treated = t_train == 1
+    control = t_train == 0
+
+    mu0 = _make_rf()
+    mu0.fit(X_train_df.loc[control], y_train[control])
+    mu1 = _make_rf()
+    mu1.fit(X_train_df.loc[treated], y_train[treated])
+
+    d1 = y_train[treated] - mu0.predict(X_train_df.loc[treated])
+    d0 = mu1.predict(X_train_df.loc[control]) - y_train[control]
+
+    tau1 = _make_rf()
+    tau1.fit(X_train_df.loc[treated], d1)
+    tau0 = _make_rf()
+    tau0.fit(X_train_df.loc[control], d0)
+
+    e = float(treated.mean())
+    return e * tau0.predict(X_test_df) + (1.0 - e) * tau1.predict(X_test_df)
+
+
 def _run_uplift_arm(df, arm):
     """
-    Run T-Learner and S-Learner for one arm vs control using scikit-uplift.
+    Run T-Learner, S-Learner, and X-Learner for one arm vs control.
 
     Uses 5-fold *stratified* cross-fitting on the treatment indicator so every
     fold has both arms represented, which matters for small-sample fold fits.
@@ -666,7 +723,6 @@ def _run_uplift_arm(df, arm):
     `n_perm_repeats` times per (fold, feature) to reduce shuffle noise.
     """
     from sklift.models import TwoModels, SoloModel
-    from sklearn.ensemble import RandomForestRegressor
     from sklearn.model_selection import StratifiedKFold
 
     arm_col = f"is_{arm}"
@@ -680,6 +736,7 @@ def _run_uplift_arm(df, arm):
     kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
     cate_t = np.zeros(len(sub))
     cate_s = np.zeros(len(sub))
+    cate_x = np.zeros(len(sub))
     perm_imp_accum = np.zeros(len(COVARIATES))
     n_perm_repeats = 5
     perm_rng = np.random.default_rng(RANDOM_SEED)
@@ -694,12 +751,8 @@ def _run_uplift_arm(df, arm):
 
         # T-Learner
         t_model = TwoModels(
-            estimator_trmnt=RandomForestRegressor(
-                n_estimators=100, random_state=RANDOM_SEED
-            ),
-            estimator_ctrl=RandomForestRegressor(
-                n_estimators=100, random_state=RANDOM_SEED
-            ),
+            estimator_trmnt=_make_rf(),
+            estimator_ctrl=_make_rf(),
             method="vanilla",
         )
         t_model.fit(X_train_df, y_train, t_train)
@@ -718,11 +771,14 @@ def _run_uplift_arm(df, arm):
 
         # S-Learner
         s_model = SoloModel(
-            estimator=RandomForestRegressor(n_estimators=100, random_state=RANDOM_SEED),
+            estimator=_make_rf(),
             method="treatment_interaction",
         )
         s_model.fit(X_train_df, y_train, t_train)
         cate_s[test_idx] = s_model.predict(X_test_df)
+
+        # X-Learner
+        cate_x[test_idx] = _x_learner_predict(X_train_df, y_train, t_train, X_test_df)
 
     feat_imp_diff = perm_imp_accum / kf.get_n_splits()
     # Normalise to sum to 1 for display consistency with the old chart
@@ -732,6 +788,7 @@ def _run_uplift_arm(df, arm):
 
     sub["cate_t"] = cate_t
     sub["cate_s"] = cate_s
+    sub["cate_x"] = cate_x
 
     def _decile_lift(sub_sorted, n_boot=500):
         """
@@ -771,12 +828,15 @@ def _run_uplift_arm(df, arm):
 
     sub_sorted_t = sub.sort_values("cate_t", ascending=False)
     sub_sorted_s = sub.sort_values("cate_s", ascending=False)
+    sub_sorted_x = sub.sort_values("cate_x", ascending=False)
 
     decile_lift = _decile_lift(sub_sorted_t)
     decile_lift_s = _decile_lift(sub_sorted_s)
+    decile_lift_x = _decile_lift(sub_sorted_x)
 
     qini_x, qini_y = _qini_curve_continuous(sub_sorted_t, arm_col)
     qini_x_s, qini_y_s = _qini_curve_continuous(sub_sorted_s, arm_col)
+    qini_x_x, qini_y_x = _qini_curve_continuous(sub_sorted_x, arm_col)
 
     # AUUC-like area under cumulative incremental gain curve.
     def _qini_auc(xs, ys):
@@ -800,20 +860,27 @@ def _run_uplift_arm(df, arm):
         "arm": arm,
         "cate_t": cate_t,
         "cate_s": cate_s,
+        "cate_x": cate_x,
         "feat_imp": dict(zip(COVARIATES, feat_imp_norm)),
         "feat_imp_label": "Heterogeneity importance (CATE permutation, T-Learner)",
         "decile_lift": decile_lift,
         "decile_lift_s": decile_lift_s,
+        "decile_lift_x": decile_lift_x,
         "qini_x": qini_x,
         "qini_y": qini_y,
         "qini_x_s": qini_x_s,
         "qini_y_s": qini_y_s,
+        "qini_x_x": qini_x_x,
+        "qini_y_x": qini_y_x,
         "qini_auc_t": _qini_auc(qini_x, qini_y),
         "qini_auc_s": _qini_auc(qini_x_s, qini_y_s),
+        "qini_auc_x": _qini_auc(qini_x_x, qini_y_x),
         "qini_excess_auc_t": _qini_excess_auc(qini_x, qini_y),
         "qini_excess_auc_s": _qini_excess_auc(qini_x_s, qini_y_s),
+        "qini_excess_auc_x": _qini_excess_auc(qini_x_x, qini_y_x),
         "avg_cate_t": float(np.mean(cate_t)),
-        "avg_cate_s": float(np.mean(cate_s))
+        "avg_cate_s": float(np.mean(cate_s)),
+        "avg_cate_x": float(np.mean(cate_x)),
     }
 
 

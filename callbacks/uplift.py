@@ -11,8 +11,9 @@ from layouts.components import kpi_card
 def update_uplift(arm, model):
     u = UPLIFT[arm]
     arm_label = "Men's Email" if arm == "mens" else "Women's Email"
-    cate = u["cate_t"] if model == "t" else u["cate_s"]
-    model_label = "T-Learner" if model == "t" else "S-Learner"
+    cate_key = {"t": "cate_t", "s": "cate_s", "x": "cate_x"}[model]
+    cate = u[cate_key]
+    model_label = {"t": "T-Learner", "s": "S-Learner", "x": "X-Learner"}[model]
     color = MENS_COLOUR if arm == "mens" else WOMENS_COLOUR
 
     kpis = html.Div(
@@ -98,9 +99,9 @@ def update_uplift(arm, model):
         margin=dict(t=50, b=30, l=130),
     )
 
-    decile_key = "decile_lift_s" if model == "s" else "decile_lift"
-    qini_x_key = "qini_x_s" if model == "s" else "qini_x"
-    qini_y_key = "qini_y_s" if model == "s" else "qini_y"
+    decile_key = {"t": "decile_lift", "s": "decile_lift_s", "x": "decile_lift_x"}[model]
+    qini_x_key = {"t": "qini_x", "s": "qini_x_s", "x": "qini_x_x"}[model]
+    qini_y_key = {"t": "qini_y", "s": "qini_y_s", "x": "qini_y_x"}[model]
     dec_df = pd.DataFrame(u.get(decile_key, u["decile_lift"]))
     qini_xd = u.get(qini_x_key, u["qini_x"])
     qini_yd = u.get(qini_y_key, u["qini_y"])
@@ -208,8 +209,12 @@ def update_uplift(arm, model):
             hoverinfo="skip",
         )
     )
-    qini_auc_key = "qini_auc_s" if model == "s" else "qini_auc_t"
-    qini_excess_key = "qini_excess_auc_s" if model == "s" else "qini_excess_auc_t"
+    qini_auc_key = {"t": "qini_auc_t", "s": "qini_auc_s", "x": "qini_auc_x"}[model]
+    qini_excess_key = {
+        "t": "qini_excess_auc_t",
+        "s": "qini_excess_auc_s",
+        "x": "qini_excess_auc_x",
+    }[model]
     qini_auc = u.get(qini_auc_key, 0.0)
     qini_excess = u.get(qini_excess_key, 0.0)
     qini_fig.update_layout(
@@ -228,11 +233,12 @@ def update_uplift(arm, model):
     ]:
         avg_t = UPLIFT[a]["avg_cate_t"]
         avg_s = UPLIFT[a]["avg_cate_s"]
+        avg_x = UPLIFT[a].get("avg_cate_x", float("nan"))
         seg_fig.add_trace(
             go.Bar(
                 name=lbl,
-                x=["T-Learner", "S-Learner"],
-                y=[avg_t, avg_s],
+                x=["T-Learner", "S-Learner", "X-Learner"],
+                y=[avg_t, avg_s, avg_x],
                 marker_color=col,
                 opacity=0.85,
                 hovertemplate="%{x}<br>Avg CATE: $%{y:.2f}<extra>%{fullData.name}</extra>",

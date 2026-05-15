@@ -2,7 +2,7 @@
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from dash import html, Output, Input, State, ctx
+from dash import html, Output, Input, State
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from dashboard.theme import hex_to_rgba
@@ -186,7 +186,7 @@ def update_bayesian(pair_key, rope_val):
 
     return kpis, posterior_fig, rope_card
 
-def toggle_trace(n, is_open, pair_key):
+def update_trace_figure(pair_key):
     b = BAYESIAN[pair_key]
     delta_chains = b["delta_chains"]
 
@@ -233,13 +233,10 @@ def toggle_trace(n, is_open, pair_key):
             )
         ],
     )
-    return not is_open, fig
+    return fig
 
-def toggle_method_tab3(n, is_open):
-    return not is_open
 
-def toggle_ppc(n, pair_key, is_open):
-    new_is_open = not is_open if ctx.triggered_id == "ppc-btn" else is_open
+def update_ppc_figure(pair_key):
     b = BAYESIAN[pair_key]
     lab_a = b["arm_a_label"]
     lab_b = b["arm_b_label"]
@@ -253,7 +250,7 @@ def toggle_ppc(n, pair_key, is_open):
             height=420,
             margin=dict(t=60, b=50),
         )
-        return new_is_open, fig
+        return fig
 
     nd = pack.get("ppc_n_draws", "—")
     nf = pack.get("ppc_n_fake_per_draw", "—")
@@ -289,6 +286,19 @@ def toggle_ppc(n, pair_key, is_open):
     ocrb = b.get("obs_conv_rate_b")
     pcrma = pack.get("ppc_conv_rep_mean_a")
     pcrmb = pack.get("ppc_conv_rep_mean_b")
+
+    # Clip the spend / amount x-axes to the 99th percentile of observed positive
+    # spend. The raw positive-spend distribution has a long right tail that
+    # squashes the bulk of the data into a thin spike at the left, so the
+    # row-1 zero spike + row-2 mass become unreadable. Clipping gives the user
+    # a view of the body and the model-vs-observed fit there.
+    _pos_pool = np.concatenate([
+        a for a in (obs_pa, obs_pb) if a is not None and len(a) > 0
+    ]) if any(a is not None and len(a) > 0 for a in (obs_pa, obs_pb)) else None
+    if _pos_pool is not None and len(_pos_pool) > 0:
+        spend_xmax = float(np.percentile(_pos_pool, 99))
+    else:
+        spend_xmax = 300.0
 
     def _add_hist_pair(row, col, obs_x, ppc_x, obs_name, ppc_name, color_o, color_p):
         if obs_x is None or ppc_x is None or len(obs_x) == 0 or len(ppc_x) == 0:
@@ -356,7 +366,7 @@ def toggle_ppc(n, pair_key, is_open):
             line_dash="dash",
             line_color=TEXT,
             annotation_text=f"Observed {ocra * 100:.2f}%",
-            annotation_position="top",
+            annotation_position="bottom right",
             row=3,
             col=1,
         )
@@ -380,7 +390,7 @@ def toggle_ppc(n, pair_key, is_open):
             line_dash="dash",
             line_color=TEXT,
             annotation_text=f"Observed {ocrb * 100:.2f}%",
-            annotation_position="top",
+            annotation_position="bottom right",
             row=3,
             col=2,
         )
@@ -402,7 +412,12 @@ def toggle_ppc(n, pair_key, is_open):
 
     for r in (1, 2):
         for c in (1, 2):
-            fig.update_xaxes(title_text="Spend ($)", row=r, col=c)
+            fig.update_xaxes(
+                title_text="Spend ($)",
+                range=[0, spend_xmax],
+                row=r,
+                col=c,
+            )
             fig.update_yaxes(title_text="Density", row=r, col=c)
 
     fig.update_xaxes(title_text="Conversion fraction", tickformat=".0%", row=3, col=1)
@@ -410,14 +425,15 @@ def toggle_ppc(n, pair_key, is_open):
     fig.update_yaxes(title_text="Count", row=3, col=1)
     fig.update_yaxes(title_text="Count", row=3, col=2)
 
-    return new_is_open, fig
+    return fig
 
-def toggle_diagnostics(n, is_open, pair_key):
+
+def update_diagnostics_table(pair_key):
     b = BAYESIAN[pair_key]
     diag_table = b.get("diagnostics_table", [])
 
     if not diag_table:
-        return not is_open, "No diagnostics available"
+        return "No diagnostics available"
 
     header = html.Tr(
         [
@@ -492,9 +508,13 @@ def toggle_diagnostics(n, is_open, pair_key):
         style={"marginBottom": 0},
     )
 
-    return not is_open, table
+    return table
 
 
+# Toggle helpers run clientside: flipping `is_open` doesn't need a server
+# roundtrip and figure rebuild. Figures inside the collapses update on
+# pair-selector change, so opening shows current content for the active pair.
+_TOGGLE_JS = "function(n, is_open) { return !is_open; }"
 
 
 def register_bayesian_callbacks(app):
@@ -505,33 +525,33 @@ def register_bayesian_callbacks(app):
         Input("bayes-pair-selector", "value"),
         Input("rope-slider", "value"),
     )(update_bayesian)
+
+    # Figure / table updates fire on pair-selector change so the content inside
+    # each collapse stays current whether the panel is open or closed.
     app.callback(
-        Output("trace-collapse", "is_open"),
         Output("bayes-trace-plot", "figure"),
-        Input("trace-btn", "n_clicks"),
-        State("trace-collapse", "is_open"),
-        State("bayes-pair-selector", "value"),
-        prevent_initial_call=True,
-    )(toggle_trace)
-    app.callback(
-        Output("method-collapse-tab3", "is_open"),
-        Input("method-btn-tab3", "n_clicks"),
-        State("method-collapse-tab3", "is_open"),
-        prevent_initial_call=True,
-    )(toggle_method_tab3)
-    app.callback(
-        Output("ppc-collapse", "is_open"),
-        Output("bayes-ppc-plot", "figure"),
-        Input("ppc-btn", "n_clicks"),
         Input("bayes-pair-selector", "value"),
-        State("ppc-collapse", "is_open"),
-        prevent_initial_call=True,
-    )(toggle_ppc)
+    )(update_trace_figure)
     app.callback(
-        Output("diag-collapse", "is_open"),
+        Output("bayes-ppc-plot", "figure"),
+        Input("bayes-pair-selector", "value"),
+    )(update_ppc_figure)
+    app.callback(
         Output("bayes-diagnostics-table", "children"),
-        Input("diag-btn", "n_clicks"),
-        State("diag-collapse", "is_open"),
-        State("bayes-pair-selector", "value"),
-        prevent_initial_call=True,
-    )(toggle_diagnostics)
+        Input("bayes-pair-selector", "value"),
+    )(update_diagnostics_table)
+
+    # Clientside toggles for the four collapses on this tab.
+    for btn, collapse in [
+        ("trace-btn", "trace-collapse"),
+        ("ppc-btn", "ppc-collapse"),
+        ("diag-btn", "diag-collapse"),
+        ("method-btn-tab3", "method-collapse-tab3"),
+    ]:
+        app.clientside_callback(
+            _TOGGLE_JS,
+            Output(collapse, "is_open"),
+            Input(btn, "n_clicks"),
+            State(collapse, "is_open"),
+            prevent_initial_call=True,
+        )

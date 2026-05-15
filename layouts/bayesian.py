@@ -232,6 +232,21 @@ def tab3_layout():
                         "the two distributions sitting on top of each other across the zero spike, "
                         "the positive tail, and the conversion rate."
                     ),
+                    html.P(
+                        [
+                            html.Strong("Multiplicity caveat. "),
+                            "Three arm pairs are compared (Men's vs Control, Women's vs Control, "
+                            "Men's vs Women's). The reported P(δ > 0) for each pair is conditional "
+                            "on that pair only; it is not adjusted for the fact that three "
+                            "comparisons are being inspected. Posterior-probability statements "
+                            "don't have a clean Bonferroni analogue — the right way to make a "
+                            "joint statement (e.g. \"both campaigns beat control\") is to compute "
+                            "the joint posterior probability from the samples, not to multiply or "
+                            "compare individual P(δ > 0) values against an adjusted threshold. "
+                            "Treat each pair's posterior as the headline; use joint probabilities "
+                            "for joint claims."
+                        ]
+                    ),
                 ],
             ),
         ],

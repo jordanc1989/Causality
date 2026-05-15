@@ -4,29 +4,35 @@ from dash import html
 def psm_intro_copy():
     return [
         html.P([
-            html.Strong("What this does: "),
-            "Each customer who got an email is paired with a control customer who looked "
-            "almost identical beforehand (same purchase history, recency, channel, and so on). "
-            "Comparing matched pairs strips out any pre-existing differences between the two "
-            "groups and isolates the effect of the email itself."
+            html.Strong("Why this tab exists: "),
+            "This dataset is a randomised experiment, so propensity score matching is "
+            "not the right tool for estimating the email effect, random assignment "
+            "already balances the arms. This tab is a ",
+            html.Em("methodology demonstration"),
+            ": it runs the workflow you would use if the data had been observational "
+            "(loyalty-program opt-ins, behaviourally-triggered sends, organic signups), "
+            "and shows the results sitting alongside the randomised estimates. Treat the "
+            "numbers as a sanity check rather than an independent answer!"
         ], className="mb-2 small"),
         html.P([
-            html.Strong("How customers are matched: "),
-            "For each email recipient we find the closest lookalike in the control group on "
-            "things visible before the send: spend history, recency, channel, postcode type, "
-            "catalogue preference, and a few flags. The same control customer can be the "
-            "nearest match for more than one recipient. If even the closest control looks too "
-            "different, we drop that recipient from this view rather than stretch the comparison. "
-            "Because assignment was random to begin with, almost everyone pairs cleanly and the "
-            "answer barely moves."
+            html.Strong("How matching works: "),
+            "Each email recipient is paired with the control customer whose pre-treatment "
+            "profile (spend history, recency, channel, postcode type, catalogue preference, "
+            "and the new-customer flag) is closest on the modelled probability of being "
+            "treated. The same control can match more than one recipient. If even the "
+            "closest control is too different, the recipient is dropped rather than forced "
+            "into a poor pair. Because assignment really was random, almost everyone pairs "
+            "cleanly and the matched ATT lands close to the randomised difference-in-means."
         ], className="mb-2 small"),
         html.P([
-            html.Strong("Why this matters: "),
-            "This tab is laid out like the "
-            " dashboards used when there isn't a random assignment to lean on. "
-            "Rather than replace the numbers on the Overview or the OLS tab, it sits "
-            "alongside them as a sanity check. The Love plot shows whether the two groups look "
-            "similar before and after matching. The bar chart repeats the lift with a confidence "
-            "band built by redoing the matching 200 times on resampled data."
+            html.Strong("How to read the panels: "),
+            "The Love plot is the diagnostic — it shows whether the two arms look similar "
+            "on each covariate before and after matching. In an observational study a big "
+            "shift toward zero after matching is the win condition. Here, the ",
+            html.Em("before"),
+            " plot already shows balance because randomisation did the work; matching "
+            "barely changes anything. The bar chart reports the matched ATT with a "
+            "stress-test band from redoing the propensity fit and the matching 200 times "
+            "on resampled data."
         ], className="mb-0 small text-muted"),
     ]
