@@ -85,7 +85,7 @@ def update_uplift(arm, model):
         title=f"CATE Distribution - {model_label} ({arm_label})",
         xaxis_title=f"Individual Uplift ($):  showing p1-p99 ({pct_shown:.0f}% of customers)",
         yaxis_title="Count",
-        margin=dict(t=50, b=30),
+        margin=FIGURE_MARGIN,
     )
 
     feat_imp = dict(sorted(u["feat_imp"].items(), key=lambda x: x[1]))
@@ -186,7 +186,7 @@ def update_uplift(arm, model):
             dtick=1
         ),
         yaxis_title="Actual Spend Lift ($)",
-        margin=dict(t=50, b=30)
+        margin=FIGURE_MARGIN
     )
 
     # Plotly fill colours don't accept hex+alpha directly so convert to rgba string
@@ -237,7 +237,7 @@ def update_uplift(arm, model):
         ),
         xaxis_title="Fraction of population targeted",
         yaxis_title="Cumulative incremental spend ($)",
-        margin=dict(t=50, b=70),
+        margin=FIGURE_MARGIN_WIDE,
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
     )
 
@@ -264,7 +264,7 @@ def update_uplift(arm, model):
         template=PLOTLY_TEMPLATE,
         title="Average CATE: Men's vs Women's Campaign",
         yaxis_title="Avg CATE ($)",
-        margin=dict(t=50, b=70),
+        margin=FIGURE_MARGIN_WIDE,
         legend=dict(
             orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5
         ),

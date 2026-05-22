@@ -686,7 +686,7 @@ def _permutation_p_auuc(
 
     # One-sided p-value: how often does a random ranking match or beat the
     # observed AUUC? Add +1 numerator/denominator (Phipson & Smyth 2010
-    # correction) so the p-value can never be exactly zero.
+    # correction) so the p-value can't be exactly zero.
     p_value = float((np.sum(null_aucs >= obs_auuc) + 1) / (n_perm + 1))
     return obs_auuc, p_value, null_aucs
 

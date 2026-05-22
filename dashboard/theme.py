@@ -86,6 +86,9 @@ GRAPH_CONFIG = {
     "toImageButtonOptions": {"format": "png", "scale": 3},
 }
 
+FIGURE_MARGIN = dict(t=50, b=30)       # standard
+FIGURE_MARGIN_WIDE = dict(t=50, b=70)  # room for bottom legend
+
 # Cards are no longer filled-and-bordered boxes; they read as quiet surfaces
 # separated from the paper by a single hairline. The left-accent-border motif
 # is gone.

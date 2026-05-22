@@ -177,8 +177,7 @@ body {
   padding-bottom: 2rem;
 }
 
-/* KPI ledger: a stack of metrics reads as one panel with hairline-divided
-   rows, not a scatter of floating boxes. */
+/* KPI ledger: a stack of metrics reads as one panel with hairline-divided rows */
 .dashboard-app .kpi-stack {
   border: 1px solid var(--border);
   border-radius: 2px;
@@ -474,7 +473,7 @@ body {
   border-radius: 50%;
 }
 
-/* Segment stat blocks: rule-separated columns, not boxed cards */
+/* Segment stat blocks: rule-separated columns */
 .dashboard-app .segment-card {
   height: 100%;
   overflow: hidden;
@@ -571,7 +570,7 @@ body {
   font-weight: 600;
 }
 
-/* Significance read as small-caps text, not a boxed badge */
+/* Significance read as small-caps text */
 .dashboard-app .segment-sig-badge {
   font-family: var(--font-main);
   font-size: 0.74rem;

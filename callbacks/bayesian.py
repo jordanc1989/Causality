@@ -209,7 +209,7 @@ def update_trace_figure(pair_key):
         title="MCMC Trace: δ (treatment effect)",
         xaxis_title="Draw",
         yaxis_title="δ value",
-        margin=dict(t=50, b=70),
+        margin=FIGURE_MARGIN_WIDE,
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
         annotations=[
             dict(

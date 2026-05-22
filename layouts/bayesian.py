@@ -2,7 +2,7 @@
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from layouts.components import section_header, methodology_collapse
+from layouts.components import section_header, methodology_collapse, collapsible_panel
 
 def tab3_layout():
     return dbc.Container(
@@ -119,71 +119,50 @@ def tab3_layout():
             dbc.Row(
                 [
                     dbc.Col(
-                        [
-                            html.Button(
-                                "Posterior predictive check",
-                                id="ppc-btn",
-                                className="btn-methodology mb-2 w-100",
-                                n_clicks=0,
-                            ),
-                            dbc.Collapse(
-                                [
-                                    html.P(
-                                        [
-                                            html.Strong("What this shows. "),
-                                            "Three stacked checks per arm that compare the model's simulated data "
-                                            "against the real data. The first row covers the full spend distribution "
-                                            "including the spike at $0. The second row focuses on the size of "
-                                            "purchases among customers who did spend. The third row checks the "
-                                            "conversion rate at the actual arm size. ",
-                                            html.Strong("What to look for. "),
-                                            "The simulated and observed distributions should sit roughly on top of "
-                                            "each other. Small spikes in the observed data come from real catalogue "
-                                            "price points, so judge the fit on the overall shape rather than every "
-                                            "individual bump.",
-                                        ],
-                                        className="text-muted small mb-2",
-                                    ),
-                                    dcc.Graph(id="bayes-ppc-plot", config=GRAPH_CONFIG),
-                                ],
-                                id="ppc-collapse",
-                                is_open=False,
-                            ),
-                        ],
+                        collapsible_panel(
+                            "ppc-btn",
+                            "ppc-collapse",
+                            "Posterior predictive check",
+                            [
+                                html.P(
+                                    [
+                                        html.Strong("What this shows. "),
+                                        "Three stacked checks per arm that compare the model's simulated data "
+                                        "against the real data. The first row covers the full spend distribution "
+                                        "including the spike at $0. The second row focuses on the size of "
+                                        "purchases among customers who did spend. The third row checks the "
+                                        "conversion rate at the actual arm size. ",
+                                        html.Strong("What to look for. "),
+                                        "The simulated and observed distributions should sit roughly on top of "
+                                        "each other. Small spikes in the observed data come from real catalogue "
+                                        "price points, so judge the fit on the overall shape rather than every "
+                                        "individual bump.",
+                                    ],
+                                    className="text-muted small mb-2",
+                                ),
+                                dcc.Graph(id="bayes-ppc-plot", config=GRAPH_CONFIG),
+                            ],
+                        ),
                         md=12,
                         className="mb-2",
                     ),
                     dbc.Col(
-                        [
-                            html.Button(
-                                "MCMC trace plots",
-                                id="trace-btn",
-                                className="btn-methodology mb-2 w-100",
-                                n_clicks=0,
-                            ),
-                            dbc.Collapse(
-                                dcc.Graph(id="bayes-trace-plot", config=GRAPH_CONFIG),
-                                id="trace-collapse",
-                                is_open=False,
-                            ),
-                        ],
+                        collapsible_panel(
+                            "trace-btn",
+                            "trace-collapse",
+                            "MCMC trace plots",
+                            dcc.Graph(id="bayes-trace-plot", config=GRAPH_CONFIG),
+                        ),
                         md=12,
                         className="mb-2",
                     ),
                     dbc.Col(
-                        [
-                            html.Button(
-                                "Convergence diagnostics (R̂, ESS)",
-                                id="diag-btn",
-                                className="btn-methodology mb-2 w-100",
-                                n_clicks=0,
-                            ),
-                            dbc.Collapse(
-                                html.Div(id="bayes-diagnostics-table"),
-                                id="diag-collapse",
-                                is_open=False,
-                            ),
-                        ],
+                        collapsible_panel(
+                            "diag-btn",
+                            "diag-collapse",
+                            "Convergence diagnostics (R̂, ESS)",
+                            html.Div(id="bayes-diagnostics-table"),
+                        ),
                         md=12,
                         className="mb-2",
                     ),
@@ -222,8 +201,8 @@ def tab3_layout():
                     ),
                     html.P(
                         "The ROPE (Region of Practical Equivalence) is a range around zero that "
-                        "you treat as 'not big enough to act on'. Set it to the smallest "
-                        "per-customer lift that would change a decision and the tab reports how "
+                        "you treat as 'not big enough to act on'. Set to the smallest "
+                        "per-customer lift that would change a decision, the tab reports how "
                         "much of the posterior sits beyond it."
                     ),
                     html.P(
@@ -231,21 +210,6 @@ def tab3_layout():
                         "and compares the simulated distribution to the real one. A good fit shows "
                         "the two distributions sitting on top of each other across the zero spike, "
                         "the positive tail, and the conversion rate."
-                    ),
-                    html.P(
-                        [
-                            html.Strong("Multiplicity caveat. "),
-                            "Three arm pairs are compared (Men's vs Control, Women's vs Control, "
-                            "Men's vs Women's). The reported P(δ > 0) for each pair is conditional "
-                            "on that pair only; it is not adjusted for the fact that three "
-                            "comparisons are being inspected. Posterior-probability statements "
-                            "don't have a clean Bonferroni analogue - the right way to make a "
-                            "joint statement (e.g. \"both campaigns beat control\") is to compute "
-                            "the joint posterior probability from the samples, not to multiply or "
-                            "compare individual P(δ > 0) values against an adjusted threshold. "
-                            "Treat each pair's posterior as the headline; use joint probabilities "
-                            "for joint claims."
-                        ]
                     ),
                 ],
             ),

@@ -19,14 +19,10 @@ def _build_comparison_df():
 
     rows = []
     for arm in ["mens", "womens"]:
-        arm_label = "Men's Email" if arm == "mens" else "Women's Email"
+        arm_label = ARM_META[arm][0]
         p = PSM[arm]
         rows.append(
             {
-                # Use the matched-pair (Abadie-Imbens style) CI here so the PSM
-                # row is directly comparable to the Bayesian and OLS rows below.
-                # The rematch-bootstrap band shown on the PSM tab is a
-                # sensitivity stress test, not a comparable inference CI.
                 "Method": "PSM (ATT, matched-pair CI)",
                 "Arm": arm_label,
                 "Estimate ($)": _rnd_money(p.get("att_point")),
@@ -37,7 +33,7 @@ def _build_comparison_df():
 
     pair_map = {"mens": "mens_vs_control", "womens": "womens_vs_control"}
     for arm in ["mens", "womens"]:
-        arm_label = "Men's Email" if arm == "mens" else "Women's Email"
+        arm_label = ARM_META[arm][0]
         b = BAYESIAN[pair_map[arm]]
         rows.append(
             {
@@ -50,7 +46,7 @@ def _build_comparison_df():
         )
 
     for arm in ["mens", "womens"]:
-        arm_label = "Men's Email" if arm == "mens" else "Women's Email"
+        arm_label = ARM_META[arm][0]
         u = UPLIFT[arm]
         rows.append(
             {
@@ -85,14 +81,14 @@ def _build_comparison_df():
     # The raw `mens_email` / `womens_email` coefficients are only the effect
     # for the reference subgroup (Existing + Phone + Urban) and are not
     # directly comparable to PSM's ATT or the Bayesian delta.
-    for arm, ate_key, lo_key, hi_key, arm_label in [
-        ("mens", "ate_mens", "ate_mens_lo", "ate_mens_hi", "Men's Email"),
-        ("womens", "ate_womens", "ate_womens_lo", "ate_womens_hi", "Women's Email"),
+    for arm, ate_key, lo_key, hi_key in [
+        ("mens", "ate_mens", "ate_mens_lo", "ate_mens_hi"),
+        ("womens", "ate_womens", "ate_womens_lo", "ate_womens_hi"),
     ]:
         rows.append(
             {
                 "Method": "OLS (avg marginal effect, HC3)",
-                "Arm": arm_label,
+                "Arm": ARM_META[arm][0],
                 "Estimate ($)": round(OLS.get(ate_key, 0.0), 2),
                 "CI Lower ($)": round(OLS.get(lo_key, 0.0), 2),
                 "CI Upper ($)": round(OLS.get(hi_key, 0.0), 2),

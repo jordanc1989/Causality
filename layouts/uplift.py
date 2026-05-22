@@ -2,7 +2,7 @@
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from layouts.components import methodology_collapse
+from layouts.components import methodology_collapse, labeled_radio, labeled_input_group
 
 def tab4_layout():
     return dbc.Container(
@@ -10,37 +10,29 @@ def tab4_layout():
             dbc.Row(
                 [
                     dbc.Col(
-                        [
-                            html.Label("Campaign arm:", className="small text-muted"),
-                            dbc.RadioItems(
-                                id="uplift-arm-selector",
-                                options=[
-                                    {"label": "Men's Email", "value": "mens"},
-                                    {"label": "Women's Email", "value": "womens"}
-                                ],
-                                value="mens",
-                                inline=True,
-                                className="dashboard-radio-group mb-2"
-                            ),
-                        ],
+                        labeled_radio(
+                            "Campaign arm:",
+                            "uplift-arm-selector",
+                            [
+                                {"label": "Men's Email", "value": "mens"},
+                                {"label": "Women's Email", "value": "womens"},
+                            ],
+                            "mens",
+                        ),
                         md=6,
                     ),
                     dbc.Col(
-                        [
-                            html.Label("Model:", className="small text-muted"),
-                            dbc.RadioItems(
-                                id="uplift-model-selector",
-                                options=[
-                                    {"label": "T-Learner", "value": "t"},
-                                    {"label": "S-Learner", "value": "s"},
-                                    {"label": "X-Learner", "value": "x"},
-                                ],
-                                value="x",
-                                inline=True,
-                                className="dashboard-radio-group mb-2"
-                            ),
-                        ],
-                        md=6
+                        labeled_radio(
+                            "Model:",
+                            "uplift-model-selector",
+                            [
+                                {"label": "T-Learner", "value": "t"},
+                                {"label": "S-Learner", "value": "s"},
+                                {"label": "X-Learner", "value": "x"},
+                            ],
+                            "x",
+                        ),
+                        md=6,
                     ),
                 ]
             ),
@@ -91,52 +83,40 @@ def tab4_layout():
                                         dbc.Row(
                                             [
                                                 dbc.Col(
-                                                    [
-                                                        html.Label(
-                                                            "Send cost per email",
-                                                            className="small text-muted",
-                                                        ),
-                                                        dbc.InputGroup(
-                                                            [
-                                                                dbc.InputGroupText("$", className="dashboard-input-group-text"),
-                                                                dbc.Input(
-                                                                    id="policy-cost",
-                                                                    type="number",
-                                                                    min=0,
-                                                                    step=0.01,
-                                                                    value=0.05,
-                                                                    debounce=True,
-                                                                    className="dashboard-input",
-                                                                ),
-                                                            ],
-                                                            size="sm",
-                                                        ),
-                                                    ],
+                                                    labeled_input_group(
+                                                        "Send cost per email",
+                                                        [
+                                                            dbc.InputGroupText("$", className="dashboard-input-group-text"),
+                                                            dbc.Input(
+                                                                id="policy-cost",
+                                                                type="number",
+                                                                min=0,
+                                                                step=0.01,
+                                                                value=0.05,
+                                                                debounce=True,
+                                                                className="dashboard-input",
+                                                            ),
+                                                        ],
+                                                    ),
                                                     md=6,
                                                 ),
                                                 dbc.Col(
-                                                    [
-                                                        html.Label(
-                                                            "Gross margin on incremental spend",
-                                                            className="small text-muted",
-                                                        ),
-                                                        dbc.InputGroup(
-                                                            [
-                                                                dbc.Input(
-                                                                    id="policy-margin",
-                                                                    type="number",
-                                                                    min=0,
-                                                                    max=1,
-                                                                    step=0.05,
-                                                                    value=0.40,
-                                                                    debounce=True,
-                                                                    className="dashboard-input",
-                                                                ),
-                                                                dbc.InputGroupText("(0-1)", className="dashboard-input-group-text"),
-                                                            ],
-                                                            size="sm",
-                                                        ),
-                                                    ],
+                                                    labeled_input_group(
+                                                        "Gross margin on incremental spend",
+                                                        [
+                                                            dbc.Input(
+                                                                id="policy-margin",
+                                                                type="number",
+                                                                min=0,
+                                                                max=1,
+                                                                step=0.05,
+                                                                value=0.40,
+                                                                debounce=True,
+                                                                className="dashboard-input",
+                                                            ),
+                                                            dbc.InputGroupText("(0-1)", className="dashboard-input-group-text"),
+                                                        ],
+                                                    ),
                                                     md=6,
                                                 ),
                                             ],

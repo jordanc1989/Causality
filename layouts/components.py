@@ -168,6 +168,31 @@ def segment_overview_card(
 def section_header(text):
     return html.H5(text, style=SECTION_HEADER_STYLE)
 
+def labeled_radio(label, id, options, value, className="dashboard-radio-group mb-2", inline=True):
+    return html.Div(
+        [
+            html.Label(label, className="small text-muted"),
+            dbc.RadioItems(id=id, options=options, value=value, inline=inline, className=className),
+        ]
+    )
+
+def collapsible_panel(btn_id, collapse_id, label, content,
+                      btn_className="btn-methodology mb-2 w-100"):
+    return html.Div(
+        [
+            html.Button(label, id=btn_id, className=btn_className, n_clicks=0),
+            dbc.Collapse(content, id=collapse_id, is_open=False),
+        ]
+    )
+
+def labeled_input_group(label, children, size="sm", group_style=None):
+    return html.Div(
+        [
+            html.Label(label, className="small text-muted"),
+            dbc.InputGroup(children, size=size, style=group_style),
+        ]
+    )
+
 def methodology_collapse(tab_id, content):
     return html.Div(
         [

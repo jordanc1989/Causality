@@ -128,7 +128,7 @@ def update_psm(arm):
         legend=dict(
             orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5
         ),
-        margin=dict(t=50, b=70)
+        margin=FIGURE_MARGIN_WIDE
     )
 
     # Love plot: “after” = caliper-kept treated vs their matched controls
@@ -253,7 +253,7 @@ def update_psm(arm):
         title="ATT estimate - analytical CI vs bootstrap sensitivity band",
         yaxis_title="Effect on spend ($)",
         showlegend=False,
-        margin=dict(t=50, b=30),
+        margin=FIGURE_MARGIN,
     )
 
     return kpis, ps_fig, love_fig, stats_fig

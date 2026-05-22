@@ -204,7 +204,7 @@ def build_ols_figures():
         title="Men's Email: Marginal Effect ($)",
         xaxis_title="Channel",
         yaxis_title="Customer type",
-        margin=dict(t=50, b=30)
+        margin=FIGURE_MARGIN
     )
 
     womens_heat = make_heatmap("me_womens")
@@ -213,7 +213,7 @@ def build_ols_figures():
         title="Women's Email: Marginal Effect ($)",
         xaxis_title="Channel",
         yaxis_title="Customer type",
-        margin=dict(t=50, b=30)
+        margin=FIGURE_MARGIN
     )
 
     return coef_fig, table, mens_heat, womens_heat

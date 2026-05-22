@@ -2,7 +2,7 @@
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from layouts.components import methodology_collapse
+from layouts.components import methodology_collapse, labeled_radio
 from content.methodology import psm_intro_copy
 
 def tab2_layout():
@@ -18,25 +18,16 @@ def tab2_layout():
             dbc.Row(
                 [
                     dbc.Col(
-                        [
-                            html.Label("Campaign arm:", className="small text-muted"),
-                            dbc.RadioItems(
-                                id="psm-arm-selector",
-                                options=[
-                                    {
-                                        "label": "Men's Email vs Control",
-                                        "value": "mens"
-                                    },
-                                    {
-                                        "label": "Women's Email vs Control",
-                                        "value": "womens"
-                                    }
-                                ],
-                                value="mens",
-                                inline=True,
-                                className="dashboard-radio-group mb-3"
-                            ),
-                        ]
+                        labeled_radio(
+                            "Campaign arm:",
+                            "psm-arm-selector",
+                            [
+                                {"label": "Men's Email vs Control", "value": "mens"},
+                                {"label": "Women's Email vs Control", "value": "womens"},
+                            ],
+                            "mens",
+                            className="dashboard-radio-group mb-3",
+                        )
                     ),
                 ]
             ),
@@ -60,13 +51,12 @@ def tab2_layout():
                     html.P(
                         [
                             html.Strong("Pedagogical framing. "),
-                            "On a randomised experiment, propensity matching is not a separate "
+                            "On a randomised experiment, propensity matching isn't a separate "
                             "estimator - it produces a noisier version of the simple "
                             "difference-in-means and discards observations along the way. "
                             "This tab is included to show ",
                             html.Em("how the workflow would look on observational data"),
-                            ", where you can't lean on random assignment. The Overview, "
-                            "Bayesian and OLS tabs are the load-bearing estimates."
+                            ", where you're unable to use random assignment."
                         ]
                     ),
                     html.P(
@@ -88,9 +78,7 @@ def tab2_layout():
                         "The confidence band on the bar chart comes from redoing the propensity fit and "
                         "the matching 200 times on resampled data. Each replicate redraws treated and "
                         "control separately at their observed sizes so the arm ratio stays fixed. Read "
-                        "the band as a stress test on the matching choices, not as a textbook nearest-"
-                        "neighbour confidence interval - the standard bootstrap is known to be "
-                        "inconsistent for nearest-neighbour matching (Abadie & Imbens 2008)."
+                        "the band as a stress test on the matching choices"
                     ),
                     html.P(
                         [
