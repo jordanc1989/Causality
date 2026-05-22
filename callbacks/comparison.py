@@ -254,7 +254,7 @@ def update_comparison(noise_eps):
                         "When they disagree, the gap usually points to where the assumptions of one "
                         "method are doing more work. The Overview and OLS tabs lean directly on the "
                         "random assignment. The Bayesian tab adds a richer picture of uncertainty. "
-                        "The Uplift tab focuses on who responds most, rather than the average.",
+                        "The Uplift tab focuses on who responds most (rather than the average).",
                         className="text-muted small mb-0"
                     ),
                 ]

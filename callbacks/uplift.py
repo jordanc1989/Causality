@@ -107,7 +107,7 @@ def update_uplift(arm, model):
         xaxis_fixedrange=True,
         yaxis_fixedrange=True,
         dragmode=False,
-        margin=dict(t=50, b=30, l=130),
+        margin=dict(t=50, b=30, l=170),
     )
 
     dec_df = pd.DataFrame(u.get(keys["decile"], u["decile_lift"]))
@@ -223,19 +223,29 @@ def update_uplift(arm, model):
     qini_p = u.get(keys["p"])
     qini_auc = u.get(keys["auc"], 0.0)
     qini_excess = u.get(keys["excess"], 0.0)
-    p_str = (
-        f", permutation p = {qini_p:.3f}" if qini_p is not None else ""
+    p_str = f" | permutation p = {qini_p:.3f}" if qini_p is not None else ""
+    qini_note = (
+        f"AUUC ${qini_auc:,.0f} | excess vs random ${qini_excess:,.0f}{p_str}"
     )
     qini_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=(
-            f"Qini Curve · {model_label} (AUUC = ${qini_auc:,.0f}, "
-            f"excess vs random = ${qini_excess:,.0f}{p_str})"
-        ),
+        title=f"Qini Curve - {model_label}",
         xaxis_title="Fraction of population targeted",
         yaxis_title="Cumulative incremental spend ($)",
-        margin=FIGURE_MARGIN_WIDE,
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
+        margin=dict(t=72, b=70),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+        annotations=[
+            dict(
+                text=qini_note,
+                x=0,
+                y=1.08,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                xanchor="left",
+                font=dict(family=MONO, size=10, color=MUTED),
+            )
+        ],
     )
 
     seg_fig = go.Figure()

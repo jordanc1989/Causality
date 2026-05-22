@@ -153,6 +153,11 @@ def build_ols_figures():
     all_vals = pd.concat([weighted_sub["me_mens"], weighted_sub["me_womens"]])
     zmax = max(abs(all_vals.min()), abs(all_vals.max()))
     zmin = -zmax
+    heat_colorscale = [
+        [0.0, "#7E5A86"],
+        [0.5, "#F4F1EA"],
+        [1.0, "#2F6E8F"],
+    ]
 
     def make_heatmap(arm_col):
         heat_pivot = weighted_sub.pivot(
@@ -163,7 +168,7 @@ def build_ols_figures():
                 z=heat_pivot.values,
                 x=heat_pivot.columns.tolist(),
                 y=heat_pivot.index.tolist(),
-                colorscale="RdYlGn",
+                colorscale=heat_colorscale,
                 zmin=zmin,
                 zmax=zmax,
                 zmid=0,

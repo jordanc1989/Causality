@@ -112,7 +112,7 @@ def tab6_layout():
                                         [
                                             html.P(
                                                 "Estimates the lift for each individual customer "
-                                                "rather than the average. Best for ranking, so you can "
+                                                ". Best for ranking, so you can "
                                                 "target the most responsive shoppers. Individual "
                                                 "estimates are noisier than the overall average, so "
                                                 "treat them as directional."
