@@ -4,24 +4,25 @@ import pandas as pd
 import plotly.graph_objects as go
 from dash import html, Output, Input
 from dashboard.theme import *
-from dashboard.theme import COVARIATE_LABELS, hex_to_rgba
 from dashboard.data import UPLIFT
 from layouts.components import kpi_card
 
 # Per-model cached results are stored under a `{base}_{model}` key in UPLIFT[arm]
-# (e.g. cate_t / cate_s / cate_x). MODEL_LABEL maps the selector value to a label.
-MODEL_LABEL = {"t": "T-Learner", "s": "S-Learner", "x": "X-Learner"}
-
-
-def _uplift_key(base, model):
-    return f"{base}_{model}"
+# (e.g. cate_t / cate_s / cate_x). Keep the UI label and cached result keys together.
+MODEL_KEYS = {
+    "t": dict(label="T-Learner", cate="cate_t", avg="avg_cate_t", decile="decile_lift", qini_x="qini_x", qini_y="qini_y", auc="qini_auc_t", excess="qini_excess_auc_t", p="qini_p_t"),
+    "s": dict(label="S-Learner", cate="cate_s", avg="avg_cate_s", decile="decile_lift_s", qini_x="qini_x_s", qini_y="qini_y_s", auc="qini_auc_s", excess="qini_excess_auc_s", p="qini_p_s"),
+    "x": dict(label="X-Learner", cate="cate_x", avg="avg_cate_x", decile="decile_lift_x", qini_x="qini_x_x", qini_y="qini_y_x", auc="qini_auc_x", excess="qini_excess_auc_x", p="qini_p_x"),
+}
+MODEL_LABEL = {key: meta["label"] for key, meta in MODEL_KEYS.items()}
 
 
 def update_uplift(arm, model):
     u = UPLIFT[arm]
     arm_label, color = ARM_META[arm]
-    cate = u[_uplift_key("cate", model)]
-    model_label = MODEL_LABEL[model]
+    keys = MODEL_KEYS[model]
+    cate = u[keys["cate"]]
+    model_label = keys["label"]
 
     kpis = html.Div(
         [
@@ -103,15 +104,15 @@ def update_uplift(arm, model):
         template=PLOTLY_TEMPLATE,
         title="Heterogeneity importance (CATE permutation, T-Learner)",
         xaxis_title="Relative importance (normalised)",
+        xaxis_fixedrange=True,
+        yaxis_fixedrange=True,
+        dragmode=False,
         margin=dict(t=50, b=30, l=130),
     )
 
-    decile_key = {"t": "decile_lift", "s": "decile_lift_s", "x": "decile_lift_x"}[model]
-    qini_x_key = {"t": "qini_x", "s": "qini_x_s", "x": "qini_x_x"}[model]
-    qini_y_key = {"t": "qini_y", "s": "qini_y_s", "x": "qini_y_x"}[model]
-    dec_df = pd.DataFrame(u.get(decile_key, u["decile_lift"]))
-    qini_xd = u.get(qini_x_key, u["qini_x"])
-    qini_yd = u.get(qini_y_key, u["qini_y"])
+    dec_df = pd.DataFrame(u.get(keys["decile"], u["decile_lift"]))
+    qini_xd = u.get(keys["qini_x"], u["qini_x"])
+    qini_yd = u.get(keys["qini_y"], u["qini_y"])
     overall_ate = dec_df["lift"].mean()
 
     has_ci = "ci_lo" in dec_df.columns and "ci_hi" in dec_df.columns
@@ -183,9 +184,12 @@ def update_uplift(arm, model):
             title="Decile (1 = highest predicted uplift)",
             tickmode="linear",
             tick0=1,
-            dtick=1
+            dtick=1,
+            fixedrange=True,
         ),
         yaxis_title="Actual Spend Lift ($)",
+        yaxis_fixedrange=True,
+        dragmode=False,
         margin=FIGURE_MARGIN
     )
 
@@ -216,16 +220,9 @@ def update_uplift(arm, model):
             hoverinfo="skip",
         )
     )
-    qini_auc_key = {"t": "qini_auc_t", "s": "qini_auc_s", "x": "qini_auc_x"}[model]
-    qini_excess_key = {
-        "t": "qini_excess_auc_t",
-        "s": "qini_excess_auc_s",
-        "x": "qini_excess_auc_x",
-    }[model]
-    qini_p_key = {"t": "qini_p_t", "s": "qini_p_s", "x": "qini_p_x"}[model]
-    qini_p = u.get(qini_p_key)
-    qini_auc = u.get(qini_auc_key, 0.0)
-    qini_excess = u.get(qini_excess_key, 0.0)
+    qini_p = u.get(keys["p"])
+    qini_auc = u.get(keys["auc"], 0.0)
+    qini_excess = u.get(keys["excess"], 0.0)
     p_str = (
         f", permutation p = {qini_p:.3f}" if qini_p is not None else ""
     )
@@ -246,14 +243,11 @@ def update_uplift(arm, model):
         ("mens", "Men's Email", MENS_COLOUR),
         ("womens", "Women's Email", WOMENS_COLOUR),
     ]:
-        avg_t = UPLIFT[a]["avg_cate_t"]
-        avg_s = UPLIFT[a]["avg_cate_s"]
-        avg_x = UPLIFT[a].get("avg_cate_x", float("nan"))
         seg_fig.add_trace(
             go.Bar(
                 name=lbl,
-                x=["T-Learner", "S-Learner", "X-Learner"],
-                y=[avg_t, avg_s, avg_x],
+                x=list(MODEL_LABEL.values()),
+                y=[UPLIFT[a].get(meta["avg"], float("nan")) for meta in MODEL_KEYS.values()],
                 marker_color=col,
                 opacity=0.85,
                 hovertemplate="%{x}<br>Avg CATE: $%{y:.2f}<extra>%{fullData.name}</extra>",
@@ -264,6 +258,9 @@ def update_uplift(arm, model):
         template=PLOTLY_TEMPLATE,
         title="Average CATE: Men's vs Women's Campaign",
         yaxis_title="Avg CATE ($)",
+        xaxis_fixedrange=True,
+        yaxis_fixedrange=True,
+        dragmode=False,
         margin=FIGURE_MARGIN_WIDE,
         legend=dict(
             orientation="h", yanchor="bottom", y=-0.35, xanchor="center", x=0.5
@@ -297,13 +294,11 @@ def update_policy(arm, model, cost_per_email, margin):
     u = UPLIFT[arm]
     arm_label = "Men's Email" if arm == "mens" else "Women's Email"
     color = MENS_COLOUR if arm == "mens" else WOMENS_COLOUR
+    keys = MODEL_KEYS[model]
 
-    qini_x_key = {"t": "qini_x", "s": "qini_x_s", "x": "qini_x_x"}[model]
-    qini_y_key = {"t": "qini_y", "s": "qini_y_s", "x": "qini_y_x"}[model]
-    qini_xd = np.asarray(u.get(qini_x_key, u["qini_x"]), dtype=float)
-    qini_yd = np.asarray(u.get(qini_y_key, u["qini_y"]), dtype=float)
-    cate_key = {"t": "cate_t", "s": "cate_s", "x": "cate_x"}[model]
-    n_total = len(u[cate_key])
+    qini_xd = np.asarray(u.get(keys["qini_x"], u["qini_x"]), dtype=float)
+    qini_yd = np.asarray(u.get(keys["qini_y"], u["qini_y"]), dtype=float)
+    n_total = len(u[keys["cate"]])
 
     if len(qini_xd) < 2:
         empty = go.Figure()
@@ -340,7 +335,7 @@ def update_policy(arm, model, cost_per_email, margin):
         verdict_color = SUCCESS
     else:
         verdict = (
-            f"Target the top {p_opt:.0%} of the {arm_label} list (ranked by {model.upper()}-Learner uplift). "
+            f"Target the top {p_opt:.0%} of the {arm_label} list (ranked by {keys['label']} uplift). "
             f"Net contribution peaks at ${net_opt:,.0f}; mailing more dilutes margin, mailing less leaves money on the table."
         )
         verdict_color = SUCCESS
@@ -437,7 +432,7 @@ def update_policy(arm, model, cost_per_email, margin):
     fig.add_hline(y=0, line_color=BORDER, line_width=1)
     fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"Targeting Policy Curve - {arm_label} ({model.upper()}-Learner)",
+        title=f"Targeting Policy Curve - {arm_label} ({keys['label']})",
         xaxis=dict(title="Fraction of list targeted", tickformat=".0%"),
         yaxis_title="Net incremental contribution ($)",
         margin=dict(t=50, b=80),

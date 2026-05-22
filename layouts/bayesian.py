@@ -1,8 +1,10 @@
 
-from dash import dcc, html
+from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from layouts.components import section_header, methodology_collapse, collapsible_panel
+from layouts.components import (
+    graph, section_col, section_header, methodology_collapse, collapsible_panel,
+)
 
 def tab3_layout():
     return dbc.Container(
@@ -19,39 +21,33 @@ def tab3_layout():
             ),
             dbc.Row(
                 [
-                    dbc.Col(
-                        [
-                            section_header("Comparison"),
-                            dbc.RadioItems(
-                                id="bayes-pair-selector",
-                                options=[
-                                    {"label": "Men's vs Control", "value": "mens_vs_control"},
-                                    {"label": "Women's vs Control", "value": "womens_vs_control"},
-                                    {"label": "Men's vs Women's", "value": "mens_vs_womens"},
-                                ],
-                                value="mens_vs_control",
-                                inline=True,
-                                className="segmented-control mt-2",
-                            ),
-                        ]
+                    section_col(
+                        "Comparison",
+                        dbc.RadioItems(
+                            id="bayes-pair-selector",
+                            options=[
+                                {"label": "Men's vs Control", "value": "mens_vs_control"},
+                                {"label": "Women's vs Control", "value": "womens_vs_control"},
+                                {"label": "Men's vs Women's", "value": "mens_vs_womens"},
+                            ],
+                            value="mens_vs_control",
+                            inline=True,
+                            className="segmented-control mt-2",
+                        ),
                     ),
                 ],
                 className="mb-4",
             ),
             dbc.Row(
                 [
-                    dbc.Col(
-                        [
-                            section_header("Posterior summary"),
-                            html.Div(id="bayes-kpi-cards", className="kpi-stack mt-2"),
-                        ],
+                    section_col(
+                        "Posterior summary",
+                        html.Div(id="bayes-kpi-cards", className="kpi-stack mt-2"),
                         md=4,
                     ),
-                    dbc.Col(
-                        [
-                            section_header("Posterior distribution · treatment effect δ"),
-                            dcc.Graph(id="bayes-posterior-plot", config=GRAPH_CONFIG, className="mt-2"),
-                        ],
+                    section_col(
+                        "Posterior distribution · treatment effect δ",
+                        graph("bayes-posterior-plot", className="mt-2"),
                         md=8,
                     ),
                 ],
@@ -140,7 +136,7 @@ def tab3_layout():
                                     ],
                                     className="text-muted small mb-2",
                                 ),
-                                dcc.Graph(id="bayes-ppc-plot", config=GRAPH_CONFIG),
+                                graph("bayes-ppc-plot"),
                             ],
                         ),
                         md=12,
@@ -151,7 +147,7 @@ def tab3_layout():
                             "trace-btn",
                             "trace-collapse",
                             "MCMC trace plots",
-                            dcc.Graph(id="bayes-trace-plot", config=GRAPH_CONFIG),
+                            graph("bayes-trace-plot"),
                         ),
                         md=12,
                         className="mb-2",
@@ -217,4 +213,3 @@ def tab3_layout():
         fluid=True,
         className="py-5"
     )
-

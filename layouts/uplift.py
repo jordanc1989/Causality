@@ -1,8 +1,11 @@
 
-from dash import dcc, html
+from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from layouts.components import methodology_collapse, labeled_radio, labeled_input_group
+from layouts.components import (
+    graph, graph_row_ids, kpi_graph_row, methodology_collapse,
+    labeled_radio, labeled_input_group,
+)
 
 def tab4_layout():
     return dbc.Container(
@@ -36,27 +39,9 @@ def tab4_layout():
                     ),
                 ]
             ),
-            dbc.Row(
-                [
-                    dbc.Col(html.Div(id="uplift-kpi-cards", className="kpi-stack"), md=4),
-                    dbc.Col(dcc.Graph(id="uplift-cate-hist", config=GRAPH_CONFIG), md=8)
-                ],
-                className="mb-3"
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(dcc.Graph(id="uplift-feat-imp", config=GRAPH_CONFIG), md=6),
-                    dbc.Col(dcc.Graph(id="uplift-decile-chart", config=GRAPH_CONFIG), md=6)
-                ],
-                className="mb-3"
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(dcc.Graph(id="uplift-qini", config=GRAPH_CONFIG), md=6),
-                    dbc.Col(dcc.Graph(id="uplift-segment-compare", config=GRAPH_CONFIG), md=6)
-                ],
-                className="mb-3"
-            ),
+            kpi_graph_row("uplift-kpi-cards", "uplift-cate-hist"),
+            graph_row_ids("uplift-feat-imp", "uplift-decile-chart", locked=True),
+            graph_row_ids("uplift-qini", ("uplift-segment-compare", 6, True)),
             dbc.Card(
                 dbc.CardBody(
                     [
@@ -129,7 +114,7 @@ def tab4_layout():
                             ],
                             className="g-3 mb-3",
                         ),
-                        dcc.Graph(id="policy-curve", config=GRAPH_CONFIG),
+                        graph("policy-curve"),
                     ]
                 ),
                 style=CARD_STYLE,
@@ -225,4 +210,3 @@ def tab4_layout():
         fluid=True,
         className="py-5"
     )
-

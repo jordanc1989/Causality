@@ -1,8 +1,8 @@
 
-from dash import dcc, html
+from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from layouts.components import methodology_collapse, labeled_radio
+from layouts.components import graph_row_ids, kpi_graph_row, methodology_collapse, labeled_radio
 from content.methodology import psm_intro_copy
 
 def tab2_layout():
@@ -31,20 +31,8 @@ def tab2_layout():
                     ),
                 ]
             ),
-            dbc.Row(
-                [
-                    dbc.Col(html.Div(id="psm-kpi-cards", className="kpi-stack"), md=4),
-                    dbc.Col(dcc.Graph(id="psm-ps-dist", config=GRAPH_CONFIG), md=8)
-                ],
-                className="mb-3"
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(dcc.Graph(id="psm-love-plot", config=GRAPH_CONFIG), md=7),
-                    dbc.Col(dcc.Graph(id="psm-stats-chart", config=GRAPH_CONFIG), md=5)
-                ],
-                className="mb-3"
-            ),
+            kpi_graph_row("psm-kpi-cards", "psm-ps-dist"),
+            graph_row_ids(("psm-love-plot", 7), ("psm-stats-chart", 5)),
             methodology_collapse(
                 "tab2",
                 [
@@ -96,4 +84,3 @@ def tab2_layout():
         fluid=True,
         className="py-5"
     )
-

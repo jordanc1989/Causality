@@ -1,8 +1,10 @@
 
-from dash import dcc, html
+from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from layouts.components import section_header, methodology_collapse
+from layouts.components import (
+    graph, graph_col, graph_row, section_col, section_header, methodology_collapse,
+)
 from callbacks.ols import build_ols_figures
 
 
@@ -15,24 +17,18 @@ def tab5_layout():
         [
             dbc.Row(
                 [
-                    dbc.Col(
-                        [
-                            section_header(
-                                "OLS coefficient plot: treatment effects & interactions"
-                            ),
-                            dcc.Graph(figure=coef_fig, id="ols-coef-plot", config=GRAPH_CONFIG)
-                        ]
+                    section_col(
+                        "OLS coefficient plot: treatment effects & interactions",
+                        graph("ols-coef-plot", figure=coef_fig, locked=True),
                     ),
                 ],
                 className="mb-3",
             ),
             dbc.Row(
                 [
-                    dbc.Col(
-                        [
-                            section_header("Marginal effects by subgroup"),
-                            html.Div(marginal_table, id="ols-marginal-table")
-                        ]
+                    section_col(
+                        "Marginal effects by subgroup",
+                        html.Div(marginal_table, id="ols-marginal-table"),
                     ),
                 ],
                 className="mb-3"
@@ -42,11 +38,10 @@ def tab5_layout():
                     dbc.Col(section_header("Subgroup heatmap: predicted spend lift"))
                 ]
             ),
-            dbc.Row(
-                [
-                    dbc.Col(dcc.Graph(figure=mens_heat, id="ols-heatmap-mens", config=GRAPH_CONFIG), md=6),
-                    dbc.Col(dcc.Graph(figure=womens_heat, id="ols-heatmap-womens", config=GRAPH_CONFIG), md=6)
-                ]
+            graph_row(
+                graph_col("ols-heatmap-mens", figure=mens_heat, locked=True),
+                graph_col("ols-heatmap-womens", figure=womens_heat, locked=True),
+                className=None,
             ),
             methodology_collapse(
                 "tab5",
@@ -89,4 +84,3 @@ def tab5_layout():
         fluid=True,
         className="py-5"
     )
-

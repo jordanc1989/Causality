@@ -1,41 +1,36 @@
 
-from dash import dcc, html
+from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from layouts.components import section_header
+from layouts.components import graph_row_ids, section_col
 
 def tab6_layout():
     return dbc.Container(
         [
             dbc.Row(
                 [
-                    dbc.Col(
-                        [
-                            section_header("All methods summary"),
-                            html.P(
-                                [
-                                    "Each row is one method's estimate of the average lift in spend "
-                                    "per recipient, with its confidence range. The Overview, Bayesian "
-                                    "and OLS rows are the headline numbers because they "
-                                    "use the random assignment directly. The PSM row is included as a "
-                                    "diagnostic, its uncertainty band is shown on the PSM tab and "
-                                    "deliberately left blank here so it isn't read as comparable to the "
-                                    "other intervals.",
-                                ],
-                                className="text-muted small mb-2",
-                            ),
-                            html.Div(id="comparison-table"),
-                        ]
+                    section_col(
+                        "All methods summary",
+                        html.P(
+                            [
+                                "Each row is one method's estimate of the average lift in spend "
+                                "per recipient, with its confidence range. The Overview, Bayesian "
+                                "and OLS rows are the headline numbers because they "
+                                "use the random assignment directly. The PSM row is included as a "
+                                "diagnostic, its uncertainty band is shown on the PSM tab and "
+                                "deliberately left blank here so it isn't read as comparable to the "
+                                "other intervals.",
+                            ],
+                            className="text-muted small mb-2",
+                        ),
+                        html.Div(id="comparison-table"),
                     ),
                 ],
                 className="mb-4",
             ),
-            dbc.Row(
-                [
-                    dbc.Col(dcc.Graph(id="forest-plot-mens", config=GRAPH_CONFIG), md=6),
-                    dbc.Col(dcc.Graph(id="forest-plot-womens", config=GRAPH_CONFIG), md=6)
-                ],
-                className="mb-4",
+            graph_row_ids(
+                "forest-plot-mens", "forest-plot-womens",
+                className="mb-4", locked=True,
             ),
             dbc.Row(
                 [
@@ -150,4 +145,3 @@ def tab6_layout():
         fluid=True,
         className="py-5"
     )
-

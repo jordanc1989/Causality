@@ -1,10 +1,10 @@
 
-from dash import html
+from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dashboard.theme import (
     SUCCESS, DANGER, MUTED, TEXT,
     KPI_LABEL_STYLE, KPI_VALUE_STYLE, KPI_DELTA_STYLE,
-    SECTION_HEADER_STYLE,
+    SECTION_HEADER_STYLE, GRAPH_CONFIG, LOCKED_GRAPH_CONFIG,
 )
 
 def kpi_card(
@@ -168,6 +168,39 @@ def segment_overview_card(
 def section_header(text):
     return html.H5(text, style=SECTION_HEADER_STYLE)
 
+def section_col(title, *children, **kwargs):
+    return dbc.Col([section_header(title), *children], **kwargs)
+
+def graph(graph_id, figure=None, locked=False, **kwargs):
+    config = LOCKED_GRAPH_CONFIG if locked else GRAPH_CONFIG
+    props = {"id": graph_id, "config": config, **kwargs}
+    if figure is not None:
+        props["figure"] = figure
+    return dcc.Graph(**props)
+
+def graph_col(graph_id, md=6, figure=None, locked=False, **kwargs):
+    return dbc.Col(graph(graph_id, figure=figure, locked=locked, **kwargs), md=md)
+
+def graph_row(*columns, className="mb-3"):
+    return dbc.Row(list(columns), className=className)
+
+def graph_row_ids(*items, className="mb-3", locked=False):
+    return graph_row(
+        *(
+            graph_col(item[0], md=item[1], locked=item[2] if len(item) > 2 else locked)
+            if isinstance(item, tuple)
+            else graph_col(item, locked=locked)
+            for item in items
+        ),
+        className=className,
+    )
+
+def kpi_graph_row(kpi_id, graph_id, graph_md=8):
+    return graph_row(
+        dbc.Col(html.Div(id=kpi_id, className="kpi-stack"), md=12 - graph_md),
+        graph_col(graph_id, md=graph_md),
+    )
+
 def labeled_radio(label, id, options, value, className="dashboard-radio-group mb-2", inline=True):
     return html.Div(
         [
@@ -221,4 +254,3 @@ def methodology_collapse(tab_id, content):
         ],
         className="methodology-section",
     )
-

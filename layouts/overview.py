@@ -1,10 +1,10 @@
 
 import numpy as np
-from dash import dcc, html
+from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from dashboard.data import DF
-from layouts.components import section_header, segment_overview_card
+from layouts.components import graph, section_col, section_header, segment_overview_card
 from figures.overview import _fig_spend_box, _fig_covariate_balance
 import causal_utils as cu
 
@@ -224,23 +224,21 @@ def tab1_layout():
             ),
             dbc.Row(
                 [
-                    dbc.Col(
-                        [
-                            section_header("About the data"),
-                            html.P(
-                                "The Hillstrom dataset is a real email experiment across 64k US "
-                                "retail customers: a third got a Men's catalogue email, a third a "
-                                "Women's, a third nothing. Spend was recorded over the following "
-                                "two weeks, alongside a handful of customer attributes.",
-                                className="small text-muted",
-                            ),
-                            html.P(
-                                "The question is whether the email itself caused extra spend, and "
-                                "where. Later sections add the confidence around that, which "
-                                "customers respond most, and whether different methods agree.",
-                                className="small text-muted mb-0",
-                            ),
-                        ],
+                    section_col(
+                        "About the data",
+                        html.P(
+                            "The Hillstrom dataset is a real email experiment across 64k US "
+                            "retail customers: a third got a Men's catalogue email, a third a "
+                            "Women's, a third nothing. Spend was recorded over the following "
+                            "two weeks, alongside a handful of customer attributes.",
+                            className="small text-muted",
+                        ),
+                        html.P(
+                            "The question is whether the email itself caused extra spend, and "
+                            "where. Later sections add the confidence around that, which "
+                            "customers respond most, and whether different methods agree.",
+                            className="small text-muted mb-0",
+                        ),
                         md=6,
                     ),
                     dbc.Col(
@@ -265,31 +263,25 @@ def tab1_layout():
             ),
             dbc.Row(
                 [
-                    dbc.Col(
-                        [
-                            section_header("Spend distribution by segment (among spenders)"),
-                            dcc.Graph(id="tab1-box", figure=_fig_spend_box(), config=GRAPH_CONFIG)
-                        ],
+                    section_col(
+                        "Spend distribution by segment (among spenders)",
+                        graph("tab1-box", figure=_fig_spend_box()),
                         md=6,
                     ),
-                    dbc.Col(
-                        [
-                            section_header("Did the randomisation work?"),
-                            html.P(
-                                [
-                                    "Each dot compares the treatment and control groups on a customer attribute "
-                                    "(recency, spend history, channel, etc). ",
-                                    html.Strong("Dots inside the dashed band = groups are balanced"),
-                                    ", meaning any difference in outcomes can be attributed to the email itself "
-                                    "rather than pre-existing differences between customers. "
-                                    "A randomised experiment should produce this pattern."
-                                ],
-                                className="small text-muted mb-2"
-                            ),
-                            dcc.Graph(
-                                id="tab1-balance", figure=_fig_covariate_balance(), config=GRAPH_CONFIG
-                            ),
-                        ],
+                    section_col(
+                        "Did the randomisation work?",
+                        html.P(
+                            [
+                                "Each dot compares the treatment and control groups on a customer attribute "
+                                "(recency, spend history, channel, etc). ",
+                                html.Strong("Dots inside the dashed band mean groups are balanced"),
+                                ", so any difference in outcomes can be attributed to the email itself "
+                                "rather than pre-existing differences between customers. "
+                                "A randomised experiment should produce this pattern."
+                            ],
+                            className="small text-muted mb-2"
+                        ),
+                        graph("tab1-balance", figure=_fig_covariate_balance()),
                         md=6,
                     ),
                 ],
@@ -299,4 +291,3 @@ def tab1_layout():
         fluid=True,
         className="py-5"
     )
-

@@ -6,7 +6,6 @@ from dash import html, Output, Input
 from dashboard.theme import *
 from dashboard.data import PSM
 from layouts.components import kpi_card
-from dashboard.theme import COVARIATE_LABELS
 
 def update_psm(arm):
     p = PSM[arm]

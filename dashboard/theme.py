@@ -85,6 +85,21 @@ GRAPH_CONFIG = {
     "displaylogo": False,
     "toImageButtonOptions": {"format": "png", "scale": 3},
 }
+LOCKED_GRAPH_CONFIG = {
+    **GRAPH_CONFIG,
+    "doubleClick": False,
+    "scrollZoom": False,
+    "modeBarButtonsToRemove": [
+        "zoom2d",
+        "pan2d",
+        "select2d",
+        "lasso2d",
+        "zoomIn2d",
+        "zoomOut2d",
+        "autoScale2d",
+        "resetScale2d",
+    ],
+}
 
 FIGURE_MARGIN = dict(t=50, b=30)       # standard
 FIGURE_MARGIN_WIDE = dict(t=50, b=70)  # room for bottom legend

@@ -6,7 +6,6 @@ from dash import html, dash_table, Output, Input
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from dashboard.data import PSM, BAYESIAN, UPLIFT, OLS
-from dashboard.theme import TABLE_CELL, TABLE_HEADER, TABLE_SELECTED
 
 def _build_comparison_df():
     """Assemble a tidy DataFrame of point estimates and CIs across all 5 methods x 2 arms."""
@@ -203,7 +202,9 @@ def update_comparison(noise_eps):
             template=PLOTLY_TEMPLATE,
             title=f"Forest Plot - {arm_label}",
             xaxis_title="Effect on Spend ($)",
-            yaxis=dict(automargin=True),
+            yaxis=dict(automargin=True, fixedrange=True),
+            xaxis_fixedrange=True,
+            dragmode=False,
             margin=dict(t=50, b=30, l=20, r=20),
             height=350,
             autosize=True,

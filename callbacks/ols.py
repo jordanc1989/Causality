@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 from dash import dash_table
 from dashboard.theme import *
 from dashboard.data import OLS, DF
-from dashboard.theme import TABLE_CELL, TABLE_HEADER, TABLE_SELECTED
 
 
 def build_ols_figures():
@@ -79,6 +78,9 @@ def build_ols_figures():
             "displayed coefficients</sup>"
         ),
         xaxis_title="Effect on Spend ($)",
+        xaxis_fixedrange=True,
+        yaxis_fixedrange=True,
+        dragmode=False,
         margin=dict(t=70, b=30, l=260)
     )
 
@@ -139,35 +141,12 @@ def build_ols_figures():
         style_header=TABLE_HEADER,
         style_data_conditional=[
             {
-                "if": {
-                    "filter_query": "{Men's Email ($)} > 0",
-                    "column_id": "Men's Email ($)",
-                },
-                "color": SUCCESS
-            },
-            {
-                "if": {
-                    "filter_query": "{Men's Email ($)} < 0",
-                    "column_id": "Men's Email ($)",
-                },
-                "color": DANGER
-            },
-            {
-                "if": {
-                    "filter_query": "{Women's Email ($)} > 0",
-                    "column_id": "Women's Email ($)",
-                },
-                "color": SUCCESS
-            },
-            {
-                "if": {
-                    "filter_query": "{Women's Email ($)} < 0",
-                    "column_id": "Women's Email ($)",
-                },
-                "color": DANGER
-            },
-            *TABLE_SELECTED,
-        ],
+                "if": {"filter_query": f"{{{col}}} {op} 0", "column_id": col},
+                "color": style_color,
+            }
+            for col in ("Men's Email ($)", "Women's Email ($)")
+            for op, style_color in ((">", SUCCESS), ("<", DANGER))
+        ] + TABLE_SELECTED,
         page_size=12
     )
 
@@ -204,6 +183,9 @@ def build_ols_figures():
         title="Men's Email: Marginal Effect ($)",
         xaxis_title="Channel",
         yaxis_title="Customer type",
+        xaxis_fixedrange=True,
+        yaxis_fixedrange=True,
+        dragmode=False,
         margin=FIGURE_MARGIN
     )
 
@@ -213,6 +195,9 @@ def build_ols_figures():
         title="Women's Email: Marginal Effect ($)",
         xaxis_title="Channel",
         yaxis_title="Customer type",
+        xaxis_fixedrange=True,
+        yaxis_fixedrange=True,
+        dragmode=False,
         margin=FIGURE_MARGIN
     )
 

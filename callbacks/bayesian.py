@@ -5,7 +5,6 @@ from plotly.subplots import make_subplots
 from dash import html, Output, Input
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from dashboard.theme import hex_to_rgba
 from dashboard.data import BAYESIAN
 from layouts.components import kpi_card
 
