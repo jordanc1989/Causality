@@ -8,6 +8,15 @@ from dashboard.theme import COVARIATE_LABELS, hex_to_rgba
 from dashboard.data import UPLIFT
 from layouts.components import kpi_card
 
+# Per-model cached results are stored under a `{base}_{model}` key in UPLIFT[arm]
+# (e.g. cate_t / cate_s / cate_x). MODEL_LABEL maps the selector value to a label.
+MODEL_LABEL = {"t": "T-Learner", "s": "S-Learner", "x": "X-Learner"}
+
+
+def _uplift_key(base, model):
+    return f"{base}_{model}"
+
+
 def update_uplift(arm, model):
     u = UPLIFT[arm]
     arm_label, color = ARM_META[arm]

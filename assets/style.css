@@ -1,27 +1,31 @@
 /* Palette: keep in sync with dashboard/theme.py */
 :root {
-  --bg: #041818;
-  --bg-strong: #020e0e;
-  --surface: #072c2c;
-  --surface-2: #0d3535;
-  --surface-3: #051f1f;
-  --border: #1a4040;
-  --border-strong: #2a5050;
-  --accent: #e86f2a;
-  --text: #e2f0ef;
-  --text-soft: #c8e0df;
-  --muted: #8fb5b5;
-  --shadow-tooltip: 0 2px 8px rgba(0, 0, 0, 0.35);
-  --hover-wash: rgba(255, 255, 255, 0.04);
-  --accent-wash: rgba(232, 111, 42, 0.12);
-  --accent-border: rgba(232, 111, 42, 0.35);
-  --accent-soft: rgba(232, 111, 42, 0.07);
-  --focus-ring: rgba(232, 111, 42, 0.25);
-  --focus-ring-tight: rgba(232, 111, 42, 0.2);
-  --focus-outline-strong: rgba(232, 111, 42, 0.45);
-  --tooltip-surface: rgba(13, 53, 53, 0.92);
-  --font-main: "Ubuntu", sans-serif;
-  --font-mono: "Ubuntu Mono", monospace;}
+  --bg: #faf8f4;
+  --bg-strong: #f4f1ea;
+  --surface: #ffffff;
+  --surface-2: #f4f1ea;
+  --surface-3: #fbfaf7;
+  --border: #e2ddd3;
+  --border-strong: #c9c2b5;
+  --accent: #1e5c4f;
+  --text: #1f1b16;
+  --text-soft: #423c33;
+  --muted: #6b655c;
+  --positive: #2e6b4f;
+  --negative: #9b3d2e;
+  --warning: #b07a2e;
+  --shadow-tooltip: 0 4px 14px rgba(31, 27, 22, 0.12);
+  --hover-wash: rgba(31, 27, 22, 0.035);
+  --accent-wash: rgba(30, 92, 79, 0.08);
+  --accent-border: rgba(30, 92, 79, 0.35);
+  --accent-soft: rgba(30, 92, 79, 0.06);
+  --focus-ring: rgba(30, 92, 79, 0.2);
+  --focus-ring-tight: rgba(30, 92, 79, 0.18);
+  --focus-outline-strong: rgba(30, 92, 79, 0.45);
+  --tooltip-surface: #ffffff;
+  --font-main: "Source Serif 4", Georgia, serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
 
 *,
 *::before,
@@ -38,8 +42,8 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -47,7 +51,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--border-strong);
   border-radius: 3px;
 }
 
@@ -55,52 +59,75 @@ body {
   background: var(--accent);
 }
 
-/* Navbar */
-.dashboard-app nav.navbar.dashboard-navbar,
-.dashboard-app .navbar.dashboard-navbar {
-  --bs-navbar-bg: var(--bg-strong);
-  background-color: var(--bg-strong) !important;
-  background-image: none !important;
-  border-bottom: 1px solid var(--border);
-  padding-top: 0.65rem;
-  padding-bottom: 0.65rem;
+/* Measure — constrain content to a centred editorial column with margins.
+   The masthead and every page share one width so nothing sprawls. Nested
+   containers (a page's own Container inside the shell's) are neutralised so
+   horizontal padding is applied once. */
+.dashboard-app .container-fluid {
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
 }
 
-.dashboard-app .dashboard-card {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+.dashboard-app .container-fluid .container-fluid {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
 }
 
-.dashboard-app .dashboard-card > .card-body {
-  padding: 1.05rem 1.1rem;
+/* Masthead — editorial nameplate instead of an app navbar */
+.dashboard-app .masthead {
+  padding: 1.4rem 0 0;
+  background-color: var(--bg);
 }
 
-.dashboard-app .dashboard-card > .card-header {
-  padding: 0.6rem 1rem;
-  background-color: var(--surface-3);
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
+.dashboard-app .masthead-inner {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 2px solid var(--text);
+}
+
+.dashboard-app .masthead-title {
   font-family: var(--font-main);
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.85rem;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  color: var(--text);
 }
 
-.dashboard-app .dashboard-tabs.nav-tabs {
-  padding: 0 0.5rem;
-  background-color: var(--bg-strong);
+.dashboard-app .masthead-standfirst {
+  font-family: var(--font-main);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+/* Section navigation — understated serif text links with an accent underline */
+.dashboard-app .dashboard-tabs.nav {
+  gap: 0.35rem 1.6rem;
+  padding: 0.7rem 0 0;
+  margin-bottom: 0.4rem;
   border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
 }
 
-.dashboard-app .dashboard-tabs.nav-tabs .nav-link {
-  padding: 0.65rem 1.1rem;
+.dashboard-app .dashboard-tabs .nav-link,
+.dashboard-app .dashboard-tabs .dashboard-nav-link {
+  padding: 0.2rem 0;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
   border-radius: 0;
   color: var(--muted);
   font-family: var(--font-main);
-  font-size: 0.84rem;
+  font-size: 0.95rem;
   font-weight: 500;
   transition:
     color 0.15s,
@@ -108,15 +135,41 @@ body {
   white-space: nowrap;
 }
 
-.dashboard-app .dashboard-tabs.nav-tabs .nav-link:hover {
+.dashboard-app .dashboard-tabs .nav-link:hover,
+.dashboard-app .dashboard-tabs .dashboard-nav-link:hover {
   color: var(--text);
   border-bottom-color: var(--border-strong);
 }
 
-.dashboard-app .dashboard-tabs.nav-tabs .nav-link.active {
+.dashboard-app .dashboard-tabs .nav-link.active,
+.dashboard-app .dashboard-tabs .dashboard-nav-link.active {
   color: var(--accent);
   background: transparent;
+  font-weight: 600;
   border-bottom: 2px solid var(--accent);
+}
+
+/* Cards — quiet surfaces on a single hairline, no fills or accent stripes */
+.dashboard-app .dashboard-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.dashboard-app .dashboard-card > .card-body {
+  padding: 1.1rem 1.2rem;
+}
+
+.dashboard-app .dashboard-card > .card-header {
+  padding: 0.6rem 1.1rem;
+  background-color: var(--surface-3);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .dashboard-app .tab-content {
@@ -124,10 +177,29 @@ body {
   padding-bottom: 2rem;
 }
 
-.dashboard-app .accordion-item {
-  margin-bottom: 4px;
-  background-color: var(--surface);
+/* KPI ledger — a stack of metrics reads as one panel with hairline-divided
+   rows, not a scatter of floating boxes. */
+.dashboard-app .kpi-stack {
   border: 1px solid var(--border);
+  border-radius: 2px;
+  background-color: var(--surface);
+}
+
+.dashboard-app .kpi-stat {
+  padding: 0.85rem 1.05rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-app .kpi-stack .kpi-stat:last-child {
+  border-bottom: none;
+}
+
+/* Accordion */
+.dashboard-app .accordion-item {
+  margin-bottom: 0;
+  background-color: var(--surface);
+  border: none;
+  border-bottom: 1px solid var(--border);
 }
 
 .dashboard-app .accordion-button {
@@ -135,29 +207,36 @@ body {
   box-shadow: none;
   color: var(--text);
   font-family: var(--font-main);
-  font-size: 0.87rem;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .dashboard-app .accordion-button:not(.collapsed) {
-  background-color: var(--surface-2);
+  background-color: var(--surface);
   color: var(--accent);
+}
+
+.dashboard-app .accordion-button:focus {
+  box-shadow: none;
+  border-color: var(--border);
 }
 
 .dashboard-app .accordion-body {
   background-color: var(--surface);
   border-top: 1px solid var(--border);
   color: var(--muted);
-  font-size: 0.87rem;
-  line-height: 1.65;
+  font-size: 0.92rem;
+  line-height: 1.7;
 }
 
+/* Segmented control */
 .dashboard-app .segmented-control {
   display: inline-flex;
   gap: 2px;
   padding: 3px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .dashboard-app .segmented-control .form-check {
@@ -174,13 +253,13 @@ body {
 }
 
 .dashboard-app .segmented-control .form-check-label {
-  padding: 0.45rem 1.1rem;
+  padding: 0.42rem 1.05rem;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 3px;
   color: var(--muted);
   cursor: pointer;
   font-family: var(--font-main);
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   line-height: 1.2;
   transition:
     background-color 0.15s ease,
@@ -200,8 +279,8 @@ body {
   .form-check-input:checked
   + .form-check-label {
   color: var(--accent);
-  background: var(--accent-wash);
-  border-color: var(--accent-border);
+  background: var(--surface);
+  border-color: var(--border-strong);
 }
 
 .dashboard-app
@@ -212,30 +291,36 @@ body {
   outline-offset: 1px;
 }
 
+/* Disclosure toggle — quiet editorial link, no glyph */
 .dashboard-app .btn-methodology {
-  padding: 0.35rem 0.9rem;
+  padding: 0.3rem 0;
   background: transparent;
-  border: 1px solid var(--border-strong);
-  border-radius: 3px;
+  border: none;
+  border-bottom: 1px solid var(--border-strong);
+  border-radius: 0;
   color: var(--muted);
   cursor: pointer;
   font-family: var(--font-main);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   transition:
-    background-color 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease;
 }
 
 .dashboard-app .btn-methodology:hover,
 .dashboard-app .btn-methodology:focus {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+  background: transparent;
+  border-bottom-color: var(--accent);
   box-shadow: none;
   color: var(--accent);
   outline: none;
 }
 
+/* Radio groups */
 .dashboard-app .dashboard-radio-group .form-check-input:checked {
   background-color: var(--accent);
   border-color: var(--accent);
@@ -246,18 +331,21 @@ body {
 }
 
 .dashboard-app .dashboard-radio-group .form-check-label {
-  color: var(--muted);
-  font-size: 0.85rem;
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 0.92rem;
 }
 
+/* Inputs */
 .dashboard-app .dashboard-input {
-  background-color: var(--surface-2);
-  border: 1px solid var(--border);
+  background-color: var(--surface);
+  border: 1px solid var(--border-strong);
   color: var(--text);
+  font-family: var(--font-mono);
 }
 
 .dashboard-app .dashboard-input:focus {
-  background-color: var(--surface-2);
+  background-color: var(--surface);
   border-color: var(--accent);
   box-shadow: 0 0 0 0.15rem var(--focus-ring-tight);
   color: var(--text);
@@ -265,7 +353,7 @@ body {
 
 .dashboard-app .dashboard-input-group-text {
   background-color: var(--surface-2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.82rem;
@@ -276,42 +364,49 @@ body {
   color: var(--muted) !important;
 }
 
+/* Info affordance — dotted underline on the term, no glyph */
+.dashboard-app .info-term {
+  border-bottom: 1px dotted var(--border-strong);
+  cursor: help;
+}
+
 .dashboard-app .methodology-section {
-  margin-top: 2.25rem;
+  margin-top: 2.5rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border);
 }
 
 .dashboard-app .methodology-content.dashboard-card {
-  border-color: var(--border);
-  background-color: var(--surface);
+  border: none;
+  border-left: 2px solid var(--border-strong);
+  border-radius: 0;
+  background-color: transparent;
 }
 
 .dashboard-app .methodology-content .card-body {
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding: 0.4rem 0 0.4rem 1.1rem;
   background-color: transparent;
-  border-left: 1px solid var(--border);
 }
 
+/* Tooltips — light surface, hairline, subtle shadow */
 .dashboard-app .tooltip .tooltip-inner {
   max-width: 260px;
-  padding: 0.45rem 0.7rem;
+  padding: 0.5rem 0.75rem;
   background-color: var(--tooltip-surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
   box-shadow: var(--shadow-tooltip);
   color: var(--text-soft);
   font-family: var(--font-main);
-  font-size: 0.78rem;
-  line-height: 1.5;
+  font-size: 0.82rem;
+  line-height: 1.55;
   text-align: left;
 }
 
 .dashboard-app .tooltip .tooltip-arrow::before {
-  border-right-color: var(--border);
+  border-right-color: var(--border-strong);
 }
 
+/* Dash DataTable */
 .dashboard-app .dash-table-container td.focused,
 .dashboard-app .dash-table-container td.cell--selected {
   background-color: var(--surface-2) !important;
@@ -321,34 +416,38 @@ body {
 /* Dash DataTable: export control has a noisy default label; hide it and show ours. */
 .dashboard-app .export {
   margin-bottom: 0.5rem;
-  padding: 0.3rem 0.85rem;
+  padding: 0.3rem 0;
   background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 3px;
+  border: none;
+  border-bottom: 1px solid var(--border-strong);
+  border-radius: 0;
   color: var(--muted);
   cursor: pointer;
-  font-family: var(--font-mono);
+  font-family: var(--font-main);
   font-size: 0;
   transition:
-    background-color 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease;
 }
 
 .dashboard-app .export::after {
   content: "Export to CSV";
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-family: var(--font-main);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .dashboard-app .export:hover,
 .dashboard-app .export:focus {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+  background: transparent;
+  border-bottom-color: var(--accent);
   color: var(--accent);
   outline: none;
 }
 
+/* Context / dateline strip */
 .dashboard-app .overview-context {
   display: flex;
   align-items: center;
@@ -359,7 +458,7 @@ body {
   border-bottom: 1px solid var(--border);
   color: var(--muted);
   font-family: var(--font-main);
-  font-size: 0.8rem;
+  font-size: 0.86rem;
 }
 
 .dashboard-app .overview-context strong {
@@ -369,31 +468,28 @@ body {
 
 .dashboard-app .overview-context .sep {
   display: inline-block;
-  width: 4px;
-  height: 4px;
-  background: var(--border);
+  width: 3px;
+  height: 3px;
+  background: var(--border-strong);
   border-radius: 50%;
 }
 
+/* Segment stat blocks — rule-separated columns, not boxed cards */
 .dashboard-app .segment-card {
   height: 100%;
   overflow: hidden;
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  transition: border-color 0.15s ease;
-}
-
-.dashboard-app .segment-card:hover {
-  border-color: var(--border-strong);
+  background-color: transparent;
+  border: none;
+  border-top: 2px solid var(--text);
+  border-radius: 0;
 }
 
 .dashboard-app .segment-card-header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  padding: 0.75rem 1.05rem;
-  background-color: var(--surface-3);
+  padding: 0.65rem 0 0.7rem;
+  background-color: transparent;
   border-bottom: 1px solid var(--border);
 }
 
@@ -403,7 +499,7 @@ body {
   align-items: flex-start;
   color: var(--text);
   font-family: var(--font-main);
-  font-size: 0.88rem;
+  font-size: 1.02rem;
   font-weight: 600;
 }
 
@@ -411,53 +507,51 @@ body {
   line-height: 1.2;
 }
 
-.dashboard-app .segment-card-underline {
-  width: 28px;
-  height: 3px;
-  margin-top: 0.4rem;
-  border-radius: 2px;
-}
-
 .dashboard-app .segment-card-count {
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
 }
 
 .dashboard-app .segment-card-count strong {
-  color: var(--text-soft);
-  font-weight: 700;
+  color: var(--text);
+  font-weight: 600;
 }
 
 .dashboard-app .segment-metric-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  background-color: var(--border);
+  column-gap: 1.4rem;
 }
 
 .dashboard-app .segment-metric {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  min-height: 118px;
-  padding: 1.05rem 1.1rem 1.1rem;
-  background-color: var(--surface);
+  min-height: 110px;
+  padding: 0.95rem 0 0.4rem;
+  background-color: transparent;
+}
+
+.dashboard-app .segment-metric:first-child {
+  border-right: 1px solid var(--border);
+  padding-right: 1.4rem;
 }
 
 .dashboard-app .segment-metric-label {
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.3rem;
   color: var(--muted);
   font-family: var(--font-main);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
 .dashboard-app .segment-metric-value {
-  font-family: var(--font-main);
-  font-size: 1.95rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: var(--font-mono);
+  font-size: 1.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
   line-height: 1.05;
 }
 
@@ -465,30 +559,30 @@ body {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.4rem;
   margin-top: 0.55rem;
   color: var(--muted);
   font-family: var(--font-main);
-  font-size: 0.76rem;
+  font-size: 0.82rem;
 }
 
 .dashboard-app .segment-metric-delta .delta-num {
   font-family: var(--font-mono);
-  font-weight: 700;
+  font-weight: 600;
 }
 
+/* Significance read as small-caps text, not a boxed badge */
 .dashboard-app .segment-sig-badge {
-  padding: 1px 6px;
-  border: 1px solid currentColor;
-  border-radius: 2px;
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  line-height: 1.3;
+  font-family: var(--font-main);
+  font-size: 0.74rem;
+  font-style: italic;
+  letter-spacing: 0.01em;
 }
 
 .dashboard-app .segment-metric-baseline {
   margin-top: 0.55rem;
   color: var(--muted);
   font-family: var(--font-main);
-  font-size: 0.74rem;
+  font-style: italic;
+  font-size: 0.8rem;
 }

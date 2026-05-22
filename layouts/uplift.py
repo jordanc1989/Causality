@@ -46,7 +46,7 @@ def tab4_layout():
             ),
             dbc.Row(
                 [
-                    dbc.Col(html.Div(id="uplift-kpi-cards"), md=4),
+                    dbc.Col(html.Div(id="uplift-kpi-cards", className="kpi-stack"), md=4),
                     dbc.Col(dcc.Graph(id="uplift-cate-hist", config=GRAPH_CONFIG), md=8)
                 ],
                 className="mb-3"
@@ -145,14 +145,14 @@ def tab4_layout():
                                     ],
                                     md=4,
                                 ),
-                                dbc.Col(html.Div(id="policy-kpi-cards"), md=8),
+                                dbc.Col(html.Div(id="policy-kpi-cards", className="kpi-stack"), md=8),
                             ],
                             className="g-3 mb-3",
                         ),
                         dcc.Graph(id="policy-curve", config=GRAPH_CONFIG),
                     ]
                 ),
-                style={**CARD_STYLE, "borderLeft": f"3px solid {ACCENT}"},
+                style=CARD_STYLE,
                 className="dashboard-card mb-4",
             ),
             methodology_collapse(

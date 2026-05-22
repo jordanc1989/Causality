@@ -2,21 +2,24 @@ import plotly.graph_objects as go
 import plotly.io as pio
 
 GOOGLE_FONTS = (
-    "https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700"
-    "&family=Ubuntu+Mono:wght@400;700&display=swap"
+    "https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,500;8..60,600;8..60,700"
+    "&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
 )
 
-BG = "#041818"
-BG_STRONG = "#020E0E"
-SURFACE = "#072C2C"
-SURFACE_2 = "#0D3535"
-SURFACE_3 = "#051F1F"
-BORDER = "#1A4040"
-BORDER_STRONG = "#2A5050"
-ACCENT = "#E86F2A"
-MENS_COLOUR = "#7DD3FC"
-WOMENS_COLOUR = "#A78BFA"
-CTRL_COLOUR = "#C6C6C6"
+# Light editorial palette — warm off-white paper, near-black ink, one restrained
+# forest-green accent. Names are kept stable so imports across callbacks/figures
+# don't break; only the values change.
+BG = "#FAF8F4"          # warm off-white "paper"
+BG_STRONG = "#F4F1EA"   # subtle warm panel (masthead / control strips)
+SURFACE = "#FFFFFF"
+SURFACE_2 = "#F4F1EA"
+SURFACE_3 = "#FBFAF7"
+BORDER = "#E2DDD3"       # hairline
+BORDER_STRONG = "#C9C2B5"
+ACCENT = "#1E5C4F"       # deep forest green
+MENS_COLOUR = "#2F6E8F"  # muted steel blue
+WOMENS_COLOUR = "#7E5A86"  # muted plum
+CTRL_COLOUR = "#9A9182"  # warm gray
 
 # Per-arm display metadata: callbacks across tabs all repeat the same
 # (label, colour) lookup for the two treatment arms. Single source here.
@@ -33,102 +36,114 @@ def hex_to_rgba(hex_color, alpha=1.0):
     g = int(h[2:4], 16)
     b = int(h[4:6], 16)
     return f"rgba({r},{g},{b},{alpha})"
-TEXT = "#E2F0EF"
-MUTED = "#8FB5B5"
-SUCCESS = "#16A34A"
-WARNING = "#D97706"
-DANGER = "#DC2626"
+TEXT = "#1F1B16"        # warm near-black ink
+MUTED = "#6B655C"
+SUCCESS = "#2E6B4F"      # muted green (positive delta)
+WARNING = "#B07A2E"      # muted ocher
+DANGER = "#9B3D2E"       # muted brick (negative delta)
+
+SERIF = "Source Serif 4, Georgia, serif"
+MONO = "IBM Plex Mono, monospace"
 
 
 def register_plotly_template():
-    pio.templates["causal_dark"] = go.layout.Template(
+    pio.templates["causal_light"] = go.layout.Template(
         layout=go.Layout(
             paper_bgcolor=SURFACE,
-            plot_bgcolor=SURFACE_2,
-            font=dict(family="Ubuntu, sans-serif", color=TEXT, size=12),
-            colorway=[MENS_COLOUR, WOMENS_COLOUR, CTRL_COLOUR, ACCENT, "#5EEAD4", "#FBBF24"],
+            plot_bgcolor=SURFACE,
+            font=dict(family=SERIF, color=TEXT, size=12),
+            colorway=[MENS_COLOUR, WOMENS_COLOUR, CTRL_COLOUR, ACCENT, WARNING, "#6B655C"],
             xaxis=dict(
                 gridcolor=BORDER,
-                linecolor=BORDER,
+                linecolor=BORDER_STRONG,
                 zerolinecolor=BORDER_STRONG,
-                tickfont=dict(color=MUTED),
-                title_font=dict(color=MUTED, size=11)
+                tickfont=dict(family=MONO, color=MUTED, size=11),
+                title_font=dict(family=SERIF, color=MUTED, size=12)
             ),
             yaxis=dict(
                 gridcolor=BORDER,
-                linecolor=BORDER,
+                linecolor=BORDER_STRONG,
                 zerolinecolor=BORDER_STRONG,
-                tickfont=dict(color=MUTED),
-                title_font=dict(color=MUTED, size=11)
+                tickfont=dict(family=MONO, color=MUTED, size=11),
+                title_font=dict(family=SERIF, color=MUTED, size=12)
             ),
             legend=dict(
                 bgcolor="rgba(0,0,0,0)",
                 bordercolor="rgba(0,0,0,0)",
-                font=dict(color=MUTED)
+                font=dict(family=SERIF, color=MUTED)
             ),
             title=dict(
-                font=dict(family="Ubuntu, sans-serif", color=TEXT, size=14),
+                font=dict(family=SERIF, color=TEXT, size=14),
                 pad=dict(l=0)
             ),
         )
     )
 
 
-PLOTLY_TEMPLATE = "causal_dark"
+PLOTLY_TEMPLATE = "causal_light"
 GRAPH_CONFIG = {"toImageButtonOptions": {"format": "png", "scale": 3}}
 
+# Cards are no longer filled-and-bordered boxes; they read as quiet surfaces
+# separated from the paper by a single hairline. The left-accent-border motif
+# is gone.
 CARD_STYLE = {
     "backgroundColor": SURFACE,
     "border": f"1px solid {BORDER}",
-    "borderRadius": "4px",
+    "borderRadius": "2px",
 }
 KPI_LABEL_STYLE = {
-    "fontSize": "0.78rem",
+    "fontSize": "0.8rem",
     "color": MUTED,
-    "fontFamily": "Ubuntu, sans-serif",
+    "fontFamily": SERIF,
     "fontWeight": "500",
-    "marginBottom": "0.15rem",
+    "marginBottom": "0.2rem",
 }
 KPI_VALUE_STYLE = {
     "fontSize": "1.7rem",
-    "fontWeight": "700",
-    "fontFamily": "Ubuntu, sans-serif",
-    "letterSpacing": "-0.02em",
+    "fontWeight": "600",
+    "fontFamily": MONO,
+    "fontVariantNumeric": "tabular-nums",
+    "letterSpacing": "-0.01em",
     "lineHeight": "1.1",
     "marginBottom": "0.25rem",
     "color": TEXT,
 }
 KPI_DELTA_STYLE = {
-    "fontSize": "0.8rem",
-    "fontFamily": "Ubuntu, sans-serif",
+    "fontSize": "0.82rem",
+    "fontFamily": MONO,
     "marginBottom": "0",
 }
+# Editorial subhead: a kicker in small-caps serif over a thin rule.
 SECTION_HEADER_STYLE = {
-    "fontFamily": "Ubuntu, sans-serif",
+    "fontFamily": SERIF,
     "fontWeight": "600",
-    "fontSize": "0.86rem",
-    "color": MUTED,
-    "borderBottom": f"1px solid {BORDER}",
-    "paddingBottom": "0.5rem",
+    "fontSize": "1.02rem",
+    "color": TEXT,
+    "borderBottom": f"1px solid {BORDER_STRONG}",
+    "paddingBottom": "0.4rem",
     "marginBottom": "1.35rem",
 }
 
 TABLE_CELL = {
     "backgroundColor": SURFACE,
     "color": TEXT,
-    "border": f"1px solid {BORDER}",
+    "border": "none",
+    "borderBottom": f"1px solid {BORDER}",
     "textAlign": "left",
-    "padding": "8px 12px",
-    "fontFamily": "Ubuntu, sans-serif",
-    "fontSize": "0.85rem",
+    "padding": "9px 12px",
+    "fontFamily": MONO,
+    "fontSize": "0.84rem",
 }
 TABLE_HEADER = {
-    "backgroundColor": BG,
+    "backgroundColor": SURFACE,
     "fontWeight": "600",
     "color": MUTED,
-    "fontFamily": "Ubuntu, sans-serif",
-    "fontSize": "0.74rem",
-    "border": f"1px solid {BORDER}",
+    "fontFamily": SERIF,
+    "fontSize": "0.76rem",
+    "textTransform": "uppercase",
+    "letterSpacing": "0.04em",
+    "border": "none",
+    "borderBottom": f"1.5px solid {BORDER_STRONG}",
 }
 TABLE_SELECTED = [
     {"if": {"state": "active"}, "backgroundColor": SURFACE_2, "border": f"1px solid {ACCENT}"},

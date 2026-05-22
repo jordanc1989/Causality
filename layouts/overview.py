@@ -98,15 +98,15 @@ def tab1_layout():
             [
             html.Div(
                 [
-                    html.Div(label, style={"fontSize": "0.72rem", "fontFamily": "Ubuntu, sans-serif",
+                    html.Div(label, style={"fontSize": "0.72rem", "fontFamily": SERIF,
                                            "fontWeight": "600", "letterSpacing": "0.01em",
                                            "color": MUTED, "marginBottom": "0.5rem"}),
                     html.Div("Projected total lift",
-                             style={"fontSize": "0.72rem", "fontFamily": "Ubuntu, sans-serif",
+                             style={"fontSize": "0.72rem", "fontFamily": SERIF,
                                     "fontWeight": "500", "letterSpacing": "0.01em",
                                     "color": MUTED, "marginBottom": "0.3rem"}),
                     html.Div(f"${proj:,.0f}",
-                             style={"fontSize": "1.7rem", "fontFamily": "Ubuntu, sans-serif",
+                             style={"fontSize": "1.7rem", "fontFamily": SERIF,
                                     "fontWeight": "700", "letterSpacing": "-0.02em",
                                     "color": color if sig else MUTED,
                                     "lineHeight": "1", "marginBottom": "0.35rem"}),
@@ -116,14 +116,15 @@ def tab1_layout():
                             html.Span(
                                 f"${proj_lo:,.0f} – ${proj_hi:,.0f}",
                                 id=ci_id,
-                                style={"color": MUTED, "cursor": "help"},
+                                className="info-term",
+                                style={"color": MUTED},
                             ),
                         ],
-                        style={"fontSize": "0.7rem", "fontFamily": "Ubuntu Mono, monospace"},
+                        style={"fontSize": "0.7rem", "fontFamily": MONO},
                     ),
                 ],
-                style={"borderLeft": f"3px solid {color if sig else BORDER}",
-                       "paddingLeft": "0.85rem"},
+                style={"borderTop": f"2px solid {color if sig else BORDER_STRONG}",
+                       "paddingTop": "0.7rem"},
             ),
             dbc.Tooltip(tooltip_text, target=ci_id, placement="bottom"),
             ],
@@ -132,6 +133,46 @@ def tab1_layout():
 
     return dbc.Container(
         [
+            # Lede — the finding stated up front, like the standfirst of an article.
+            html.Div(
+                [
+                    html.Div(
+                        "Headline finding",
+                        style={"fontFamily": MONO, "fontSize": "0.74rem",
+                               "textTransform": "uppercase", "letterSpacing": "0.08em",
+                               "color": MUTED, "marginBottom": "0.5rem"},
+                    ),
+                    html.H2(
+                        headline,
+                        style={"fontFamily": SERIF, "fontWeight": "600",
+                               "fontSize": "1.7rem", "lineHeight": "1.3",
+                               "maxWidth": "52rem", "color": TEXT,
+                               "borderLeft": f"3px solid {headline_color}",
+                               "paddingLeft": "1rem", "marginBottom": "1.5rem"},
+                    ),
+                    dbc.Row(
+                        [
+                            _hl_col(
+                                "Men's Email", MENS_COLOUR, mens_sig,
+                                proj_mens, proj_mens_lo, proj_mens_hi,
+                            ),
+                            _hl_col(
+                                "Women's Email", WOMENS_COLOUR, wom_sig,
+                                proj_womens, proj_wom_lo, proj_wom_hi,
+                            ),
+                        ],
+                        className="g-4 mb-2",
+                    ),
+                    html.P(
+                        "Per-recipient lift scaled to the full arm. Ranges are 95% bootstrap "
+                        "intervals (2,000 resamples). The later sections re-test the same lift "
+                        "with matching, Bayesian and uplift methods.",
+                        className="text-muted small mb-0",
+                    ),
+                ],
+                style={"marginBottom": "2.5rem"},
+            ),
+            section_header("By campaign arm"),
             dbc.Row(
                 [
                     dbc.Col(
@@ -184,84 +225,43 @@ def tab1_layout():
             dbc.Row(
                 [
                     dbc.Col(
-                        dbc.Card(
-                            [
-                                dbc.CardHeader("Headline Finding"),
-                                dbc.CardBody(
-                                    [
-                                        html.P(
-                                            headline,
-                                            style={"fontSize": "0.82rem", "color": MUTED, "marginBottom": "1.25rem"},
-                                        ),
-                                        dbc.Row(
-                                            [
-                                                _hl_col(
-                                                    "Men's Email", MENS_COLOUR, mens_sig,
-                                                    proj_mens, proj_mens_lo, proj_mens_hi,
-                                                ),
-                                                _hl_col(
-                                                    "Women's Email", WOMENS_COLOUR, wom_sig,
-                                                    proj_womens, proj_wom_lo, proj_wom_hi,
-                                                ),
-                                            ],
-                                            className="g-3 mb-3",
-                                        ),
-                                        html.P(
-                                            "The segment cards above show the lift per recipient. This card "
-                                            "scales it up to the full campaign. Confidence ranges come from a "
-                                            "bootstrap of 2,000 resamples. Later tabs re-test the same lift "
-                                            "with matching, Bayesian and uplift methods.",
-                                            className="text-muted small mb-0",
-                                        ),
-                                    ]
-                                ),
-                            ],
-                            style={**CARD_STYLE, "borderLeft": f"3px solid {headline_color}"},
-                            className="dashboard-card h-100"
-                        ),
-                        md=6,
-                        className="mb-3",
-                    ),
-                    dbc.Col(
                         [
-                            section_header("About this Dataset"),
+                            section_header("About the data"),
                             html.P(
-                                "The Hillstrom dataset is a real email marketing experiment run across "
-                                "64k US retail customers. A third received a Men's catalogue email, "
-                                "a third received a Women's email, and a third was the control. "
-                                "Spend was recorded for the two weeks after the send. Every customer comes "
-                                "with a few attributes about how recently they bought and how they usually shop.",
-                                className="small text-muted"
+                                "The Hillstrom dataset is a real email experiment across 64k US "
+                                "retail customers: a third got a Men's catalogue email, a third a "
+                                "Women's, a third nothing. Spend was recorded over the following "
+                                "two weeks, alongside a handful of customer attributes.",
+                                className="small text-muted",
                             ),
                             html.P(
-                                "The question this dashboard answers is whether the email itself caused "
-                                "extra spend (and if so, where). The later tabs add value by showing "
-                                "how confident we can be, which customers respond most, and whether "
-                                "different statistical approaches all land in the same place.",
-                                className="small text-muted"
-                            ),
-                            html.P(
-                                [
-                                    html.Strong("Detection sensitivity. "),
-                                    f"With ~{n_mens // 1000}k recipients per arm, this experiment can "
-                                    f"reliably detect a per-recipient lift of ",
-                                    html.Strong(f"${mde_mens:.2f}"),
-                                    " (Men's vs Control) and ",
-                                    html.Strong(f"${mde_womens:.2f}"),
-                                    " (Women's vs Control) at 80% power and a two-sided α = 5%. The "
-                                    f"observed lifts (${lift_mens:.2f} and ${lift_womens:.2f}) are "
-                                    "above these thresholds, which is why the bootstrap CIs above "
-                                    "exclude zero. A smaller experiment would not have separated "
-                                    "these effects from noise."
-                                ],
-                                className="small text-muted"
+                                "The question is whether the email itself caused extra spend, and "
+                                "where. Later sections add the confidence around that, which "
+                                "customers respond most, and whether different methods agree.",
+                                className="small text-muted mb-0",
                             ),
                         ],
                         md=6,
-                        className="mb-3",
+                    ),
+                    dbc.Col(
+                        html.P(
+                            [
+                                html.Strong("Detection sensitivity. "),
+                                f"With ~{n_mens // 1000}k recipients per arm, the experiment can "
+                                "reliably detect a per-recipient lift of ",
+                                html.Strong(f"${mde_mens:.2f}"),
+                                " (Men's) and ",
+                                html.Strong(f"${mde_womens:.2f}"),
+                                f" (Women's) at 80% power, two-sided α = 5%. The observed lifts "
+                                f"(${lift_mens:.2f} and ${lift_womens:.2f}) clear those floors — "
+                                "which is why the intervals above exclude zero.",
+                            ],
+                            className="small text-muted",
+                        ),
+                        md=6,
                     ),
                 ],
-                className="mb-4 g-3 align-items-start"
+                className="mb-4 g-4 align-items-start",
             ),
             dbc.Row(
                 [

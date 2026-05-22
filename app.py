@@ -15,7 +15,7 @@ register_plotly_template()
 
 app = dash.Dash(
     __name__,
-    external_stylesheets=[dbc.themes.CYBORG, GOOGLE_FONTS],
+    external_stylesheets=[dbc.themes.BOOTSTRAP, GOOGLE_FONTS],
     suppress_callback_exceptions=True,
     title="Causal Inference Dashboard",
     use_pages=True,

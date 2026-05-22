@@ -12,7 +12,7 @@ def tab2_layout():
                 dbc.CardBody(
                     psm_intro_copy()
                 ),
-                style={**CARD_STYLE, "borderLeft": f"3px solid {ACCENT}"},
+                style=CARD_STYLE,
                 className="dashboard-card mb-3"
             ),
             dbc.Row(
@@ -42,7 +42,7 @@ def tab2_layout():
             ),
             dbc.Row(
                 [
-                    dbc.Col(html.Div(id="psm-kpi-cards"), md=4),
+                    dbc.Col(html.Div(id="psm-kpi-cards", className="kpi-stack"), md=4),
                     dbc.Col(dcc.Graph(id="psm-ps-dist", config=GRAPH_CONFIG), md=8)
                 ],
                 className="mb-3"

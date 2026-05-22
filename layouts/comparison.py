@@ -44,17 +44,9 @@ def tab6_layout():
                             html.Div(
                                 [
                                     html.Span(
-                                        "Agreement threshold ",
-                                        className="small text-muted",
-                                    ),
-                                    html.Span(
-                                        " ⓘ",
+                                        "Agreement threshold",
                                         id="comparison-noise-info",
-                                        style={
-                                            "cursor": "help",
-                                            "color": "var(--muted)",
-                                            "fontSize": "0.85em",
-                                        },
+                                        className="small text-muted info-term",
                                     ),
                                 ],
                                 className="mb-1",

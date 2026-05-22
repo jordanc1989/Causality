@@ -43,7 +43,7 @@ def tab3_layout():
                     dbc.Col(
                         [
                             section_header("Posterior Summary"),
-                            html.Div(id="bayes-kpi-cards", className="mt-2"),
+                            html.Div(id="bayes-kpi-cards", className="kpi-stack mt-2"),
                         ],
                         md=4,
                     ),
@@ -112,7 +112,7 @@ def tab3_layout():
                     ],
                     style={"paddingTop": "1rem", "paddingBottom": "1rem"},
                 ),
-                style={**CARD_STYLE, "borderLeft": f"3px solid {ACCENT}"},
+                style=CARD_STYLE,
                 className="dashboard-card mb-4",
             ),
             section_header("Model Diagnostics & Checks"),
@@ -121,7 +121,7 @@ def tab3_layout():
                     dbc.Col(
                         [
                             html.Button(
-                                "▸ Posterior Predictive Check",
+                                "Posterior predictive check",
                                 id="ppc-btn",
                                 className="btn-methodology mb-2 w-100",
                                 n_clicks=0,
@@ -156,7 +156,7 @@ def tab3_layout():
                     dbc.Col(
                         [
                             html.Button(
-                                "▸ MCMC Trace Plots",
+                                "MCMC trace plots",
                                 id="trace-btn",
                                 className="btn-methodology mb-2 w-100",
                                 n_clicks=0,
@@ -173,7 +173,7 @@ def tab3_layout():
                     dbc.Col(
                         [
                             html.Button(
-                                "▸ Convergence Diagnostics (R̂, ESS)",
+                                "Convergence diagnostics (R̂, ESS)",
                                 id="diag-btn",
                                 className="btn-methodology mb-2 w-100",
                                 n_clicks=0,

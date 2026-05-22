@@ -2,9 +2,9 @@
 from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import (
-    SUCCESS, DANGER, MUTED, BORDER, TEXT,
+    SUCCESS, DANGER, MUTED, TEXT,
     KPI_LABEL_STYLE, KPI_VALUE_STYLE, KPI_DELTA_STYLE,
-    SECTION_HEADER_STYLE, CARD_STYLE,
+    SECTION_HEADER_STYLE,
 )
 
 def kpi_card(
@@ -18,39 +18,25 @@ def kpi_card(
     info_id=None,
     pct_change=None,
 ):
-    """Metric card with optional delta row, ⓘ tooltip, and right-side pct-change badge."""
+    """Metric stat block with optional delta row, info tooltip, and pct-change figure.
+
+    The info affordance is a dotted underline on the label (no glyph); the
+    pct-change is restrained mono text rather than a coloured arrow.
+    """
     delta_color = (
         SUCCESS if delta_positive else DANGER if delta_positive is False else MUTED
     )
-    left_border = accent if accent else BORDER
 
-    label_children = [label]
-    extra = []
     if info and info_id:
-        label_children += [
-            html.Span(
-                " ⓘ",
-                id=info_id,
-                style={
-                    "cursor": "help",
-                    "color": MUTED,
-                    "fontSize": "0.85em",
-                    "marginLeft": "3px"
-                },
-            ),
-        ]
-        extra = [
-            dbc.Tooltip(
-                info,
-                target=info_id,
-                placement="right",
-                style={"fontFamily": "Ubuntu, sans-serif", "fontSize": "0.8rem"}
-            )
-        ]
+        label_node = html.Span(label, id=info_id, className="info-term")
+        extra = [dbc.Tooltip(info, target=info_id, placement="right")]
+    else:
+        label_node = label
+        extra = []
 
     left_block = html.Div(
         [
-            html.P(label_children, style=KPI_LABEL_STYLE),
+            html.P(label_node, style=KPI_LABEL_STYLE),
             html.P(value, style={**KPI_VALUE_STYLE, "color": color}),
             html.P(delta or " ", style={**KPI_DELTA_STYLE, "color": delta_color}),
         ],
@@ -59,34 +45,24 @@ def kpi_card(
 
     if pct_change is not None:
         pct_color = SUCCESS if pct_change >= 0 else DANGER
-        arrow = "↑" if pct_change >= 0 else "↓"
         right_block = html.Div(
-            [
-                html.Span(arrow, style={"fontSize": "1.6rem", "lineHeight": "1"}),
-                html.Div(
-                    f"{abs(pct_change):.1f}%",
-                    style={"fontSize": "0.85rem", "fontWeight": "700", "marginTop": "2px"},
-                ),
-            ],
+            f"{pct_change:+.1f}%",
             style={
                 "color": pct_color,
-                "textAlign": "center",
-                "alignSelf": "center",
+                "textAlign": "right",
+                "alignSelf": "flex-end",
                 "paddingLeft": "14px",
-                "fontFamily": "Ubuntu Mono, monospace",
-                "lineHeight": "1.2",
-                "minWidth": "52px",
+                "fontFamily": "IBM Plex Mono, monospace",
+                "fontSize": "0.95rem",
+                "fontWeight": "600",
+                "minWidth": "58px",
             },
         )
         body_children = [html.Div([left_block, right_block], style={"display": "flex"}), *extra]
     else:
         body_children = [left_block, *extra]
 
-    return dbc.Card(
-        dbc.CardBody(body_children),
-        style={**CARD_STYLE, "borderLeft": f"3px solid {left_border}"},
-        className="dashboard-card mb-2"
-    )
+    return html.Div(body_children, className="kpi-stat")
 
 def segment_overview_card(
     name,
@@ -106,21 +82,17 @@ def segment_overview_card(
     def _delta_row(lift_text, pct_change, positive, sig=None):
         if pct_change is None:
             return None
-        arrow = "▲" if positive else "▼"
-        color_ok = SUCCESS if positive else DANGER
+        delta_color = SUCCESS if positive else DANGER
         children = [
-            html.Span(arrow, style={"color": color_ok, "fontSize": "0.7rem"}),
-            html.Span(lift_text, className="delta-num", style={"color": TEXT}),
+            html.Span(lift_text, className="delta-num", style={"color": delta_color}),
             html.Span(f"({pct_change:+.1f}%)", style={"color": MUTED}),
         ]
         if sig is not None:
-            badge_color = SUCCESS if sig else MUTED
-            badge_text = "SIG" if sig else "N.S."
             children.append(
                 html.Span(
-                    badge_text,
+                    "significant" if sig else "not significant",
                     className="segment-sig-badge",
-                    style={"color": badge_color},
+                    style={"color": SUCCESS if sig else MUTED},
                 )
             )
         return html.Div(children, className="segment-metric-delta")
@@ -147,13 +119,7 @@ def segment_overview_card(
                     html.Div(
                         [
                             html.Div(
-                                [
-                                    html.Div(name, className="segment-card-name"),
-                                    html.Div(
-                                        className="segment-card-underline",
-                                        style={"backgroundColor": color},
-                                    ),
-                                ],
+                                html.Div(name, className="segment-card-name"),
                                 className="segment-card-title",
                             ),
                         ],
@@ -164,7 +130,6 @@ def segment_overview_card(
                     ),
                 ],
                 className="segment-card-header",
-                style={"borderTop": f"2px solid {color}"},
             ),
             html.Div(
                 [
@@ -197,6 +162,7 @@ def segment_overview_card(
             ),
         ],
         className="segment-card",
+        style={"borderTopColor": color},
     )
 
 def section_header(text):
@@ -206,7 +172,7 @@ def methodology_collapse(tab_id, content):
     return html.Div(
         [
             html.Button(
-                "▸ Methodology & Assumptions",
+                "Methodology & assumptions",
                 id=f"method-btn-{tab_id}",
                 className="btn-methodology mb-2",
                 n_clicks=0
@@ -216,13 +182,13 @@ def methodology_collapse(tab_id, content):
                     dbc.CardBody(
                         content,
                         style={
-                            "fontSize": "0.85rem",
+                            "fontSize": "0.92rem",
                             "color": MUTED,
-                            "lineHeight": "1.65",
+                            "lineHeight": "1.7",
                         },
                     ),
                     className="dashboard-card methodology-content",
-                    style={**CARD_STYLE, "marginTop": "4px"}
+                    style={"marginTop": "4px"},
                 ),
                 id=f"method-collapse-{tab_id}",
                 is_open=False

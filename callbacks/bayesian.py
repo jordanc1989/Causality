@@ -84,7 +84,7 @@ def update_bayesian(pair_key, rope_val):
                 ),
                 y=np.concatenate([[0], counts[rope_mask], [0]]),
                 fill="toself",
-                fillcolor="rgba(217,119,6,0.2)",
+                fillcolor=hex_to_rgba(WARNING, 0.18),
                 line=dict(color="rgba(0,0,0,0)"),
                 name=f"ROPE ±${rope_val}",
                 showlegend=True,
@@ -152,19 +152,15 @@ def update_bayesian(pair_key, rope_val):
             html.Div(
                 [
                     html.Span(f"{p_outside_rope:.1%}",
-                              style={"fontSize": "2rem", "fontFamily": "Ubuntu, sans-serif",
-                                     "fontWeight": "700", "letterSpacing": "-0.02em",
+                              style={"fontSize": "2rem", "fontFamily": MONO,
+                                     "fontWeight": "600", "letterSpacing": "-0.01em",
                                      "color": rope_color, "lineHeight": "1"}),
                     html.Span(
-                        [
-                            f"  P(|δ| > ${rope_val})",
-                            html.Span(" ⓘ", id="bayes-rope-info",
-                                      style={"cursor": "help", "color": MUTED,
-                                             "fontSize": "0.85em", "marginLeft": "4px"}),
-                        ],
-                        style={"fontSize": "0.78rem", "color": MUTED,
-                               "fontFamily": "Ubuntu, sans-serif",
-                               "letterSpacing": "0.01em",
+                        f"P(|δ| > ${rope_val})",
+                        id="bayes-rope-info",
+                        className="info-term",
+                        style={"fontSize": "0.82rem", "color": MUTED,
+                               "fontFamily": SERIF,
                                "marginLeft": "10px", "verticalAlign": "middle"},
                     ),
                 ],
@@ -178,10 +174,9 @@ def update_bayesian(pair_key, rope_val):
                 f"probability outside it is the evidence the effect is big enough to act on.",
                 target="bayes-rope-info",
                 placement="top",
-                style={"fontFamily": "Ubuntu, sans-serif", "fontSize": "0.8rem"},
             ),
         ],
-        style={"borderLeft": f"3px solid {rope_color}", "paddingLeft": "0.9rem"},
+        style={"borderTop": f"2px solid {rope_color}", "paddingTop": "0.7rem"},
     )
 
     return kpis, posterior_fig, rope_card
@@ -224,7 +219,7 @@ def update_trace_figure(pair_key):
                 yref="paper",
                 text=f"<b>MCMC Diagnostics</b><br>R̂: {rhat}<br>Bulk ESS: {bulk_ess}<br>Tail ESS: {tail_ess}",
                 showarrow=False,
-                font=dict(family="Ubuntu Mono, monospace", size=10, color=MUTED),
+                font=dict(family=MONO, size=10, color=MUTED),
                 align="left",
                 bgcolor=SURFACE,
                 bordercolor=BORDER,
@@ -439,19 +434,19 @@ def update_diagnostics_table(pair_key):
         [
             html.Th(
                 "Parameter",
-                style={"fontFamily": "Ubuntu Mono, monospace", "fontSize": "0.75rem"},
+                style={"fontFamily": MONO, "fontSize": "0.75rem"},
             ),
             html.Th(
                 "R̂",
-                style={"fontFamily": "Ubuntu Mono, monospace", "fontSize": "0.75rem"},
+                style={"fontFamily": MONO, "fontSize": "0.75rem"},
             ),
             html.Th(
                 "Bulk ESS",
-                style={"fontFamily": "Ubuntu Mono, monospace", "fontSize": "0.75rem"},
+                style={"fontFamily": MONO, "fontSize": "0.75rem"},
             ),
             html.Th(
                 "Tail ESS",
-                style={"fontFamily": "Ubuntu Mono, monospace", "fontSize": "0.75rem"},
+                style={"fontFamily": MONO, "fontSize": "0.75rem"},
             ),
         ]
     )
@@ -471,14 +466,14 @@ def update_diagnostics_table(pair_key):
                     html.Td(
                         row["parameter"],
                         style={
-                            "fontFamily": "Ubuntu Mono, monospace",
+                            "fontFamily": MONO,
                             "fontSize": "0.8rem",
                         },
                     ),
                     html.Td(
                         f"{row['r_hat']:.3f}",
                         style={
-                            "fontFamily": "Ubuntu Mono, monospace",
+                            "fontFamily": MONO,
                             "fontSize": "0.8rem",
                             "color": rhat_color,
                         },
@@ -486,14 +481,14 @@ def update_diagnostics_table(pair_key):
                     html.Td(
                         f"{row['ess_bulk']:.0f}",
                         style={
-                            "fontFamily": "Ubuntu Mono, monospace",
+                            "fontFamily": MONO,
                             "fontSize": "0.8rem",
                         },
                     ),
                     html.Td(
                         f"{row['ess_tail']:.0f}",
                         style={
-                            "fontFamily": "Ubuntu Mono, monospace",
+                            "fontFamily": MONO,
                             "fontSize": "0.8rem",
                         },
                     ),

@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from dashboard.data import DF
 from dashboard.theme import (
     PLOTLY_TEMPLATE, MENS_COLOUR, WOMENS_COLOUR, CTRL_COLOUR,
-    WARNING, BORDER,
+    WARNING, BORDER, TEXT,
 )
 from dashboard.theme import COVARIATE_LABELS
 import causal_utils as cu
@@ -38,12 +38,12 @@ def _fig_spend_box():
                 width=0.2,
                 marker=dict(
                     color=fill,
-                    outliercolor='rgba(0,0,0,0.4)',
-                    line=dict(outliercolor='rgba(0,0,0,0.4)', outlierwidth=1)
+                    outliercolor='rgba(31,27,22,0.35)',
+                    line=dict(outliercolor='rgba(31,27,22,0.35)', outlierwidth=1)
                 ),
-                line=dict(color='black', width=1.5),
+                line=dict(color=TEXT, width=1.4),
                 fillcolor=fill,
-                opacity=0.75,
+                opacity=0.55,
                 boxmean=True,
                 boxpoints='outliers',
                 customdata=[[q1, med, q3, mean_val] for _ in range(len(vals))],
