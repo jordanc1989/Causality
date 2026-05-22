@@ -90,10 +90,10 @@ This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Space
 ## Methodology Notes and Caveats
 
 - The underlying dataset is randomized, so causal identification of average effects comes from random assignment.
-- Covariate-adjusted and matched analyses are included as precision, sensitivity, and interpretability tools.
+- Covariate-adjusted analyses are included for precision and interpretability; propensity matching is included as a pedagogical workflow.
 - Uplift metrics are useful for ranking policy decisions but should ideally be reported with uncertainty intervals when used for high-stakes targeting.
 - Subgroup interaction findings are exploratory unless multiplicity is explicitly controlled.
-- Matched analyses (PSM) is included as a demo workflow for non-randomised data, and isn't used as a headline estimate for this dashboard.
+- Propensity matching (PSM) is included as a demo workflow for non-randomised data, and isn't used as a headline estimate for this dashboard.
 
 ## Results Snapshot
 

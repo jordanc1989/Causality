@@ -8,7 +8,7 @@ from dashboard.theme import *
 from dashboard.data import BAYESIAN, UPLIFT, OLS
 
 def _build_comparison_df():
-    """Assemble comparable point estimates and CIs across methods x arms."""
+    """Assemble comparable point estimates and uncertainty intervals."""
     rows = []
     pair_map = {"mens": "mens_vs_control", "womens": "womens_vs_control"}
     for arm in ["mens", "womens"]:
@@ -19,8 +19,8 @@ def _build_comparison_df():
                 "Method": "Bayesian A/B (posterior mean)",
                 "Arm": arm_label,
                 "Estimate ($)": round(float(np.mean(b["delta_samples"])), 2),
-                "CI Lower ($)": round(b["hdi_lo"], 2),
-                "CI Upper ($)": round(b["hdi_hi"], 2)
+                "Interval Lower ($)": round(b["hdi_lo"], 2),
+                "Interval Upper ($)": round(b["hdi_hi"], 2),
             }
         )
 
@@ -32,8 +32,8 @@ def _build_comparison_df():
                 "Method": "T-Learner (avg CATE)",
                 "Arm": arm_label,
                 "Estimate ($)": round(u["avg_cate_t"], 2),
-                "CI Lower ($)": None,
-                "CI Upper ($)": None
+                "Interval Lower ($)": None,
+                "Interval Upper ($)": None,
             }
         )
         rows.append(
@@ -41,8 +41,8 @@ def _build_comparison_df():
                 "Method": "S-Learner (avg CATE)",
                 "Arm": arm_label,
                 "Estimate ($)": round(u["avg_cate_s"], 2),
-                "CI Lower ($)": None,
-                "CI Upper ($)": None
+                "Interval Lower ($)": None,
+                "Interval Upper ($)": None,
             }
         )
         rows.append(
@@ -50,8 +50,8 @@ def _build_comparison_df():
                 "Method": "X-Learner (avg CATE)",
                 "Arm": arm_label,
                 "Estimate ($)": round(u.get("avg_cate_x", float("nan")), 2),
-                "CI Lower ($)": None,
-                "CI Upper ($)": None
+                "Interval Lower ($)": None,
+                "Interval Upper ($)": None,
             }
         )
 
@@ -69,8 +69,8 @@ def _build_comparison_df():
                 "Method": "OLS (avg marginal effect, HC3)",
                 "Arm": ARM_META[arm][0],
                 "Estimate ($)": round(OLS.get(ate_key, 0.0), 2),
-                "CI Lower ($)": round(OLS.get(lo_key, 0.0), 2),
-                "CI Upper ($)": round(OLS.get(hi_key, 0.0), 2),
+                "Interval Lower ($)": round(OLS.get(lo_key, 0.0), 2),
+                "Interval Upper ($)": round(OLS.get(hi_key, 0.0), 2),
             }
         )
 
@@ -130,12 +130,18 @@ def update_comparison(noise_eps):
             est_cell = row["Estimate ($)"]
             if pd.isna(est_cell) or est_cell is None:
                 continue
-            has_ci = pd.notna(row["CI Lower ($)"]) and pd.notna(row["CI Upper ($)"])
+            has_interval = pd.notna(row["Interval Lower ($)"]) and pd.notna(
+                row["Interval Upper ($)"]
+            )
             method_name = row["Method"]
+            interval_name = (
+                "95% HDI" if method_name.startswith("Bayesian") else "95% CI"
+            )
             hover_tail = (
-                f"95% CI: ${row['CI Lower ($)']:.2f} – ${row['CI Upper ($)']:.2f}"
-                if has_ci
-                else "No CI available"
+                f"{interval_name}: ${row['Interval Lower ($)']:.2f} – "
+                f"${row['Interval Upper ($)']:.2f}"
+                if has_interval
+                else "No interval available"
             )
             fig.add_trace(
                 go.Scatter(
@@ -159,15 +165,15 @@ def update_comparison(noise_eps):
                     error_x=dict(
                         type="data",
                         symmetric=False,
-                        array=[row["CI Upper ($)"] - row["Estimate ($)"]]
-                        if has_ci
+                        array=[row["Interval Upper ($)"] - row["Estimate ($)"]]
+                        if has_interval
                         else [0],
-                        arrayminus=[row["Estimate ($)"] - row["CI Lower ($)"]]
-                        if has_ci
+                        arrayminus=[row["Estimate ($)"] - row["Interval Lower ($)"]]
+                        if has_interval
                         else [0],
                         color=MUTED
                     )
-                    if has_ci
+                    if has_interval
                     else None,
                 )
             )

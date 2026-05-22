@@ -182,8 +182,8 @@ def tab3_layout():
                     ),
                     html.P(
                         "The 95% Highest Density Interval is the narrowest range that holds 95% "
-                        "of the posterior. Given the model and the data, there's a 95% probability "
-                        "the true per-customer effect sits inside it."
+                        "of the posterior. Under this model and the data, there's a 95% probability "
+                        "the per-customer effect sits inside it."
                     ),
                     html.P(
                         "The ROPE (Region of Practical Equivalence) is a range around zero that "

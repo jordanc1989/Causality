@@ -54,9 +54,9 @@ def tab4_layout():
                             ),
                             html.P(
                                 [
-                                    html.Strong("Start with X-Learner. "),
-                                    "It is the best default here because it is built for targeting: "
-                                    "it learns from both the mailed and control groups, then blends "
+                                    html.Strong("Start by checking X-Learner. "),
+                                    "It is a good first view for targeting because it learns "
+                                    "from both the mailed and control groups, then blends "
                                     "the evidence into a steadier customer ranking.",
                                 ],
                                 className="small text-muted mb-1",
@@ -185,8 +185,9 @@ def tab4_layout():
                         "counterfactual outcome for each customer, regresses those imputed "
                         "treatment effects on covariates, and combines the two arms with a "
                         "propensity-weighted average. X-Learner handles arm imbalance better "
-                        "than T- or S-Learners and is the recommended default in modern uplift "
-                        "practice. The three often disagree on individual customers, which is "
+                        "than T- or S-Learners when treatment groups are uneven. Here the groups "
+                        "are balanced, so use it as a strong default view rather than a final "
+                        "answer. The three often disagree on individual customers, which is "
                         "itself a useful signal."
                     ),
                     html.P(
@@ -232,12 +233,12 @@ def tab4_layout():
                         ]
                     ),
                     html.P(
-                        "Feature importance is measured by shuffling one feature at a time and "
-                        "checking how much the predicted CATE moves. A feature that drives real "
-                        "heterogeneity shifts the prediction a lot. A feature that doesn't matter "
-                        "barely moves it. This is more honest than the default random-forest "
-                        "importance, which gets fooled by continuous features and high-cardinality "
-                        "categoricals."
+                        "Feature importance is recomputed for the selected learner by shuffling "
+                        "one feature at a time and checking how much that learner's predicted "
+                        "CATE moves. A feature that drives real heterogeneity shifts the "
+                        "prediction a lot. A feature that doesn't matter barely moves it. This "
+                        "is more honest than the default random-forest importance, which gets "
+                        "fooled by continuous features and high-cardinality categoricals."
                     ),
                     html.P(
                         "A known quirk of the S-Learner: when outcome noise is large relative to "

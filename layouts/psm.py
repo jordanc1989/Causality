@@ -63,10 +63,10 @@ def tab2_layout():
                         ]
                     ),
                     html.P(
-                        "The confidence band on the bar chart comes from redoing the propensity fit and "
-                        "the matching 200 times on resampled data. Each replicate redraws treated and "
-                        "control separately at their observed sizes so the arm ratio stays fixed. Read "
-                        "the band as a stress test on the matching choices"
+                        "The main ATT band uses a simple matched-pair standard error for the retained "
+                        "pairs. The bootstrap band beside it refits the propensity model and rematches "
+                        "200 times on resampled data. Read that second band as a stress test on the "
+                        "matching choices, not as an exact nearest-neighbour matching interval."
                     ),
                     html.P(
                         [

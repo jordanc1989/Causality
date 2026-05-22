@@ -10,9 +10,24 @@ from layouts.components import kpi_card
 # Per-model cached results are stored under a `{base}_{model}` key in UPLIFT[arm]
 # (e.g. cate_t / cate_s / cate_x). Keep the UI label and cached result keys together.
 MODEL_KEYS = {
-    "t": dict(label="T-Learner", cate="cate_t", avg="avg_cate_t", decile="decile_lift", qini_x="qini_x", qini_y="qini_y", auc="qini_auc_t", excess="qini_excess_auc_t", p="qini_p_t"),
-    "s": dict(label="S-Learner", cate="cate_s", avg="avg_cate_s", decile="decile_lift_s", qini_x="qini_x_s", qini_y="qini_y_s", auc="qini_auc_s", excess="qini_excess_auc_s", p="qini_p_s"),
-    "x": dict(label="X-Learner", cate="cate_x", avg="avg_cate_x", decile="decile_lift_x", qini_x="qini_x_x", qini_y="qini_y_x", auc="qini_auc_x", excess="qini_excess_auc_x", p="qini_p_x"),
+    "t": dict(
+        label="T-Learner", cate="cate_t", avg="avg_cate_t",
+        decile="decile_lift", qini_x="qini_x", qini_y="qini_y",
+        auc="qini_auc_t", excess="qini_excess_auc_t", p="qini_p_t",
+        feat_imp="feat_imp_t",
+    ),
+    "s": dict(
+        label="S-Learner", cate="cate_s", avg="avg_cate_s",
+        decile="decile_lift_s", qini_x="qini_x_s", qini_y="qini_y_s",
+        auc="qini_auc_s", excess="qini_excess_auc_s", p="qini_p_s",
+        feat_imp="feat_imp_s",
+    ),
+    "x": dict(
+        label="X-Learner", cate="cate_x", avg="avg_cate_x",
+        decile="decile_lift_x", qini_x="qini_x_x", qini_y="qini_y_x",
+        auc="qini_auc_x", excess="qini_excess_auc_x", p="qini_p_x",
+        feat_imp="feat_imp_x",
+    ),
 }
 MODEL_LABEL = {key: meta["label"] for key, meta in MODEL_KEYS.items()}
 
@@ -65,7 +80,8 @@ def update_uplift(arm, model):
     )
 
     p1, p99 = np.percentile(cate, 1), np.percentile(cate, 99)
-    cate_clipped = cate[(cate >= p1) & (cate <= p99)]  # display only, full CATE used for all analysis
+    # Display only; full CATE is used for all analysis.
+    cate_clipped = cate[(cate >= p1) & (cate <= p99)]
     pct_shown = len(cate_clipped) / len(cate) * 100
 
     hist_fig = go.Figure(
@@ -84,12 +100,16 @@ def update_uplift(arm, model):
     hist_fig.update_layout(
         template=PLOTLY_TEMPLATE,
         title=f"CATE Distribution - {model_label} ({arm_label})",
-        xaxis_title=f"Individual Uplift ($):  showing p1-p99 ({pct_shown:.0f}% of customers)",
+        xaxis_title=(
+            f"Individual Uplift ($): showing p1-p99 ({pct_shown:.0f}% of customers)"
+        ),
         yaxis_title="Count",
         margin=FIGURE_MARGIN,
     )
 
-    feat_imp = dict(sorted(u["feat_imp"].items(), key=lambda x: x[1]))
+    feat_imp = dict(
+        sorted(u.get(keys["feat_imp"], u["feat_imp"]).items(), key=lambda x: x[1])
+    )
     feat_labels = [COVARIATE_LABELS.get(k, k) for k in feat_imp.keys()]
     fi_fig = go.Figure(
         go.Bar(
@@ -102,7 +122,10 @@ def update_uplift(arm, model):
     )
     fi_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title="Heterogeneity importance (CATE permutation, T-Learner)",
+        title=u.get(
+            f"feat_imp_label_{model}",
+            f"Heterogeneity importance ({model_label} CATE permutation)",
+        ),
         xaxis_title="Relative importance (normalised)",
         xaxis_fixedrange=True,
         yaxis_fixedrange=True,
@@ -284,16 +307,17 @@ def update_policy(arm, model, cost_per_email, margin):
     """
     Cost-aware targeting policy curve.
 
-    The Qini curve gives cumulative incremental spend `g(p)` as a function of
-    the fraction `p` of the list targeted (sorted by predicted CATE desc).
+    The Qini curve gives audience-scaled cumulative incremental spend `g(p)`
+    as a function of the fraction `p` of the list targeted (sorted by
+    predicted CATE desc).
     Net contribution at policy `p` is:
 
-        N_total * [ margin * g(p) - cost_per_email * p ]
+        margin * g(p) - cost_per_email * p * N_total
 
-    where `g` and the population fraction `p` both come from the Qini arrays
-    and `N_total` is the eligible audience for this arm. We report the optimal
-    targeting share, the expected net contribution there, and a curve that
-    sweeps `p` from 0 to 1 so users can see the tradeoff.
+    where `g` and `p` both come from the Qini arrays and `N_total` is the
+    eligible audience for this arm. We report the optimal targeting share, the
+    expected net contribution there, and a curve that sweeps `p` from 0 to 1 so
+    users can see the tradeoff.
 
     Cost defaults to $0.05 / send and margin defaults to 0.40. Both are
     user-tunable from the layout's input controls.
@@ -315,9 +339,8 @@ def update_policy(arm, model, cost_per_email, margin):
         empty.update_layout(template=PLOTLY_TEMPLATE, title="Policy curve unavailable")
         return html.Div("Policy curve unavailable."), empty
 
-    # The Qini curve already aggregates over the matched-evaluation cohort.
-    # Convert to per-arm totals: gross revenue = qini_y (already in $), and
-    # cost = cost_per_email * fraction_targeted * n_total.
+    # The Qini curve is scaled to the full ranked audience, so gross revenue
+    # and send cost are both expressed for the same targeted customer count.
     n_targeted = qini_xd * n_total
     gross_contribution = margin * qini_yd
     total_cost = cost_per_email * n_targeted

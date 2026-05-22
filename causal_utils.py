@@ -18,6 +18,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="sklift")
 
 CACHE_DIR = ".cache"
 CACHE_FILE = os.path.join(CACHE_DIR, "results.pkl")
+CACHE_SCHEMA_VERSION = 2
 RANDOM_SEED = 10
 
 # Set to False to force a full recompute (and overwrite the pickle) the next
@@ -212,13 +213,11 @@ def _compute_psm_for_arm(df, arm):
         )
         att_point = float(np.mean(matched_diffs))
         avg_logit_ps_distance = float(np.mean(distances_logit))
-        # Matched-pair analytical SE (Abadie & Imbens 2006 form, simplified for
-        # 1:1 matching with replacement). The dominant term is the variance of
-        # the paired differences; we report 95% CI as ±1.96·SE. This avoids the
-        # known inconsistency of the nonparametric bootstrap for NN matching.
-        # The correction for control re-use is omitted because it requires a
-        # second KNN fit on the control arm and contributes only a small
-        # adjustment at this sample size - flagged in the methodology copy.
+        # Simple matched-pair analytical SE for the retained pairs. This avoids
+        # presenting the nonparametric bootstrap as an exact NN-matching CI, but
+        # it is still pedagogical rather than a full nearest-neighbour matching
+        # variance estimator: control re-use and matching uncertainty are not
+        # modelled here.
         if n_matched > 1:
             att_se_matched = float(
                 np.std(matched_diffs, ddof=1) / np.sqrt(n_matched)
@@ -637,7 +636,7 @@ def run_bayesian_ab(df):
 
 
 def _permutation_p_auuc(
-    sub_sorted, arm_col, n_perm=500, seed=RANDOM_SEED
+    sub_sorted, arm_col, n_perm=500, seed=RANDOM_SEED, scale_to_audience=True
 ):
     """
     Permutation p-value for Qini AUUC > 0 with fixed CATE ranking.
@@ -650,12 +649,17 @@ def _permutation_p_auuc(
     treatment labels are reshuffled. It tests whether the *ranking* picks
     out responders, conditional on the model that produced it.
 
+    When `scale_to_audience=True`, AUUC is computed on the same audience-scaled
+    curve shown in the dashboard and used by the policy calculator.
+
     Returns (observed_auuc, p_value, null_distribution).
     """
     rng = np.random.default_rng(seed)
     treatment = sub_sorted[arm_col].values.astype(np.float64)
     y = sub_sorted["spend"].values.astype(np.float64)
     n = len(sub_sorted)
+    if n == 0:
+        return 0.0, 1.0, np.array([], dtype=np.float64)
     xs_full = np.arange(1, n + 1, dtype=np.float64) / n
 
     def _auuc_for_treatment(t_vec):
@@ -669,6 +673,9 @@ def _permutation_p_auuc(
         ratio = np.zeros_like(n_t)
         ratio[valid] = n_t[valid] / n_c[valid]
         ys = cum_t - cum_c * ratio
+        if scale_to_audience:
+            rank_counts = np.arange(1, n + 1, dtype=np.float64)
+            ys[valid] = ys[valid] * (rank_counts[valid] / n_t[valid])
         xs_v = xs_full[valid]
         ys_v = ys[valid]
         if len(xs_v) < 2:
@@ -687,9 +694,9 @@ def _permutation_p_auuc(
     return obs_auuc, p_value, null_aucs
 
 
-def _qini_curve_continuous(sorted_df, arm_col):
+def _qini_curve_continuous(sorted_df, arm_col, scale_to_audience=True):
     """
-    Radcliffe (2007) Qini curve for continuous outcomes.
+    Radcliffe (2007) Qini-style curve for continuous outcomes.
 
     For a population ranked by predicted uplift (descending), the canonical
     Qini value at rank k is:
@@ -699,11 +706,15 @@ def _qini_curve_continuous(sorted_df, arm_col):
     where R_T(k) and R_C(k) are cumulative outcomes in treated/control and
     N_T(k), N_C(k) are cumulative treated/control counts. At k=N this equals
     R_T_total - R_C_total * (N_T/N_C), i.e. the total incremental revenue
-    captured over random targeting. The x-axis is the fraction of population
-    targeted. scikit-uplift's `qini_curve` enforces binary outcomes and can't
+    among the treated sample. For dashboard and policy use, `scale_to_audience`
+    converts that to the full ranked-audience scale by multiplying by
+    k / N_T(k), so revenue and send cost are expressed for the same number of
+    customers. scikit-uplift's `qini_curve` enforces binary outcomes and can't
     be used on `spend` directly. This is the same formula generalised.
     """
     n_rows = len(sorted_df)
+    if n_rows == 0:
+        return [], []
     is_t = sorted_df[arm_col].values.astype(float)
     y_vals = sorted_df["spend"].values.astype(float)
 
@@ -713,8 +724,14 @@ def _qini_curve_continuous(sorted_df, arm_col):
     n_c_cum = np.cumsum(1 - is_t)
 
     valid = (n_t_cum > 0) & (n_c_cum > 0)
-    xs = (np.arange(1, n_rows + 1) / n_rows)[valid].tolist()
-    ys = (cum_t[valid] - cum_c[valid] * (n_t_cum[valid] / n_c_cum[valid])).tolist()
+    rank_counts = np.arange(1, n_rows + 1)
+    xs_arr = (rank_counts / n_rows)[valid]
+    ys_arr = cum_t[valid] - cum_c[valid] * (n_t_cum[valid] / n_c_cum[valid])
+    if scale_to_audience:
+        ys_arr = ys_arr * (rank_counts[valid] / n_t_cum[valid])
+
+    xs = xs_arr.tolist()
+    ys = ys_arr.tolist()
 
     # Prepend origin for a clean plot
     if xs and xs[0] > 0:
@@ -744,21 +761,16 @@ def _make_rf():
     )
 
 
-def _x_learner_predict(X_train_df, y_train, t_train, X_test_df):
+def _fit_x_learner(X_train_df, y_train, t_train):
     """
-    X-Learner CATE (Künzel et al. 2019).
+    Fit X-Learner fold models (Künzel et al. 2019).
 
     Stage 1: fit outcome models μ̂₀, μ̂₁ on control and treated arms.
     Stage 2: impute counterfactual treatment effects on training data:
         D̃¹_i = Y_i - μ̂₀(X_i)   for treated i
         D̃⁰_i = μ̂₁(X_i) - Y_i   for control i
     Stage 3: fit τ̂₁, τ̂₀ regressing the imputed effects on covariates,
-    then combine with the propensity-weighted average
-        τ̂(x) = e * τ̂₀(x) + (1 - e) * τ̂₁(x)
-    where e is the observed treated share (≈0.5 for this RCT).
-
-    X-Learner handles arm imbalance better than T- and S-Learners because
-    the minority arm's τ estimate gets up-weighted via the propensity weights.
+    then retain e for the propensity-weighted prediction step.
     """
     treated = t_train == 1
     control = t_train == 0
@@ -777,7 +789,25 @@ def _x_learner_predict(X_train_df, y_train, t_train, X_test_df):
     tau0.fit(X_train_df.loc[control], d0)
 
     e = float(treated.mean())
-    return e * tau0.predict(X_test_df) + (1.0 - e) * tau1.predict(X_test_df)
+    return {"tau0": tau0, "tau1": tau1, "e": e}
+
+
+def _predict_x_learner(fit, X_test_df):
+    """
+    Predict X-Learner CATE from a fitted fold bundle.
+
+    τ̂(x) = e * τ̂₀(x) + (1 - e) * τ̂₁(x), where e is the observed treated
+    share in the fold. The minority arm's τ estimate is up-weighted, which is
+    why X-Learner is useful when treatment/control sizes are uneven.
+    """
+    return fit["e"] * fit["tau0"].predict(X_test_df) + (1.0 - fit["e"]) * fit[
+        "tau1"
+    ].predict(X_test_df)
+
+
+def _x_learner_predict(X_train_df, y_train, t_train, X_test_df):
+    """X-Learner CATE for one train/test split."""
+    return _predict_x_learner(_fit_x_learner(X_train_df, y_train, t_train), X_test_df)
 
 
 def _run_uplift_arm(df, arm):
@@ -788,16 +818,16 @@ def _run_uplift_arm(df, arm):
     fold has both arms represented, which matters for small-sample fold fits.
     CATE estimates are out-of-sample for every observation.
 
-    Heterogeneity importance is computed by **permutation importance on the
-    predicted CATE**: for each fold and feature, the column is shuffled in
-    the held-out X_test, the T-Learner re-predicts CATE on the permuted
-    inputs, and the mean absolute change in CATE relative to the unpermuted
-    prediction is recorded. Features that drive heterogeneity show large
-    shifts, features irrelevant to the treatment-effect surface show small
-    ones. This is a model-agnostic, bias-free alternative to RF impurity
-    importance, which is biased toward high-cardinality / continuous
-    features regardless of treatment heterogeneity. Permutation is repeated
-    `n_perm_repeats` times per (fold, feature) to reduce shuffle noise.
+    Heterogeneity importance is computed per learner by **permutation
+    importance on the predicted CATE**: for each fold and feature, the column
+    is shuffled in the held-out X_test, the selected learner re-predicts CATE
+    on the permuted inputs, and the mean absolute change relative to the
+    unpermuted prediction is recorded. Features that drive heterogeneity show
+    large shifts, features irrelevant to the treatment-effect surface show
+    small ones. This is a model-agnostic, bias-free alternative to RF impurity
+    importance, which is biased toward high-cardinality / continuous features.
+    Permutation is repeated `n_perm_repeats` times per (fold, feature) to
+    reduce shuffle noise.
     """
     from sklift.models import TwoModels, SoloModel
     from sklearn.model_selection import StratifiedKFold
@@ -814,7 +844,11 @@ def _run_uplift_arm(df, arm):
     cate_t = np.zeros(len(sub))
     cate_s = np.zeros(len(sub))
     cate_x = np.zeros(len(sub))
-    perm_imp_accum = np.zeros(len(COVARIATES))
+    perm_imp_accum = {
+        "t": np.zeros(len(COVARIATES)),
+        "s": np.zeros(len(COVARIATES)),
+        "x": np.zeros(len(COVARIATES)),
+    }
     n_perm_repeats = 5
     perm_rng = np.random.default_rng(RANDOM_SEED)
 
@@ -826,6 +860,16 @@ def _run_uplift_arm(df, arm):
         X_train_df = pd.DataFrame(X_train, columns=COVARIATES)
         X_test_df = pd.DataFrame(X_test, columns=COVARIATES)
 
+        def _accumulate_importance(model_key, predict_fn, baseline_pred):
+            for j, _col in enumerate(COVARIATES):
+                shifts = np.zeros(n_perm_repeats)
+                for r in range(n_perm_repeats):
+                    X_perm = X_test_df.copy()
+                    X_perm.iloc[:, j] = perm_rng.permutation(X_perm.iloc[:, j].values)
+                    cate_perm = predict_fn(X_perm)
+                    shifts[r] = float(np.mean(np.abs(cate_perm - baseline_pred)))
+                perm_imp_accum[model_key][j] += shifts.mean()
+
         # T-Learner
         t_model = TwoModels(
             estimator_trmnt=_make_rf(),
@@ -835,16 +879,7 @@ def _run_uplift_arm(df, arm):
         t_model.fit(X_train_df, y_train, t_train)
         cate_t_fold = t_model.predict(X_test_df)
         cate_t[test_idx] = cate_t_fold
-
-        # Permutation importance on the predicted CATE surface
-        for j, _col in enumerate(COVARIATES):
-            shifts = np.zeros(n_perm_repeats)
-            for r in range(n_perm_repeats):
-                X_perm = X_test_df.copy()
-                X_perm.iloc[:, j] = perm_rng.permutation(X_perm.iloc[:, j].values)
-                cate_perm = t_model.predict(X_perm)
-                shifts[r] = float(np.mean(np.abs(cate_perm - cate_t_fold)))
-            perm_imp_accum[j] += shifts.mean()
+        _accumulate_importance("t", t_model.predict, cate_t_fold)
 
         # S-Learner
         s_model = SoloModel(
@@ -852,16 +887,28 @@ def _run_uplift_arm(df, arm):
             method="treatment_interaction",
         )
         s_model.fit(X_train_df, y_train, t_train)
-        cate_s[test_idx] = s_model.predict(X_test_df)
+        cate_s_fold = s_model.predict(X_test_df)
+        cate_s[test_idx] = cate_s_fold
+        _accumulate_importance("s", s_model.predict, cate_s_fold)
 
         # X-Learner
-        cate_x[test_idx] = _x_learner_predict(X_train_df, y_train, t_train, X_test_df)
+        x_fit = _fit_x_learner(X_train_df, y_train, t_train)
+        cate_x_fold = _predict_x_learner(x_fit, X_test_df)
+        cate_x[test_idx] = cate_x_fold
+        _accumulate_importance(
+            "x", lambda X_perm: _predict_x_learner(x_fit, X_perm), cate_x_fold
+        )
 
-    feat_imp_diff = perm_imp_accum / kf.get_n_splits()
-    # Normalise to sum to 1 for display consistency with the old chart
-    feat_imp_norm = (
-        feat_imp_diff / feat_imp_diff.sum() if feat_imp_diff.sum() > 0 else feat_imp_diff
-    )
+    feat_imp_diff = {
+        key: vals / kf.get_n_splits() for key, vals in perm_imp_accum.items()
+    }
+
+    def _normalise_importance(vals):
+        return vals / vals.sum() if vals.sum() > 0 else vals
+
+    feat_imp_norm = {
+        key: _normalise_importance(vals) for key, vals in feat_imp_diff.items()
+    }
 
     sub["cate_t"] = cate_t
     sub["cate_s"] = cate_s
@@ -938,8 +985,14 @@ def _run_uplift_arm(df, arm):
         "cate_t": cate_t,
         "cate_s": cate_s,
         "cate_x": cate_x,
-        "feat_imp": dict(zip(COVARIATES, feat_imp_norm)),
-        "feat_imp_label": "Heterogeneity importance (CATE permutation, T-Learner)",
+        "feat_imp": dict(zip(COVARIATES, feat_imp_norm["t"])),
+        "feat_imp_t": dict(zip(COVARIATES, feat_imp_norm["t"])),
+        "feat_imp_s": dict(zip(COVARIATES, feat_imp_norm["s"])),
+        "feat_imp_x": dict(zip(COVARIATES, feat_imp_norm["x"])),
+        "feat_imp_label": "Heterogeneity importance (CATE permutation)",
+        "feat_imp_label_t": "Heterogeneity importance (T-Learner CATE permutation)",
+        "feat_imp_label_s": "Heterogeneity importance (S-Learner CATE permutation)",
+        "feat_imp_label_x": "Heterogeneity importance (X-Learner CATE permutation)",
         "decile_lift": decile_lift,
         "decile_lift_s": decile_lift_s,
         "decile_lift_x": decile_lift_x,
@@ -1145,6 +1198,7 @@ def build_cache():
     ols = run_ols(df)
 
     results = {
+        "schema_version": CACHE_SCHEMA_VERSION,
         "df": df,
         "psm": psm,
         "bayesian": bayesian,
@@ -1163,8 +1217,18 @@ def load_or_build_cache():
     """Load cached results if USE_CACHE and a pickle exists, otherwise recompute."""
     if USE_CACHE and os.path.exists(CACHE_FILE):
         print(f"[Cache] USE_CACHE=True - loading from {CACHE_FILE}...")
-        with open(CACHE_FILE, "rb") as f:
-            return pickle.load(f)
+        try:
+            with open(CACHE_FILE, "rb") as f:
+                results = pickle.load(f)
+        except ModuleNotFoundError as exc:
+            print(
+                f"[Cache] Existing cache needs unavailable module ({exc.name}); "
+                "rebuilding..."
+            )
+        else:
+            if results.get("schema_version") == CACHE_SCHEMA_VERSION:
+                return results
+            print("[Cache] Existing cache schema is stale; rebuilding...")
     if not USE_CACHE:
         print("[Cache] USE_CACHE=False - forcing rebuild (this will take several minutes)...")
     else:

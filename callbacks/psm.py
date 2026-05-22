@@ -12,9 +12,9 @@ def update_psm(arm):
     arm_label, arm_color = ARM_META[arm]
 
     att_pt = p.get("att_point", float("nan"))
-    # Default to matched-pair (Abadie-Imbens style) CI when available, the
-    # nonparametric bootstrap is inconsistent for NN matching, so we report it
-    # only as a sensitivity band lower in the page.
+    # Default to the simple matched-pair CI when available. The refit/rematch
+    # bootstrap is shown only as a sensitivity band lower in the page because
+    # nonparametric bootstrap intervals are not exact for NN matching.
     ci_lo = p.get("att_ci_lo_matched", p.get("att_ci_lo", float("nan")))
     ci_hi = p.get("att_ci_hi_matched", p.get("att_ci_hi", float("nan")))
     att_ok = bool(np.isfinite(att_pt))

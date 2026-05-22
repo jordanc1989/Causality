@@ -23,7 +23,8 @@ def psm_intro_copy():
             "after matching. On observational data a big shift toward zero is the win; here "
             "the ",
             html.Em("before"),
-            " plot is already balanced, so matching barely moves it. The bar chart reports "
-            "the matched ATT with a stress-test band from refitting and rematching 200 times."
+            " plot is already balanced, so matching barely moves it. The ATT chart shows "
+            "the matched-pair interval beside a stress-test band from refitting and "
+            "rematching 200 times."
         ], className="mb-0 small text-muted"),
     ]

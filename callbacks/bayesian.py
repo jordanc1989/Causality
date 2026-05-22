@@ -25,8 +25,8 @@ def update_bayesian(pair_key, rope_val):
                 accent=arm_color,
                 info=(
                     "The 95% Highest Density Interval is the narrowest range that holds 95% of "
-                    "the posterior. Given the model and the data, there's a 95% probability the "
-                    "true per-customer effect sits inside it."
+                    "the posterior. Under this model and the data, there's a 95% probability the "
+                    "per-customer effect sits inside it."
                 ),
                 info_id="bayes-kpi-hdi-info",
             ),
@@ -36,9 +36,9 @@ def update_bayesian(pair_key, rope_val):
                 color=SUCCESS if p_pos > 0.9 else WARNING,
                 accent=SUCCESS if p_pos > 0.9 else WARNING,
                 info=(
-                    "The probability that the true per-customer effect is positive. Above 95% is "
-                    "strong evidence of a lift. Near 50% means the data can't tell which way the "
-                    "effect points."
+                    "Under the model, the probability that the per-customer effect is "
+                    "positive. Above 95% is strong evidence of a lift. Near 50% means "
+                    "the data can't tell which way the effect points."
                 ),
                 info_id="bayes-kpi-ppos-info",
             ),
@@ -111,7 +111,7 @@ def update_bayesian(pair_key, rope_val):
         x=b["hdi_lo"],
         line_dash="dash",
         line_color=MUTED,
-        annotation_text="HDI 2.5%",
+        annotation_text="95% HDI lower",
         annotation_position="top left",
         annotation_font_color=MUTED
     )
@@ -119,7 +119,7 @@ def update_bayesian(pair_key, rope_val):
         x=b["hdi_hi"],
         line_dash="dash",
         line_color=MUTED,
-        annotation_text="HDI 97.5%",
+        annotation_text="95% HDI upper",
         annotation_position="top right",
         annotation_font_color=MUTED
     )
