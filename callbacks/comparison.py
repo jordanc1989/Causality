@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from dash import html, dash_table, Output, Input, State
+from dash import html, dash_table, Output, Input
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from dashboard.data import PSM, BAYESIAN, UPLIFT, OLS
