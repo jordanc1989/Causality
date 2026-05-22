@@ -81,11 +81,7 @@ def _fig_covariate_balance():
     for arm_label, arm_df in arms.items():
         smds, labels = [], []
         for cov in covs:
-            a = arm_df[cov].values
-            b = control[cov].values
-            pooled_std = np.sqrt((np.var(a, ddof=1) + np.var(b, ddof=1)) / 2)
-            smd = (np.mean(a) - np.mean(b)) / pooled_std if pooled_std > 0 else 0.0
-            smds.append(smd)
+            smds.append(cu.smd(arm_df[cov].values, control[cov].values))
             labels.append(COVARIATE_LABELS.get(cov, cov))
 
         fig.add_trace(

@@ -18,13 +18,22 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="sklift")
 
 CACHE_DIR = ".cache"
 CACHE_FILE = os.path.join(CACHE_DIR, "results.pkl")
-RANDOM_SEED = 42
+RANDOM_SEED = 10
 
 # Set to False to force a full recompute (and overwrite the pickle) the next
 # time the app starts - use after any change to this file's estimation logic.
 # Leave True for production/Plotly Cloud so the pre-computed pickle is loaded
 # instantly instead of re-running ~3-5 min of PSM/Bayesian/uplift fits.
 USE_CACHE = True
+
+def smd(a, b):
+    """Standardised mean difference with pooled SD. nan if either group has <2 obs."""
+    if len(a) < 2 or len(b) < 2:
+        return float("nan")
+    pooled_std = np.sqrt((np.var(a, ddof=1) + np.var(b, ddof=1)) / 2)
+    if pooled_std == 0:
+        return 0.0
+    return (np.mean(a) - np.mean(b)) / pooled_std
 
 # ---------------------------------------------------------------------------
 # Data Loading
@@ -244,14 +253,6 @@ def _compute_psm_for_arm(df, arm):
         ((treated_all["propensity"] < cs_lower)
          | (treated_all["propensity"] > cs_upper)).sum()
     )
-
-    def smd(a, b):
-        if len(a) < 2 or len(b) < 2:
-            return float("nan")
-        pooled_std = np.sqrt((np.var(a, ddof=1) + np.var(b, ddof=1)) / 2)
-        if pooled_std == 0:
-            return 0.0
-        return (np.mean(a) - np.mean(b)) / pooled_std
 
     smd_before = {}
     smd_after = {}
@@ -660,7 +661,6 @@ def _permutation_p_auuc(
     y = sub_sorted["spend"].values.astype(np.float64)
     n = len(sub_sorted)
     xs_full = np.arange(1, n + 1, dtype=np.float64) / n
-    trapz = getattr(np, "trapezoid", None) or np.trapz
 
     def _auuc_for_treatment(t_vec):
         cum_t = np.cumsum(y * t_vec)
@@ -677,7 +677,7 @@ def _permutation_p_auuc(
         ys_v = ys[valid]
         if len(xs_v) < 2:
             return 0.0
-        return float(trapz(ys_v, xs_v))
+        return float(np.trapezoid(ys_v, xs_v))
 
     obs_auuc = _auuc_for_treatment(treatment)
     null_aucs = np.empty(n_perm, dtype=np.float64)
@@ -925,23 +925,17 @@ def _run_uplift_arm(df, arm):
     _, qini_p_s, _ = _permutation_p_auuc(sub_sorted_s, arm_col, n_perm=500)
     _, qini_p_x, _ = _permutation_p_auuc(sub_sorted_x, arm_col, n_perm=500)
 
-    # AUUC-like area under cumulative incremental gain curve.
-    def _qini_auc(xs, ys):
-        if len(xs) < 2:
-            return 0.0
-        trapz = getattr(np, "trapezoid", None) or np.trapz
-        return float(trapz(ys, xs))
-
-    # Excess area above the random-targeting baseline:
-    # line from (0, 0) to (1, final cumulative incremental gain).
-    def _qini_excess_auc(xs, ys):
+    # AUUC-like area under the cumulative incremental gain curve. With
+    # subtract_baseline=True, reports only the excess area above the
+    # random-targeting baseline (the line from (0, 0) to (1, final gain)).
+    def _qini_auc(xs, ys, subtract_baseline=False):
         if len(xs) < 2:
             return 0.0
         xs_arr = np.asarray(xs, dtype=float)
         ys_arr = np.asarray(ys, dtype=float)
-        baseline = xs_arr * ys_arr[-1]
-        trapz = getattr(np, "trapezoid", None) or np.trapz
-        return float(trapz(ys_arr - baseline, xs_arr))
+        if subtract_baseline:
+            ys_arr = ys_arr - xs_arr * ys_arr[-1]
+        return float(np.trapezoid(ys_arr, xs_arr))
 
     return {
         "arm": arm,
@@ -962,9 +956,9 @@ def _run_uplift_arm(df, arm):
         "qini_auc_t": _qini_auc(qini_x, qini_y),
         "qini_auc_s": _qini_auc(qini_x_s, qini_y_s),
         "qini_auc_x": _qini_auc(qini_x_x, qini_y_x),
-        "qini_excess_auc_t": _qini_excess_auc(qini_x, qini_y),
-        "qini_excess_auc_s": _qini_excess_auc(qini_x_s, qini_y_s),
-        "qini_excess_auc_x": _qini_excess_auc(qini_x_x, qini_y_x),
+        "qini_excess_auc_t": _qini_auc(qini_x, qini_y, subtract_baseline=True),
+        "qini_excess_auc_s": _qini_auc(qini_x_s, qini_y_s, subtract_baseline=True),
+        "qini_excess_auc_x": _qini_auc(qini_x_x, qini_y_x, subtract_baseline=True),
         "qini_p_t": qini_p_t,
         "qini_p_s": qini_p_s,
         "qini_p_x": qini_p_x,
@@ -985,6 +979,25 @@ def run_uplift(df):
 # ---------------------------------------------------------------------------
 # Multi-Arm OLS
 # ---------------------------------------------------------------------------
+
+# Covariates that interact with each arm dummy in the OLS model, i.e. the terms
+# that shift an arm's marginal effect away from the reference subgroup.
+OLS_INTERACTION_COVARIATES = [
+    "newbie",
+    "channel_web",
+    "channel_multichannel",
+    "zip_suburban",
+    "zip_rural",
+]
+
+
+def _subgroup_marginal_effect(params, arm_prefix, subgroup_vals):
+    """Marginal effect of an arm for one covariate subgroup: main effect plus
+    each interaction coefficient weighted by that subgroup's covariate value."""
+    me = params.get(arm_prefix, 0)
+    for cov in OLS_INTERACTION_COVARIATES:
+        me += params.get(f"{arm_prefix}:{cov}", 0) * subgroup_vals[cov]
+    return me
 
 
 def run_ols(df):
@@ -1045,31 +1058,24 @@ def run_ols(df):
                 (1, 0, "Suburban"),
                 (0, 1, "Rural")
             ]:
-                me_mens = (
-                    result.params.get("mens_email", 0)
-                    + result.params.get("mens_email:newbie", 0) * newbie_val
-                    + result.params.get("mens_email:channel_web", 0) * channel_web
-                    + result.params.get("mens_email:channel_multichannel", 0)
-                    * channel_mc
-                    + result.params.get("mens_email:zip_suburban", 0) * zip_sub
-                    + result.params.get("mens_email:zip_rural", 0) * zip_rural_val
-                )
-                me_womens = (
-                    result.params.get("womens_email", 0)
-                    + result.params.get("womens_email:newbie", 0) * newbie_val
-                    + result.params.get("womens_email:channel_web", 0) * channel_web
-                    + result.params.get("womens_email:channel_multichannel", 0)
-                    * channel_mc
-                    + result.params.get("womens_email:zip_suburban", 0) * zip_sub
-                    + result.params.get("womens_email:zip_rural", 0) * zip_rural_val
-                )
+                subgroup_vals = {
+                    "newbie": newbie_val,
+                    "channel_web": channel_web,
+                    "channel_multichannel": channel_mc,
+                    "zip_suburban": zip_sub,
+                    "zip_rural": zip_rural_val,
+                }
                 subgroups.append(
                     {
                         "newbie": newbie_label,
                         "channel": channel_label,
                         "zip_code": zip_label,
-                        "me_mens": me_mens,
-                        "me_womens": me_womens
+                        "me_mens": _subgroup_marginal_effect(
+                            result.params, "mens_email", subgroup_vals
+                        ),
+                        "me_womens": _subgroup_marginal_effect(
+                            result.params, "womens_email", subgroup_vals
+                        ),
                     }
                 )
 
@@ -1085,13 +1091,8 @@ def run_ols(df):
     def _ate_with_ci(arm_prefix):
         term_main = arm_prefix
         inter_terms = {
-            f"{arm_prefix}:newbie": float(model_df["newbie"].mean()),
-            f"{arm_prefix}:channel_web": float(model_df["channel_web"].mean()),
-            f"{arm_prefix}:channel_multichannel": float(
-                model_df["channel_multichannel"].mean()
-            ),
-            f"{arm_prefix}:zip_suburban": float(model_df["zip_suburban"].mean()),
-            f"{arm_prefix}:zip_rural": float(model_df["zip_rural"].mean()),
+            f"{arm_prefix}:{cov}": float(model_df[cov].mean())
+            for cov in OLS_INTERACTION_COVARIATES
         }
         params = result.params
         cov = result.cov_params()
