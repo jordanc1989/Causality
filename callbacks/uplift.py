@@ -437,7 +437,7 @@ def update_policy(arm, model, cost_per_email, margin):
     fig.add_hline(y=0, line_color=BORDER, line_width=1)
     fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"Targeting Policy Curve — {arm_label} ({model.upper()}-Learner)",
+        title=f"Targeting Policy Curve - {arm_label} ({model.upper()}-Learner)",
         xaxis=dict(title="Fraction of list targeted", tickformat=".0%"),
         yaxis_title="Net incremental contribution ($)",
         margin=dict(t=50, b=80),

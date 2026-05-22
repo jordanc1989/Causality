@@ -6,7 +6,7 @@ GOOGLE_FONTS = (
     "&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
 )
 
-# Light editorial palette — warm off-white paper, near-black ink, one restrained
+# Light editorial palette: warm off-white paper, near-black ink, one restrained
 # forest-green accent. Names are kept stable so imports across callbacks/figures
 # don't break; only the values change.
 BG = "#FAF8F4"          # warm off-white "paper"
@@ -81,7 +81,10 @@ def register_plotly_template():
 
 
 PLOTLY_TEMPLATE = "causal_light"
-GRAPH_CONFIG = {"toImageButtonOptions": {"format": "png", "scale": 3}}
+GRAPH_CONFIG = {
+    "displaylogo": False,
+    "toImageButtonOptions": {"format": "png", "scale": 3},
+}
 
 # Cards are no longer filled-and-bordered boxes; they read as quiet surfaces
 # separated from the paper by a single hairline. The left-accent-border motif

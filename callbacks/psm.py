@@ -13,7 +13,7 @@ def update_psm(arm):
     arm_label, arm_color = ARM_META[arm]
 
     att_pt = p.get("att_point", float("nan"))
-    # Default to matched-pair (Abadie-Imbens style) CI when available — the
+    # Default to matched-pair (Abadie-Imbens style) CI when available, the
     # nonparametric bootstrap is inconsistent for NN matching, so we report it
     # only as a sensitivity band lower in the page.
     ci_lo = p.get("att_ci_lo_matched", p.get("att_ci_lo", float("nan")))
@@ -44,7 +44,7 @@ def update_psm(arm):
     kpis = html.Div(
         [
             kpi_card(
-                f"${att_pt:.2f}" if att_ok else "—",
+                f"${att_pt:.2f}" if att_ok else "-",
                 f"ATT, {arm_label}",
                 ci_str,
                 (att_pt > 0) if att_ok else None,
@@ -131,7 +131,7 @@ def update_psm(arm):
         margin=dict(t=50, b=70)
     )
 
-    # Love plot — “after” = caliper-kept treated vs their matched controls
+    # Love plot: “after” = caliper-kept treated vs their matched controls
     covs = list(p["smd_before"].keys())
     cov_labels = [COVARIATE_LABELS.get(c, c) for c in covs]
     smd_before = [p["smd_before"][c] for c in covs]
@@ -242,7 +242,7 @@ def update_psm(arm):
                 text=[f"${att_pt:.2f}"],
                 textposition="top center",
                 hovertemplate=(
-                    f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f} – ${boot_hi:.2f}<extra></extra>"
+                    f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f} - ${boot_hi:.2f}<extra></extra>"
                 ),
                 name="Rematch bootstrap (sensitivity)",
             )
@@ -250,7 +250,7 @@ def update_psm(arm):
     stats_fig.add_hline(y=0, line_color=BORDER, line_dash="dot")
     stats_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title="ATT estimate — analytical CI vs bootstrap sensitivity band",
+        title="ATT estimate - analytical CI vs bootstrap sensitivity band",
         yaxis_title="Effect on spend ($)",
         showlegend=False,
         margin=dict(t=50, b=30),

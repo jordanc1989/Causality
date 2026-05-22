@@ -1,4 +1,4 @@
-"""Uplift / HTE page — `/uplift`."""
+"""Uplift / HTE page - `/uplift`."""
 
 import dash
 
@@ -8,7 +8,7 @@ dash.register_page(
     __name__,
     path="/uplift",
     name="Uplift / HTE",
-    title="Causal Inference Dashboard — Uplift / HTE",
+    title="Causal Inference Dashboard - Uplift / HTE",
     order=4,
 )
 

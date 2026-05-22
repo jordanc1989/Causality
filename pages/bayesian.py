@@ -1,4 +1,4 @@
-"""Bayesian A/B page — `/bayesian`."""
+"""Bayesian A/B page - `/bayesian`."""
 
 import dash
 
@@ -8,7 +8,7 @@ dash.register_page(
     __name__,
     path="/bayesian",
     name="Bayesian A/B",
-    title="Causal Inference Dashboard — Bayesian A/B",
+    title="Causal Inference Dashboard - Bayesian A/B",
     order=2,
 )
 

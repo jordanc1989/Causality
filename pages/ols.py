@@ -1,4 +1,4 @@
-"""Multi-Arm OLS page — `/ols`."""
+"""Multi-Arm OLS page - `/ols`."""
 
 import dash
 
@@ -8,7 +8,7 @@ dash.register_page(
     __name__,
     path="/ols",
     name="Multi-Arm OLS",
-    title="Causal Inference Dashboard — Multi-Arm OLS",
+    title="Causal Inference Dashboard - Multi-Arm OLS",
     order=3,
 )
 

@@ -11,7 +11,7 @@ def tab6_layout():
                 [
                     dbc.Col(
                         [
-                            section_header("All Methods Summary"),
+                            section_header("All methods summary"),
                             html.P(
                                 [
                                     "Each row is one method's estimate of the average lift in spend "

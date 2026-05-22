@@ -26,7 +26,7 @@ def tab1_layout():
     lift_womens = avg_womens - avg_control
 
     def _ci95(a, b, n_boot=2000, seed=cu.RANDOM_SEED):
-        # Simple difference-of-means bootstrap — not the causal bootstrap used in PSM.
+        # Simple difference-of-means bootstrap - not the causal bootstrap used in PSM.
         # Valid here because the randomised design makes the raw difference unbiased.
         rng = np.random.default_rng(seed)
         diffs = np.array([
@@ -133,7 +133,7 @@ def tab1_layout():
 
     return dbc.Container(
         [
-            # Lede — the finding stated up front, like the standfirst of an article.
+            # Lede: the finding stated up front, like the standfirst of an article.
             html.Div(
                 [
                     html.Div(
@@ -253,7 +253,7 @@ def tab1_layout():
                                 " (Men's) and ",
                                 html.Strong(f"${mde_womens:.2f}"),
                                 f" (Women's) at 80% power, two-sided α = 5%. The observed lifts "
-                                f"(${lift_mens:.2f} and ${lift_womens:.2f}) clear those floors — "
+                                f"(${lift_mens:.2f} and ${lift_womens:.2f}) clear those floors - "
                                 "which is why the intervals above exclude zero.",
                             ],
                             className="small text-muted",
@@ -267,7 +267,7 @@ def tab1_layout():
                 [
                     dbc.Col(
                         [
-                            section_header("Spend Distribution by Segment (among spenders)"),
+                            section_header("Spend distribution by segment (among spenders)"),
                             dcc.Graph(id="tab1-box", figure=_fig_spend_box(), config=GRAPH_CONFIG)
                         ],
                         md=6,

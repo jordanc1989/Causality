@@ -73,7 +73,7 @@ def tab4_layout():
                                 dbc.Col(
                                     [
                                         html.Div(
-                                            "Targeting Policy",
+                                            "Targeting policy",
                                             style={
                                                 **SECTION_HEADER_STYLE,
                                                 "borderBottom": "none",
@@ -201,7 +201,7 @@ def tab4_layout():
                             "the predicted ranking fixed, then asking how often the random AUUC "
                             "reaches the observed one. Small p means the ranking is picking out "
                             "real responders rather than coincidence. This is a refit-free test, "
-                            "so it conditions on the trained model — it's the right null for "
+                            "so it conditions on the trained model - it's the right null for "
                             "\"does this ranking work?\" rather than \"would a fresh model on "
                             "different data also find a ranking?\""
                         ]
@@ -212,7 +212,7 @@ def tab4_layout():
                             "The error bars come from resampling treated and control within each "
                             "fixed decile. That captures within-decile sampling noise but ",
                             html.Em("not"),
-                            " uncertainty in the decile boundaries themselves — those boundaries "
+                            " uncertainty in the decile boundaries themselves - those boundaries "
                             "depend on the predicted CATE, which is itself noisy. A fully honest "
                             "CI would bootstrap the entire fit → rank → decile loop. Read these "
                             "intervals as a lower bound on the true uncertainty."

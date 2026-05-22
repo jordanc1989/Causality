@@ -247,27 +247,23 @@ def update_ppc_figure(pair_key):
         )
         return fig
 
-    nd = pack.get("ppc_n_draws", "—")
-    nf = pack.get("ppc_n_fake_per_draw", "—")
-    nca = pack.get("ppc_conv_n_a")
-    ncb = pack.get("ppc_conv_n_b")
-    nca_s = f"{nca:,}" if nca is not None else "—"
-    ncb_s = f"{ncb:,}" if ncb is not None else "—"
-
     fig = make_subplots(
         rows=3,
         cols=2,
         subplot_titles=(
-            f"Full spend ·{lab_a} ({nf} synthetic draws / PPC slice)",
-            f"Full spend ·{lab_b} ({nf} synthetic draws / PPC slice)",
-            f"Amount | spend > 0 ·{lab_a} (same {nf}-draw slices)",
-            f"Amount | spend > 0 ·{lab_b} (same {nf}-draw slices)",
-            f"Conversion ·{lab_a} (PPC batches of n = {nca_s})",
-            f"Conversion ·{lab_b} (PPC batches of n = {ncb_s})",
+            f"Full spend · {lab_a}",
+            f"Full spend · {lab_b}",
+            f"Amount given spend > 0 · {lab_a}",
+            f"Amount given spend > 0 · {lab_b}",
+            f"Conversion rate · {lab_a}",
+            f"Conversion rate · {lab_b}",
         ),
-        vertical_spacing=0.09,
-        horizontal_spacing=0.07,
+        vertical_spacing=0.11,
+        horizontal_spacing=0.08,
     )
+    # Subplot titles render as annotations; quieten them so they don't fight the
+    # data or the figure title. (Set before traces/vlines add their own.)
+    fig.update_annotations(font=dict(family=SERIF, size=12.5, color=MUTED))
 
     obs_sa = b.get("observed_spend_a")
     obs_sb = b.get("observed_spend_b")
@@ -325,21 +321,23 @@ def update_ppc_figure(pair_key):
             col=col,
         )
 
+    # Observed is coloured by arm; the model (PPC) is the accent everywhere, so a
+    # single two-entry legend reads correctly across all panels.
     _add_hist_pair(
-        1, 1, obs_sa, ppc_sa, f"Observed:{lab_a}", f"PPC mimic:{lab_a}",
+        1, 1, obs_sa, ppc_sa, "Observed", "Model (PPC)",
         MENS_COLOUR, ACCENT,
     )
     _add_hist_pair(
-        1, 2, obs_sb, ppc_sb, f"Observed:{lab_b}", f"PPC mimic:{lab_b}",
-        WOMENS_COLOUR, CTRL_COLOUR,
+        1, 2, obs_sb, ppc_sb, f"Observed · {lab_b}", f"Model (PPC) · {lab_b}",
+        WOMENS_COLOUR, ACCENT,
     )
     _add_hist_pair(
-        2, 1, obs_pa, ppc_pa, f"Obs converters:{lab_a}", f"PPC | spend>0:{lab_a}",
+        2, 1, obs_pa, ppc_pa, f"Observed · {lab_a}", f"Model (PPC) · {lab_a}",
         MENS_COLOUR, ACCENT,
     )
     _add_hist_pair(
-        2, 2, obs_pb, ppc_pb, f"Obs converters:{lab_b}", f"PPC | spend>0:{lab_b}",
-        WOMENS_COLOUR, CTRL_COLOUR,
+        2, 2, obs_pb, ppc_pb, f"Observed · {lab_b}", f"Model (PPC) · {lab_b}",
+        WOMENS_COLOUR, ACCENT,
     )
 
     if pcrma is not None and len(pcrma):
@@ -372,7 +370,7 @@ def update_ppc_figure(pair_key):
                 x=pcrmb,
                 nbinsx=45,
                 name="PPC draw mean conversion",
-                marker_color=CTRL_COLOUR,
+                marker_color=ACCENT,
                 opacity=0.55,
                 showlegend=False,
             ),
@@ -393,16 +391,19 @@ def update_ppc_figure(pair_key):
     fig.update_layout(
         template=PLOTLY_TEMPLATE,
         barmode="overlay",
-        height=980,
-        title=(
-            "Posterior predictive check · "
-            f"rows 1 and 2 simulate {nf} customers per posterior draw. "
-            f"Row 3 simulates at the full arm size "
-            f"(n={nca_s}, n={ncb_s}) so the conversion-rate spread matches reality. "
-            f"({nd} posterior draws total.)"
+        height=1000,
+        title=dict(
+            text="Posterior predictive check - observed vs model-simulated data",
+            font=dict(size=14),
         ),
-        margin=dict(t=80, b=46, l=54, r=36),
-        legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+        margin=dict(t=58, b=92, l=54, r=36),
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.07,
+            x=0.5,
+            xanchor="center",
+        ),
     )
 
     for r in (1, 2):
@@ -415,8 +416,8 @@ def update_ppc_figure(pair_key):
             )
             fig.update_yaxes(title_text="Density", row=r, col=c)
 
-    fig.update_xaxes(title_text="Conversion fraction", tickformat=".0%", row=3, col=1)
-    fig.update_xaxes(title_text="Conversion fraction", tickformat=".0%", row=3, col=2)
+    fig.update_xaxes(title_text="Conversion fraction", tickformat=".1%", row=3, col=1)
+    fig.update_xaxes(title_text="Conversion fraction", tickformat=".1%", row=3, col=2)
     fig.update_yaxes(title_text="Count", row=3, col=1)
     fig.update_yaxes(title_text="Count", row=3, col=2)
 

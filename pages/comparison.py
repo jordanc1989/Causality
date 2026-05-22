@@ -1,4 +1,4 @@
-"""Method Comparison page — `/comparison`."""
+"""Method Comparison page - `/comparison`."""
 
 import dash
 
@@ -8,7 +8,7 @@ dash.register_page(
     __name__,
     path="/comparison",
     name="Method Comparison",
-    title="Causal Inference Dashboard — Method Comparison",
+    title="Causal Inference Dashboard - Method Comparison",
     order=6,
 )
 

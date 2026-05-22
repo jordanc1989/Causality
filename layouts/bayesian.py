@@ -42,14 +42,14 @@ def tab3_layout():
                 [
                     dbc.Col(
                         [
-                            section_header("Posterior Summary"),
+                            section_header("Posterior summary"),
                             html.Div(id="bayes-kpi-cards", className="kpi-stack mt-2"),
                         ],
                         md=4,
                     ),
                     dbc.Col(
                         [
-                            section_header("Posterior Distribution · Treatment Effect δ"),
+                            section_header("Posterior distribution · treatment effect δ"),
                             dcc.Graph(id="bayes-posterior-plot", config=GRAPH_CONFIG, className="mt-2"),
                         ],
                         md=8,
@@ -66,7 +66,7 @@ def tab3_layout():
                                     [
                                         html.Div(
                                             [
-                                                html.Span("Practical Significance (ROPE)",
+                                                html.Span("Practical significance (ROPE)",
                                                           style={**SECTION_HEADER_STYLE,
                                                                  "borderBottom": "none",
                                                                  "paddingBottom": 0,
@@ -115,7 +115,7 @@ def tab3_layout():
                 style=CARD_STYLE,
                 className="dashboard-card mb-4",
             ),
-            section_header("Model Diagnostics & Checks"),
+            section_header("Model diagnostics & checks"),
             dbc.Row(
                 [
                     dbc.Col(
@@ -239,7 +239,7 @@ def tab3_layout():
                             "Men's vs Women's). The reported P(δ > 0) for each pair is conditional "
                             "on that pair only; it is not adjusted for the fact that three "
                             "comparisons are being inspected. Posterior-probability statements "
-                            "don't have a clean Bonferroni analogue — the right way to make a "
+                            "don't have a clean Bonferroni analogue - the right way to make a "
                             "joint statement (e.g. \"both campaigns beat control\") is to compute "
                             "the joint posterior probability from the samples, not to multiply or "
                             "compare individual P(δ > 0) values against an adjusted threshold. "

@@ -18,7 +18,7 @@ def tab5_layout():
                     dbc.Col(
                         [
                             section_header(
-                                "OLS Coefficient Plot: Treatment Effects & Interactions"
+                                "OLS coefficient plot: treatment effects & interactions"
                             ),
                             dcc.Graph(figure=coef_fig, id="ols-coef-plot", config=GRAPH_CONFIG)
                         ]
@@ -30,7 +30,7 @@ def tab5_layout():
                 [
                     dbc.Col(
                         [
-                            section_header("Marginal Effects by Subgroup"),
+                            section_header("Marginal effects by subgroup"),
                             html.Div(marginal_table, id="ols-marginal-table")
                         ]
                     ),
@@ -39,7 +39,7 @@ def tab5_layout():
             ),
             dbc.Row(
                 [
-                    dbc.Col(section_header("Subgroup Heatmap: Predicted Spend Lift"))
+                    dbc.Col(section_header("Subgroup heatmap: predicted spend lift"))
                 ]
             ),
             dbc.Row(

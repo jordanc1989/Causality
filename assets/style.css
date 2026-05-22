@@ -59,7 +59,7 @@ body {
   background: var(--accent);
 }
 
-/* Measure — constrain content to a centred editorial column with margins.
+/* Measure - constrain content to a centred editorial column with margins.
    The masthead and every page share one width so nothing sprawls. Nested
    containers (a page's own Container inside the shell's) are neutralised so
    horizontal padding is applied once. */
@@ -77,7 +77,7 @@ body {
   padding-right: 0;
 }
 
-/* Masthead — editorial nameplate instead of an app navbar */
+/* Masthead: editorial nameplate instead of an app navbar */
 .dashboard-app .masthead {
   padding: 1.4rem 0 0;
   background-color: var(--bg);
@@ -109,7 +109,7 @@ body {
   color: var(--muted);
 }
 
-/* Section navigation — understated serif text links with an accent underline */
+/* Section navigation - understated serif text links with an accent underline */
 .dashboard-app .dashboard-tabs.nav {
   gap: 0.35rem 1.6rem;
   padding: 0.7rem 0 0;
@@ -149,7 +149,7 @@ body {
   border-bottom: 2px solid var(--accent);
 }
 
-/* Cards — quiet surfaces on a single hairline, no fills or accent stripes */
+/* Cards: quiet surfaces on a single hairline, no fills or accent stripes */
 .dashboard-app .dashboard-card {
   background-color: var(--surface);
   border: 1px solid var(--border);
@@ -177,7 +177,7 @@ body {
   padding-bottom: 2rem;
 }
 
-/* KPI ledger — a stack of metrics reads as one panel with hairline-divided
+/* KPI ledger: a stack of metrics reads as one panel with hairline-divided
    rows, not a scatter of floating boxes. */
 .dashboard-app .kpi-stack {
   border: 1px solid var(--border);
@@ -291,7 +291,7 @@ body {
   outline-offset: 1px;
 }
 
-/* Disclosure toggle — quiet editorial link, no glyph */
+/* Disclosure toggle - quiet editorial link, no glyph */
 .dashboard-app .btn-methodology {
   padding: 0.3rem 0;
   background: transparent;
@@ -364,7 +364,7 @@ body {
   color: var(--muted) !important;
 }
 
-/* Info affordance — dotted underline on the term, no glyph */
+/* Info affordance: dotted underline on the term, no glyph */
 .dashboard-app .info-term {
   border-bottom: 1px dotted var(--border-strong);
   cursor: help;
@@ -387,7 +387,7 @@ body {
   background-color: transparent;
 }
 
-/* Tooltips — light surface, hairline, subtle shadow */
+/* Tooltips: light surface, hairline, subtle shadow */
 .dashboard-app .tooltip .tooltip-inner {
   max-width: 260px;
   padding: 0.5rem 0.75rem;
@@ -474,7 +474,7 @@ body {
   border-radius: 50%;
 }
 
-/* Segment stat blocks — rule-separated columns, not boxed cards */
+/* Segment stat blocks: rule-separated columns, not boxed cards */
 .dashboard-app .segment-card {
   height: 100%;
   overflow: hidden;

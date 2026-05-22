@@ -1,4 +1,4 @@
-"""Overview page — landing route at `/`."""
+"""Overview page - landing route at `/`."""
 
 import dash
 
@@ -8,7 +8,7 @@ dash.register_page(
     __name__,
     path="/",
     name="Overview",
-    title="Causal Inference Dashboard — Overview",
+    title="Causal Inference Dashboard - Overview",
     order=1,
 )
 

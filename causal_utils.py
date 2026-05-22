@@ -52,7 +52,7 @@ def load_data():
     df["channel_web"] = (df["channel"] == "Web").astype(int)
     df["channel_multichannel"] = (df["channel"] == "Multichannel").astype(int)
 
-    # Keep ordinal encodings too — used only for OLS interaction display
+    # Keep ordinal encodings too, used only for OLS interaction display
     df["zip_code_enc"] = df["zip_code"].map({"Urban": 0, "Surburban": 1, "Rural": 2})
     df["channel_enc"] = df["channel"].map({"Phone": 0, "Web": 1, "Multichannel": 2})
 
@@ -209,7 +209,7 @@ def _compute_psm_for_arm(df, arm):
         # known inconsistency of the nonparametric bootstrap for NN matching.
         # The correction for control re-use is omitted because it requires a
         # second KNN fit on the control arm and contributes only a small
-        # adjustment at this sample size — flagged in the methodology copy.
+        # adjustment at this sample size - flagged in the methodology copy.
         if n_matched > 1:
             att_se_matched = float(
                 np.std(matched_diffs, ddof=1) / np.sqrt(n_matched)
@@ -649,7 +649,7 @@ def _permutation_p_auuc(
     response. Under H0, treatment labels are exchangeable across the ranked
     list, so we shuffle them, recompute AUUC, and check how often the
     permuted AUUC reaches the observed value. This is a refit-free
-    permutation — the model and its ranking are held fixed; only the
+    permutation - the model and its ranking are held fixed; only the
     treatment labels are reshuffled. It tests whether the *ranking* picks
     out responders, conditional on the model that produced it.
 
@@ -1165,11 +1165,11 @@ def build_cache():
 def load_or_build_cache():
     """Load cached results if USE_CACHE and a pickle exists, otherwise recompute."""
     if USE_CACHE and os.path.exists(CACHE_FILE):
-        print(f"[Cache] USE_CACHE=True — loading from {CACHE_FILE}...")
+        print(f"[Cache] USE_CACHE=True - loading from {CACHE_FILE}...")
         with open(CACHE_FILE, "rb") as f:
             return pickle.load(f)
     if not USE_CACHE:
-        print("[Cache] USE_CACHE=False — forcing rebuild (this will take several minutes)...")
+        print("[Cache] USE_CACHE=False - forcing rebuild (this will take several minutes)...")
     else:
-        print("[Cache] No cache found — computing (this will take several minutes)...")
+        print("[Cache] No cache found - computing (this will take several minutes)...")
     return build_cache()
