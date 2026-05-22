@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from dash import html, Output, Input, State
+from dash import html, Output, Input
 from dashboard.theme import *
 from dashboard.data import PSM
 from layouts.components import kpi_card
@@ -10,8 +10,7 @@ from dashboard.theme import COVARIATE_LABELS
 
 def update_psm(arm):
     p = PSM[arm]
-    arm_label = "Men's Email" if arm == "mens" else "Women's Email"
-    arm_color = MENS_COLOUR if arm == "mens" else WOMENS_COLOUR
+    arm_label, arm_color = ARM_META[arm]
 
     att_pt = p.get("att_point", float("nan"))
     # Default to matched-pair (Abadie-Imbens style) CI when available — the
@@ -259,13 +258,9 @@ def update_psm(arm):
 
     return kpis, ps_fig, love_fig, stats_fig
 
-def toggle_method_tab2(n, is_open):
-    return not is_open
-
-
-
 
 def register_psm_callbacks(app):
+    # Methodology-collapse toggle is wired centrally in callbacks/__init__.py.
     app.callback(
         Output("psm-kpi-cards", "children"),
         Output("psm-ps-dist", "figure"),
@@ -273,9 +268,3 @@ def register_psm_callbacks(app):
         Output("psm-stats-chart", "figure"),
         Input("psm-arm-selector", "value"),
     )(update_psm)
-    app.callback(
-        Output("method-collapse-tab2", "is_open"),
-        Input("method-btn-tab2", "n_clicks"),
-        State("method-collapse-tab2", "is_open"),
-        prevent_initial_call=True,
-    )(toggle_method_tab2)

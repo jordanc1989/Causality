@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from dash import dash_table, Output, Input, State
+from dash import dash_table
 from dashboard.theme import *
 from dashboard.data import OLS, DF
 from dashboard.theme import TABLE_CELL, TABLE_HEADER, TABLE_SELECTED
@@ -218,18 +218,9 @@ def build_ols_figures():
 
     return coef_fig, table, mens_heat, womens_heat
 
-def toggle_method_tab5(n, is_open):
-    return not is_open
-
-
-
 
 def register_ols_callbacks(app):
-    # OLS figures are baked into the layout itself (see layouts/ols.py), so
-    # only the methodology-collapse toggle remains on the callback side.
-    app.callback(
-        Output("method-collapse-tab5", "is_open"),
-        Input("method-btn-tab5", "n_clicks"),
-        State("method-collapse-tab5", "is_open"),
-        prevent_initial_call=True,
-    )(toggle_method_tab5)
+    # OLS figures are baked into the layout itself (see layouts/ols.py); the
+    # methodology-collapse toggle is wired centrally in callbacks/__init__.py.
+    # Nothing else to register here.
+    pass

@@ -2,7 +2,7 @@
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from dash import html, Output, Input, State
+from dash import html, Output, Input
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from dashboard.theme import hex_to_rgba
@@ -511,12 +511,6 @@ def update_diagnostics_table(pair_key):
     return table
 
 
-# Toggle helpers run clientside: flipping `is_open` doesn't need a server
-# roundtrip and figure rebuild. Figures inside the collapses update on
-# pair-selector change, so opening shows current content for the active pair.
-_TOGGLE_JS = "function(n, is_open) { return !is_open; }"
-
-
 def register_bayesian_callbacks(app):
     app.callback(
         Output("bayes-kpi-cards", "children"),
@@ -527,7 +521,9 @@ def register_bayesian_callbacks(app):
     )(update_bayesian)
 
     # Figure / table updates fire on pair-selector change so the content inside
-    # each collapse stays current whether the panel is open or closed.
+    # each collapse stays current whether the panel is open or closed. The
+    # button-click toggles for the four collapses on this tab are registered
+    # centrally in `callbacks/__init__.py`.
     app.callback(
         Output("bayes-trace-plot", "figure"),
         Input("bayes-pair-selector", "value"),
@@ -540,18 +536,3 @@ def register_bayesian_callbacks(app):
         Output("bayes-diagnostics-table", "children"),
         Input("bayes-pair-selector", "value"),
     )(update_diagnostics_table)
-
-    # Clientside toggles for the four collapses on this tab.
-    for btn, collapse in [
-        ("trace-btn", "trace-collapse"),
-        ("ppc-btn", "ppc-collapse"),
-        ("diag-btn", "diag-collapse"),
-        ("method-btn-tab3", "method-collapse-tab3"),
-    ]:
-        app.clientside_callback(
-            _TOGGLE_JS,
-            Output(collapse, "is_open"),
-            Input(btn, "n_clicks"),
-            State(collapse, "is_open"),
-            prevent_initial_call=True,
-        )

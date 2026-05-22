@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from dash import html, Output, Input, State
+from dash import html, Output, Input
 from dashboard.theme import *
 from dashboard.theme import COVARIATE_LABELS, hex_to_rgba
 from dashboard.data import UPLIFT
@@ -10,11 +10,9 @@ from layouts.components import kpi_card
 
 def update_uplift(arm, model):
     u = UPLIFT[arm]
-    arm_label = "Men's Email" if arm == "mens" else "Women's Email"
-    cate_key = {"t": "cate_t", "s": "cate_s", "x": "cate_x"}[model]
-    cate = u[cate_key]
-    model_label = {"t": "T-Learner", "s": "S-Learner", "x": "X-Learner"}[model]
-    color = MENS_COLOUR if arm == "mens" else WOMENS_COLOUR
+    arm_label, color = ARM_META[arm]
+    cate = u[_uplift_key("cate", model)]
+    model_label = MODEL_LABEL[model]
 
     kpis = html.Div(
         [
@@ -451,13 +449,8 @@ def update_policy(arm, model, cost_per_email, margin):
     return kpis, fig
 
 
-def toggle_method_tab4(n, is_open):
-    return not is_open
-
-
-
-
 def register_uplift_callbacks(app):
+    # Methodology-collapse toggle is wired centrally in callbacks/__init__.py.
     app.callback(
         Output("uplift-kpi-cards", "children"),
         Output("uplift-cate-hist", "figure"),
@@ -476,9 +469,3 @@ def register_uplift_callbacks(app):
         Input("policy-cost", "value"),
         Input("policy-margin", "value"),
     )(update_policy)
-    app.callback(
-        Output("method-collapse-tab4", "is_open"),
-        Input("method-btn-tab4", "n_clicks"),
-        State("method-collapse-tab4", "is_open"),
-        prevent_initial_call=True,
-    )(toggle_method_tab4)

@@ -18,6 +18,13 @@ MENS_COLOUR = "#7DD3FC"
 WOMENS_COLOUR = "#A78BFA"
 CTRL_COLOUR = "#C6C6C6"
 
+# Per-arm display metadata: callbacks across tabs all repeat the same
+# (label, colour) lookup for the two treatment arms. Single source here.
+ARM_META = {
+    "mens": ("Men's Email", MENS_COLOUR),
+    "womens": ("Women's Email", WOMENS_COLOUR),
+}
+
 
 def hex_to_rgba(hex_color, alpha=1.0):
     """`#RRGGBB` → `rgba(r,g,b,alpha)` string for Plotly fillcolor / shape fills."""
