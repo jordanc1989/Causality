@@ -180,56 +180,6 @@ def update_bayesian(pair_key, rope_val):
 
     return kpis, posterior_fig, rope_card
 
-def update_trace_figure(pair_key):
-    b = BAYESIAN[pair_key]
-    delta_chains = b["delta_chains"]
-
-    fig = go.Figure()
-    colors = [MENS_COLOUR, WOMENS_COLOUR]
-    for i, chain in enumerate(delta_chains):
-        fig.add_trace(
-            go.Scatter(
-                x=list(range(len(chain))),
-                y=chain,
-                mode="lines",
-                name=f"Chain {i + 1}",
-                line=dict(color=colors[i % len(colors)], width=0.8),
-                opacity=0.8,
-                hovertemplate="Draw %{x}<br>δ: $%{y:.2f}<extra>Chain %{fullData.name}</extra>",
-            )
-        )
-
-    rhat = b.get("rhat_delta", "N/A")
-    bulk_ess = b.get("bulk_ess_delta", "N/A")
-    tail_ess = b.get("tail_ess_delta", "N/A")
-
-    fig.update_layout(
-        template=PLOTLY_TEMPLATE,
-        title="MCMC Trace: δ (treatment effect)",
-        xaxis_title="Draw",
-        yaxis_title="δ value",
-        margin=FIGURE_MARGIN_WIDE,
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
-        annotations=[
-            dict(
-                x=1.02,
-                y=1.0,
-                xref="paper",
-                yref="paper",
-                text=f"<b>MCMC Diagnostics</b><br>R̂: {rhat}<br>Bulk ESS: {bulk_ess}<br>Tail ESS: {tail_ess}",
-                showarrow=False,
-                font=dict(family=MONO, size=10, color=MUTED),
-                align="left",
-                bgcolor=SURFACE,
-                bordercolor=BORDER,
-                borderwidth=1,
-                borderpad=6,
-            )
-        ],
-    )
-    return fig
-
-
 def update_ppc_figure(pair_key):
     b = BAYESIAN[pair_key]
     lab_a = b["arm_a_label"]
@@ -512,17 +462,13 @@ def register_bayesian_callbacks(app):
         Output("bayes-posterior-plot", "figure"),
         Output("rope-result-card", "children"),
         Input("bayes-pair-selector", "value"),
-        Input("rope-slider", "value"),
+        Input("rope-input", "value"),
     )(update_bayesian)
 
     # Figure / table updates fire on pair-selector change so the content inside
     # each collapse stays current whether the panel is open or closed. The
-    # button-click toggles for the four collapses on this tab are registered
+    # button-click toggles for the collapses on this tab are registered
     # centrally in `callbacks/__init__.py`.
-    app.callback(
-        Output("bayes-trace-plot", "figure"),
-        Input("bayes-pair-selector", "value"),
-    )(update_trace_figure)
     app.callback(
         Output("bayes-ppc-plot", "figure"),
         Input("bayes-pair-selector", "value"),

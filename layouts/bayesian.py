@@ -80,12 +80,12 @@ def tab3_layout():
                                             [
                                                 dbc.InputGroupText("±$", className="dashboard-input-group-text"),
                                                 dbc.Input(
-                                                    id="rope-slider",
+                                                    id="rope-input",
                                                     type="number",
                                                     min=0,
-                                                    step=0.5,
+                                                    step=0.1,
                                                     value=1,
-                                                    debounce=True,
+                                                    debounce=False,
                                                     className="dashboard-input",
                                                 ),
                                                 dbc.InputGroupText("per customer", className="dashboard-input-group-text"),
@@ -138,16 +138,6 @@ def tab3_layout():
                                 ),
                                 graph("bayes-ppc-plot"),
                             ],
-                        ),
-                        md=12,
-                        className="mb-2",
-                    ),
-                    dbc.Col(
-                        collapsible_panel(
-                            "trace-btn",
-                            "trace-collapse",
-                            "MCMC trace plots",
-                            graph("bayes-trace-plot"),
                         ),
                         md=12,
                         className="mb-2",

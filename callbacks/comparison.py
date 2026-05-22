@@ -5,31 +5,11 @@ import plotly.graph_objects as go
 from dash import html, dash_table, Output, Input
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from dashboard.data import PSM, BAYESIAN, UPLIFT, OLS
+from dashboard.data import BAYESIAN, UPLIFT, OLS
 
 def _build_comparison_df():
-    """Assemble a tidy DataFrame of point estimates and CIs across all 5 methods x 2 arms."""
-    def _rnd_money(v):
-        try:
-            x = float(v)
-            return round(x, 2) if np.isfinite(x) else None
-        except (TypeError, ValueError):
-            return None
-
+    """Assemble comparable point estimates and CIs across methods x arms."""
     rows = []
-    for arm in ["mens", "womens"]:
-        arm_label = ARM_META[arm][0]
-        p = PSM[arm]
-        rows.append(
-            {
-                "Method": "PSM (ATT, matched-pair CI)",
-                "Arm": arm_label,
-                "Estimate ($)": _rnd_money(p.get("att_point")),
-                "CI Lower ($)": _rnd_money(p.get("att_ci_lo_matched")),
-                "CI Upper ($)": _rnd_money(p.get("att_ci_hi_matched")),
-            }
-        )
-
     pair_map = {"mens": "mens_vs_control", "womens": "womens_vs_control"}
     for arm in ["mens", "womens"]:
         arm_label = ARM_META[arm][0]
@@ -79,7 +59,7 @@ def _build_comparison_df():
     # the sample's actual covariate distribution) with its HC3 delta-method CI.
     # The raw `mens_email` / `womens_email` coefficients are only the effect
     # for the reference subgroup (Existing + Phone + Urban) and are not
-    # directly comparable to PSM's ATT or the Bayesian delta.
+    # directly comparable to the Bayesian delta or uplift average-CATE rows.
     for arm, ate_key, lo_key, hi_key in [
         ("mens", "ate_mens", "ate_mens_lo", "ate_mens_hi"),
         ("womens", "ate_womens", "ate_womens_lo", "ate_womens_hi"),
@@ -135,7 +115,6 @@ def update_comparison(noise_eps):
     # and forces a hard-coded left margin that clips on mobile. yaxis
     # automargin handles whatever remains.
     short_label_map = {
-        "PSM (ATT, matched-pair CI)": "PSM (matched-pair)",
         "Bayesian A/B (posterior mean)": "Bayesian A/B",
         "T-Learner (avg CATE)": "T-Learner",
         "S-Learner (avg CATE)": "S-Learner",
@@ -153,15 +132,10 @@ def update_comparison(noise_eps):
                 continue
             has_ci = pd.notna(row["CI Lower ($)"]) and pd.notna(row["CI Upper ($)"])
             method_name = row["Method"]
-            is_psm = isinstance(method_name, str) and method_name.startswith("PSM")
             hover_tail = (
                 f"95% CI: ${row['CI Lower ($)']:.2f} – ${row['CI Upper ($)']:.2f}"
                 if has_ci
-                else (
-                    "Heuristic rematch band shown on the PSM tab"
-                    if is_psm
-                    else "No CI available"
-                )
+                else "No CI available"
             )
             fig.add_trace(
                 go.Scatter(

@@ -39,6 +39,54 @@ def tab4_layout():
                     ),
                 ]
             ),
+            dbc.Row(
+                dbc.Col(
+                    html.Div(
+                        [
+                            html.Div(
+                                "Which learner should I use?",
+                                style={
+                                    "fontFamily": SERIF,
+                                    "fontWeight": "600",
+                                    "color": TEXT,
+                                    "marginBottom": "0.35rem",
+                                },
+                            ),
+                            html.P(
+                                [
+                                    html.Strong("Start with X-Learner. "),
+                                    "It is the best default here because it is built for targeting: "
+                                    "it learns from both the mailed and control groups, then blends "
+                                    "the evidence into a steadier customer ranking.",
+                                ],
+                                className="small text-muted mb-1",
+                            ),
+                            html.P(
+                                [
+                                    html.Strong("Use T-Learner as a direct comparison. "),
+                                    "It builds one model for mailed customers and another for control, "
+                                    "so it's easy to reason about but can be noisier customer by customer.",
+                                ],
+                                className="small text-muted mb-1",
+                            ),
+                            html.P(
+                                [
+                                    html.Strong("Use S-Learner as a conservative check. "),
+                                    "It can pull individual uplift estimates toward zero when the signal "
+                                    "is faint, so treat it as a sanity check.",
+                                ],
+                                className="small text-muted mb-0",
+                            ),
+                        ],
+                        style={
+                            "borderLeft": f"2px solid {BORDER_STRONG}",
+                            "paddingLeft": "1rem",
+                            "marginBottom": "1.25rem",
+                        },
+                    ),
+                    md=12,
+                )
+            ),
             kpi_graph_row("uplift-kpi-cards", "uplift-cate-hist"),
             graph_row_ids("uplift-feat-imp", "uplift-decile-chart", locked=True),
             graph_row_ids("uplift-qini", ("uplift-segment-compare", 6, True)),

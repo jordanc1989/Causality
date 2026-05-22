@@ -16,10 +16,9 @@ def tab6_layout():
                                 "Each row is one method's estimate of the average lift in spend "
                                 "per recipient, with its confidence range. The Overview, Bayesian "
                                 "and OLS rows are the headline numbers because they "
-                                "use the random assignment directly. The PSM row is included as a "
-                                "diagnostic, its uncertainty band is shown on the PSM tab and "
-                                "deliberately left blank here so it isn't read as comparable to the "
-                                "other intervals.",
+                                "use the random assignment directly. PSM is left out of this comparison "
+                                "because it is included as a teaching example, not as a headline method "
+                                "for this randomised dataset.",
                             ],
                             className="text-muted small mb-2",
                         ),
@@ -89,14 +88,13 @@ def tab6_layout():
                                     dbc.AccordionItem(
                                         [
                                             html.P(
-                                                "Pairs each email recipient with a lookalike control "
-                                                "customer and compares them. Useful as a sanity check, "
-                                                "and as a demo of what you'd do if there was no random "
-                                                "assignment. The confidence band on the PSM tab is a "
-                                                "stress test on the matching, not a textbook interval."
+                                                "The PSM tab pairs each email recipient with a lookalike "
+                                                "control customer. That's useful as a demo of what you'd do "
+                                                "without random assignment, but this dataset was randomised, "
+                                                "so PSM is intentionally omitted from the headline comparison."
                                             ),
                                         ],
-                                        title="PSM (matching)"
+                                        title="Why PSM is omitted"
                                     ),
                                     dbc.AccordionItem(
                                         [
@@ -120,7 +118,7 @@ def tab6_layout():
                                                 "treat them as directional."
                                             ),
                                         ],
-                                        title="Uplift (T-Learner, S-Learner)"
+                                        title="Uplift (T-, S-, X-Learner)"
                                     ),
                                     dbc.AccordionItem(
                                         [

@@ -44,7 +44,6 @@ def register_callbacks(app):
             ("method-btn-tab3", "method-collapse-tab3"),
             ("method-btn-tab4", "method-collapse-tab4"),
             ("method-btn-tab5", "method-collapse-tab5"),
-            ("trace-btn", "trace-collapse"),
             ("ppc-btn", "ppc-collapse"),
             ("diag-btn", "diag-collapse"),
         ],

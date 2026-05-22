@@ -112,23 +112,29 @@ This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Space
 ├── dashboard/
 │   ├── theme.py           # Design tokens, Plotly template, shared style dicts
 │   └── data.py            # Loads cache → exposes RESULTS, DF, PSM, BAYESIAN, UPLIFT, OLS
+├── pages/                 # Dash Pages route registration
+│   ├── overview.py        # /
+│   ├── bayesian.py        # /bayesian
+│   ├── ols.py             # /ols
+│   ├── uplift.py          # /uplift
+│   ├── psm.py             # /psm
+│   └── comparison.py      # /comparison
 ├── layouts/
-│   ├── shell.py           # Navbar + tab container, imports per-tab layouts
-│   ├── components.py      # Reusable UI helpers (KPI cards, section headers, methodology collapse)
-│   ├── overview.py        # Tab 1 layout
-│   ├── psm.py             # Tab 2 layout
-│   ├── bayesian.py        # Tab 3 layout
-│   ├── uplift.py          # Tab 4 layout
-│   ├── ols.py             # Tab 5 layout
-│   └── comparison.py      # Tab 6 layout
+│   ├── shell.py           # Masthead + section nav + Dash Pages container
+│   ├── components.py      # Reusable UI helpers
+│   ├── overview.py        # Overview layout
+│   ├── psm.py             # PSM layout
+│   ├── bayesian.py        # Bayesian A/B layout
+│   ├── uplift.py          # Uplift / HTE layout
+│   ├── ols.py             # Multi-Arm OLS layout
+│   └── comparison.py      # Method Comparison layout
 ├── callbacks/
 │   ├── __init__.py        # register_callbacks(app)
-│   ├── overview.py        # Tab 1 callbacks
-│   ├── psm.py             # Tab 2 callbacks
-│   ├── bayesian.py        # Tab 3 callbacks
-│   ├── uplift.py          # Tab 4 callbacks
-│   ├── ols.py             # Tab 5 callbacks
-│   └── comparison.py      # Tab 6 callbacks
+│   ├── psm.py             # PSM callbacks
+│   ├── bayesian.py        # Bayesian A/B callbacks
+│   ├── uplift.py          # Uplift / HTE callbacks
+│   ├── ols.py             # Static OLS figure builder
+│   └── comparison.py      # Method Comparison callbacks
 ├── figures/
 │   └── overview.py        # Static Plotly helpers for Overview tab
 ├── content/

@@ -552,11 +552,7 @@ def _run_bayesian_pair(df, pair_key):
         )
 
     delta_samples = idata.posterior["delta"].values.flatten()
-    # arviz_stats >=1.0 renamed `hdi_prob` to `prob`; fallback for older envs.
-    try:
-        hdi = az.hdi(idata, var_names=["delta"], prob=0.95)["delta"].values
-    except TypeError:
-        hdi = az.hdi(idata, var_names=["delta"], hdi_prob=0.95)["delta"].values
+    hdi = az.hdi(idata, var_names=["delta"], prob=0.95)["delta"].values
 
     report_vars = ["delta", "exp_spend_a", "exp_spend_b", "p_a", "p_b",
                    "mu_log_a", "mu_log_b", "sigma_log_a", "sigma_log_b"]
@@ -1142,7 +1138,7 @@ def build_cache():
     print("[Cache] Running Bayesian A/B (PyMC, 3 arm pairs)...")
     bayesian = run_bayesian_ab(df)
 
-    print("[Cache] Running Uplift models (T-Learner + S-Learner w/ 2 arms)...")
+    print("[Cache] Running Uplift models (T/S/X-Learners w/ 2 arms)...")
     uplift = run_uplift(df)
 
     print("[Cache] Running Multi-Arm OLS...")
