@@ -83,6 +83,7 @@ def register_plotly_template():
 PLOTLY_TEMPLATE = "causal_light"
 GRAPH_CONFIG = {
     "displaylogo": False,
+    "displayModeBar": "hover",
     "toImageButtonOptions": {"format": "png", "scale": 3},
 }
 LOCKED_GRAPH_CONFIG = {

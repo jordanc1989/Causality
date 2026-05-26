@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from dashboard.data import DF
 from dashboard.theme import (
     PLOTLY_TEMPLATE, MENS_COLOUR, WOMENS_COLOUR, CTRL_COLOUR,
-    WARNING, BORDER, TEXT,
+    WARNING, BORDER, TEXT, hex_to_rgba,
 )
 from dashboard.theme import COVARIATE_LABELS
 import causal_utils as cu
@@ -25,6 +25,7 @@ def _fig_spend_box():
         "No E-Mail": "Control"
     }
 
+    outlier_rgba = hex_to_rgba(TEXT, 0.35)
     fig = go.Figure()
     for seg in seg_order:
         vals = spenders[spenders["segment"] == seg]["spend"].values
@@ -38,8 +39,8 @@ def _fig_spend_box():
                 width=0.2,
                 marker=dict(
                     color=fill,
-                    outliercolor='rgba(31,27,22,0.35)',
-                    line=dict(outliercolor='rgba(31,27,22,0.35)', outlierwidth=1)
+                    outliercolor=outlier_rgba,
+                    line=dict(outliercolor=outlier_rgba, outlierwidth=1)
                 ),
                 line=dict(color=TEXT, width=1.4),
                 fillcolor=fill,

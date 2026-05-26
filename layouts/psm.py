@@ -2,18 +2,28 @@
 from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
-from layouts.components import graph_row_ids, kpi_graph_row, methodology_collapse, labeled_radio
+from layouts.components import (
+    graph_row_ids, kpi_graph_row, methodology_collapse, labeled_radio, spec_strip,
+)
 from content.methodology import psm_intro_copy
 
 def tab2_layout():
     return dbc.Container(
         [
-            dbc.Card(
-                dbc.CardBody(
-                    psm_intro_copy()
-                ),
-                style=CARD_STYLE,
-                className="dashboard-card mb-3"
+            spec_strip(
+                "Logistic propensity",
+                "9 covariates",
+                "0.2 SD caliper",
+                "200-iter bootstrap",
+            ),
+            html.Div(
+                psm_intro_copy(),
+                className="psm-intro mb-4",
+                style={
+                    "borderLeft": f"2px solid {BORDER_STRONG}",
+                    "paddingLeft": "1rem",
+                    "color": MUTED,
+                },
             ),
             dbc.Row(
                 [

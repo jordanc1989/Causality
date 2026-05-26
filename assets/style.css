@@ -25,6 +25,24 @@
   --tooltip-surface: #ffffff;
   --font-main: "Source Serif 4", Georgia, serif;
   --font-mono: "IBM Plex Mono", monospace;
+
+  /* Type scale - one source of truth for every size used across the app. */
+  --fs-micro: 0.72rem;   /* kicker / overline */
+  --fs-meta: 0.82rem;    /* captions, deltas, secondary text */
+  --fs-body: 0.95rem;    /* form labels, body */
+  --fs-lede: 1.05rem;    /* lead paragraphs, section titles */
+  --fs-h2: 1.7rem;       /* page lede, segment KPI */
+  --fs-h1: 1.85rem;      /* masthead */
+
+  /* Spacing scale - 4 / 8 / 12 / 20 / 32 / 56 px */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1.25rem;
+  --s-5: 2rem;
+  --s-6: 3.5rem;
+
+  --radius: 2px;
 }
 
 *,
@@ -38,7 +56,11 @@ body {
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-main);
+  font-size: var(--fs-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -52,7 +74,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--border-strong);
-  border-radius: 3px;
+  border-radius: var(--radius);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -105,17 +127,48 @@ body {
 .dashboard-app .masthead-standfirst {
   font-family: var(--font-main);
   font-style: italic;
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
   color: var(--muted);
 }
 
-/* Section navigation - understated serif text links with an accent underline */
+/* Source / dateline line below the standfirst. Picks up the FT/NYT
+   attribution slug pattern: small, italic, mono separator dot. */
+.dashboard-app .masthead-dateline {
+  margin-top: 0.5rem;
+  font-family: var(--font-main);
+  font-size: var(--fs-meta);
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.dashboard-app .masthead-dateline strong {
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.dashboard-app .masthead-dateline .sep {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  margin: 0 0.55rem;
+  background: var(--border-strong);
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+/* Section navigation - understated serif text links with an accent underline.
+   The nav is sticky to the viewport so it stays available on long pages while
+   the masthead nameplate scrolls away. */
 .dashboard-app .dashboard-tabs.nav {
   gap: 0.35rem 1.6rem;
   padding: 0.7rem 0 0;
   margin-bottom: 0.4rem;
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--bg);
 }
 
 .dashboard-app .dashboard-tabs .nav-link,
@@ -146,7 +199,10 @@ body {
   color: var(--accent);
   background: transparent;
   font-weight: 600;
+  /* Pull the accent rule down by 1px so it overlays the container's 1px
+     bottom border instead of sitting flush against it. FT-style tab. */
   border-bottom: 2px solid var(--accent);
+  margin-bottom: -1px;
 }
 
 /* Cards: quiet surfaces on a single hairline, no fills or accent stripes */
@@ -166,10 +222,8 @@ body {
   border-bottom: 1px solid var(--border);
   color: var(--text);
   font-family: var(--font-main);
-  font-size: 0.78rem;
+  font-size: var(--fs-body);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .dashboard-app .tab-content {
@@ -235,7 +289,7 @@ body {
   padding: 3px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius);
 }
 
 .dashboard-app .segmented-control .form-check {
@@ -584,4 +638,155 @@ body {
   font-family: var(--font-main);
   font-style: italic;
   font-size: 0.8rem;
+}
+
+/* Headline finding tile - the two projection cards on the overview lede.
+   Number leads (per FT/NYT lede tile), arm kicker sits above the rule. */
+.dashboard-app .headline-tile {
+  padding-top: 0.75rem;
+  border-top: 2px solid var(--border-strong);
+}
+
+.dashboard-app .headline-tile--sig {
+  border-top-color: var(--tile-accent, var(--border-strong));
+}
+
+.dashboard-app .headline-tile__kicker {
+  font-family: var(--font-main);
+  font-weight: 600;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.01em;
+  color: var(--muted);
+  margin-bottom: 0.55rem;
+}
+
+.dashboard-app .headline-tile__value {
+  font-family: var(--font-main);
+  font-weight: 700;
+  font-size: var(--fs-h2);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.dashboard-app .headline-tile__value--sig {
+  color: var(--tile-accent, var(--text));
+}
+
+.dashboard-app .headline-tile__label {
+  font-family: var(--font-main);
+  font-weight: 500;
+  font-size: var(--fs-meta);
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.dashboard-app .headline-tile__meta {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-micro);
+  color: var(--muted);
+}
+
+.dashboard-app .headline-tile__meta .label {
+  color: var(--muted);
+  margin-right: 0.35rem;
+}
+
+/* Page headline lede - serif H2, no left bar, kicker above. */
+.dashboard-app .page-lede {
+  margin-bottom: 2.5rem;
+}
+
+.dashboard-app .page-lede__kicker {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-app .page-lede__headline {
+  font-family: var(--font-main);
+  font-weight: 600;
+  font-size: var(--fs-h2);
+  line-height: 1.25;
+  color: var(--text);
+  max-width: 52rem;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-app .page-lede__caveat {
+  color: var(--muted);
+  font-size: var(--fs-meta);
+  margin-bottom: 0;
+}
+
+/* Spec strip: the dateline-style methodology kicker repeated under each tab. */
+.dashboard-app .spec-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.3rem;
+  margin: 0.25rem 0 1.6rem;
+  padding: 0.45rem 0 0.7rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--font-main);
+  font-size: var(--fs-meta);
+}
+
+.dashboard-app .spec-strip strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.dashboard-app .spec-strip .sep {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  background: var(--border-strong);
+  border-radius: 50%;
+}
+
+/* Accordion chevron: replace bootstrap's blue SVG with a typographic + / − */
+.dashboard-app .accordion-button::after {
+  width: auto;
+  height: auto;
+  background-image: none;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--muted);
+  content: "+";
+  transform: none;
+  transition: color 0.15s ease;
+}
+
+.dashboard-app .accordion-button:not(.collapsed)::after {
+  background-image: none;
+  color: var(--accent);
+  content: "−";
+  transform: none;
+}
+
+/* Plotly modebar: dial down the contrast so the chart chrome reads quiet. */
+.dashboard-app .js-plotly-plot .modebar {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.dashboard-app .js-plotly-plot:hover .modebar {
+  opacity: 1;
+}
+
+.dashboard-app .js-plotly-plot .modebar-btn path {
+  fill: var(--muted) !important;
+}
+
+.dashboard-app .js-plotly-plot .modebar-btn:hover path {
+  fill: var(--accent) !important;
 }

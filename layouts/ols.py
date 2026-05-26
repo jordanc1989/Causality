@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from layouts.components import (
     graph, graph_col, graph_row, section_col, section_header, methodology_collapse,
+    spec_strip,
 )
 from callbacks.ols import build_ols_figures
 
@@ -15,6 +16,11 @@ def tab5_layout():
     coef_fig, marginal_table, mens_heat, womens_heat = build_ols_figures()
     return dbc.Container(
         [
+            spec_strip(
+                "Three-arm OLS with interactions",
+                "HC3 robust SEs",
+                "Holm-Bonferroni at α = 0.05",
+            ),
             dbc.Row(
                 [
                     section_col(

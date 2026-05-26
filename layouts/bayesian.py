@@ -4,20 +4,16 @@ import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from layouts.components import (
     graph, section_col, section_header, methodology_collapse, collapsible_panel,
+    spec_strip,
 )
 
 def tab3_layout():
     return dbc.Container(
         [
-            html.Div(
-                [
-                    html.Span([html.Strong("Hurdle model"), ": Bernoulli x LogNormal"]),
-                    html.Span(className="sep"),
-                    html.Span("2,000 draws x 2 chains"),
-                    html.Span(className="sep"),
-                    html.Span("Full arm data (no subsampling)"),
-                ],
-                className="overview-context",
+            spec_strip(
+                "Hurdle model: Bernoulli × LogNormal",
+                "2,000 draws × 2 chains",
+                "Full arm data (no subsampling)",
             ),
             dbc.Row(
                 [
@@ -53,63 +49,49 @@ def tab3_layout():
                 ],
                 className="mb-4",
             ),
-            dbc.Card(
-                dbc.CardBody(
-                    [
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        html.Div(
-                                            [
-                                                html.Span("Practical significance (ROPE)",
-                                                          style={**SECTION_HEADER_STYLE,
-                                                                 "borderBottom": "none",
-                                                                 "paddingBottom": 0,
-                                                                 "marginBottom": "0.3rem",
-                                                                 "display": "block"}),
-                                                html.Span(
-                                                    "Set this to the smallest per-customer lift worth acting on. "
-                                                    "The result is how much of the posterior sits beyond that threshold.",
-                                                    className="small text-muted",
-                                                    style={"display": "block", "marginBottom": "0.6rem"},
-                                                ),
-                                            ],
-                                        ),
-                                        dbc.InputGroup(
-                                            [
-                                                dbc.InputGroupText("±$", className="dashboard-input-group-text"),
-                                                dbc.Input(
-                                                    id="rope-input",
-                                                    type="number",
-                                                    min=0,
-                                                    step=0.1,
-                                                    value=1,
-                                                    debounce=False,
-                                                    className="dashboard-input",
-                                                ),
-                                                dbc.InputGroupText("per customer", className="dashboard-input-group-text"),
-                                            ],
-                                            size="sm",
-                                            style={"maxWidth": "240px"},
-                                        ),
-                                    ],
-                                    md=5,
-                                    className="d-flex flex-column justify-content-center",
-                                ),
-                                dbc.Col(
-                                    html.Div(id="rope-result-card"),
-                                    md=7,
-                                    className="d-flex align-items-center",
-                                ),
-                            ],
-                            className="g-3",
-                        ),
-                    ],
-                    style={"paddingTop": "1rem", "paddingBottom": "1rem"},
-                ),
-                style=CARD_STYLE,
-                className="dashboard-card mb-4",
+            html.Div(
+                [
+                    section_header("Practical significance (ROPE)"),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    html.P(
+                                        "Set this to the smallest per-customer lift worth acting on. "
+                                        "The result is how much of the posterior sits beyond that threshold.",
+                                        className="small text-muted mb-2",
+                                    ),
+                                    dbc.InputGroup(
+                                        [
+                                            dbc.InputGroupText("±$", className="dashboard-input-group-text"),
+                                            dbc.Input(
+                                                id="rope-input",
+                                                type="number",
+                                                min=0,
+                                                step=0.1,
+                                                value=1,
+                                                debounce=False,
+                                                className="dashboard-input",
+                                            ),
+                                            dbc.InputGroupText("per customer", className="dashboard-input-group-text"),
+                                        ],
+                                        size="sm",
+                                        style={"maxWidth": "240px"},
+                                    ),
+                                ],
+                                md=5,
+                                className="d-flex flex-column justify-content-center",
+                            ),
+                            dbc.Col(
+                                html.Div(id="rope-result-card"),
+                                md=7,
+                                className="d-flex align-items-center",
+                            ),
+                        ],
+                        className="g-3",
+                    ),
+                ],
+                className="mb-4",
             ),
             section_header("Model diagnostics & checks"),
             dbc.Row(

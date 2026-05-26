@@ -4,7 +4,11 @@ from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from dashboard.data import DF
-from layouts.components import graph, section_col, section_header, segment_overview_card
+from dashboard.format import money
+from layouts.components import (
+    graph, section_col, section_header, segment_overview_card,
+    spec_strip, page_lede, headline_tile,
+)
 from figures.overview import _fig_spend_box, _fig_covariate_balance
 import causal_utils as cu
 
@@ -94,83 +98,62 @@ def tab1_layout():
             "Per-recipient lift multiplied by the number of recipients in this arm. "
             "The range is a 95% confidence interval from a 2,000-resample bootstrap."
         )
+        meta = html.Span(
+            [
+                html.Span("95% CI", className="label"),
+                html.Span(
+                    f"{money(proj_lo, 0)} – {money(proj_hi, 0)}",
+                    id=ci_id,
+                    className="info-term",
+                ),
+            ]
+        )
         return dbc.Col(
             [
-            html.Div(
-                [
-                    html.Div(label, style={"fontSize": "0.72rem", "fontFamily": SERIF,
-                                           "fontWeight": "600", "letterSpacing": "0.01em",
-                                           "color": MUTED, "marginBottom": "0.5rem"}),
-                    html.Div("Projected total lift",
-                             style={"fontSize": "0.72rem", "fontFamily": SERIF,
-                                    "fontWeight": "500", "letterSpacing": "0.01em",
-                                    "color": MUTED, "marginBottom": "0.3rem"}),
-                    html.Div(f"${proj:,.0f}",
-                             style={"fontSize": "1.7rem", "fontFamily": SERIF,
-                                    "fontWeight": "700", "letterSpacing": "-0.02em",
-                                    "color": color if sig else MUTED,
-                                    "lineHeight": "1", "marginBottom": "0.35rem"}),
-                    html.Div(
-                        [
-                            html.Span("95% CI  ", style={"color": MUTED}),
-                            html.Span(
-                                f"${proj_lo:,.0f} – ${proj_hi:,.0f}",
-                                id=ci_id,
-                                className="info-term",
-                                style={"color": MUTED},
-                            ),
-                        ],
-                        style={"fontSize": "0.7rem", "fontFamily": MONO},
-                    ),
-                ],
-                style={"borderTop": f"2px solid {color if sig else BORDER_STRONG}",
-                       "paddingTop": "0.7rem"},
-            ),
-            dbc.Tooltip(tooltip_text, target=ci_id, placement="bottom"),
+                headline_tile(
+                    kicker=label,
+                    value=money(proj, 0),
+                    label="Projected total lift",
+                    meta=meta,
+                    accent=color,
+                    significant=sig,
+                ),
+                dbc.Tooltip(tooltip_text, target=ci_id, placement="bottom"),
             ],
             md=4,
         )
 
     return dbc.Container(
         [
-            # Lede: the finding stated up front, like the standfirst of an article.
-            html.Div(
+            spec_strip(
+                ("Customers", f"{len(DF):,}"),
+                "3 arms",
+                "14-day spend window",
+                "Hillstrom (2008)",
+            ),
+            page_lede(
+                kicker="Headline finding",
+                headline=headline,
+                caveat=None,
+            ),
+            dbc.Row(
                 [
-                    html.Div(
-                        "Headline finding",
-                        style={"fontFamily": MONO, "fontSize": "0.74rem",
-                               "textTransform": "uppercase", "letterSpacing": "0.08em",
-                               "color": MUTED, "marginBottom": "0.5rem"},
+                    _hl_col(
+                        "Men's Email", MENS_COLOUR, mens_sig,
+                        proj_mens, proj_mens_lo, proj_mens_hi,
                     ),
-                    html.H2(
-                        headline,
-                        style={"fontFamily": SERIF, "fontWeight": "600",
-                               "fontSize": "1.7rem", "lineHeight": "1.3",
-                               "maxWidth": "52rem", "color": TEXT,
-                               "borderLeft": f"3px solid {headline_color}",
-                               "paddingLeft": "1rem", "marginBottom": "1.5rem"},
-                    ),
-                    dbc.Row(
-                        [
-                            _hl_col(
-                                "Men's Email", MENS_COLOUR, mens_sig,
-                                proj_mens, proj_mens_lo, proj_mens_hi,
-                            ),
-                            _hl_col(
-                                "Women's Email", WOMENS_COLOUR, wom_sig,
-                                proj_womens, proj_wom_lo, proj_wom_hi,
-                            ),
-                        ],
-                        className="g-4 mb-2",
-                    ),
-                    html.P(
-                        "Per-recipient lift scaled to the full arm. Ranges are 95% bootstrap "
-                        "intervals (2,000 resamples). The later sections re-test the same lift "
-                        "with matching, Bayesian and uplift methods.",
-                        className="text-muted small mb-0",
+                    _hl_col(
+                        "Women's Email", WOMENS_COLOUR, wom_sig,
+                        proj_womens, proj_wom_lo, proj_wom_hi,
                     ),
                 ],
-                style={"marginBottom": "2.5rem"},
+                className="g-4 mb-2",
+            ),
+            html.P(
+                "Per-recipient lift scaled to the full arm. Ranges are 95% bootstrap "
+                "intervals (2,000 resamples). The later sections re-test the same lift "
+                "with matching, Bayesian and uplift methods.",
+                className="text-muted small mb-5",
             ),
             section_header("By campaign arm"),
             dbc.Row(

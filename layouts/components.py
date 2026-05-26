@@ -7,6 +7,78 @@ from dashboard.theme import (
     SECTION_HEADER_STYLE, GRAPH_CONFIG, LOCKED_GRAPH_CONFIG,
 )
 
+
+def spec_strip(*items):
+    """Methodology kicker shown at the top of each tab.
+
+    Each item is either a string ("Hurdle model"), a `(label, value)` tuple
+    rendered as `label <strong>value</strong>`, or any already-built component.
+    Items are separated by a small bullet so the strip reads like a chart
+    source line.
+    """
+    children = []
+    for i, item in enumerate(items):
+        if i:
+            children.append(html.Span(className="sep"))
+        if isinstance(item, tuple) and len(item) == 2:
+            label, value = item
+            children.append(html.Span([f"{label} ", html.Strong(str(value))]))
+        elif isinstance(item, str):
+            children.append(html.Span(item))
+        else:
+            children.append(item)
+    return html.Div(children, className="spec-strip")
+
+
+def masthead_dateline(source, updated=None):
+    """Source attribution slug for the masthead. FT/NYT-style trailing line."""
+    parts = [html.Span(["Source: ", html.Strong(source)])]
+    if updated:
+        parts.extend([html.Span(className="sep"), html.Span(f"Updated {updated}")])
+    return html.Div(parts, className="masthead-dateline")
+
+
+def page_lede(kicker, headline, caveat=None):
+    """The page's lede block: small mono kicker, serif headline, optional caveat.
+
+    Replaces the inline `borderLeft` accent motif. The headline carries
+    its own weight; no extra rule needed beside it.
+    """
+    children = [
+        html.Div(kicker, className="page-lede__kicker"),
+        html.H2(headline, className="page-lede__headline"),
+    ]
+    if caveat:
+        children.append(html.P(caveat, className="page-lede__caveat"))
+    return html.Div(children, className="page-lede")
+
+
+def headline_tile(kicker, value, label, meta, accent=None, significant=False):
+    """A single "projected total lift" tile.
+
+    Layout reads: small kicker (arm name) > big serif number > small label
+    > meta line (CI). The arm colour only appears as a top rule when the
+    arm's effect is significant, otherwise the rule stays muted.
+    """
+    style = {}
+    if accent:
+        style["--tile-accent"] = accent
+    tile_class = "headline-tile"
+    value_class = "headline-tile__value"
+    if significant:
+        tile_class += " headline-tile--sig"
+        value_class += " headline-tile__value--sig"
+    return html.Div(
+        [
+            html.Div(kicker, className="headline-tile__kicker"),
+            html.Div(value, className=value_class),
+            html.Div(label, className="headline-tile__label"),
+            html.Div(meta, className="headline-tile__meta"),
+        ],
+        className=tile_class,
+        style=style,
+    )
+
 def kpi_card(
     value,
     label,
@@ -139,7 +211,6 @@ def segment_overview_card(
                             html.Div(
                                 f"${revenue_per:.2f}",
                                 className="segment-metric-value",
-                                style={"color": color},
                             ),
                             rev_delta,
                         ],
@@ -151,7 +222,6 @@ def segment_overview_card(
                             html.Div(
                                 f"{conversion_rate:.2f}%",
                                 className="segment-metric-value",
-                                style={"color": color},
                             ),
                             conv_delta,
                         ],

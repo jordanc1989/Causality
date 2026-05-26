@@ -4,12 +4,18 @@ import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from layouts.components import (
     graph, graph_row_ids, kpi_graph_row, methodology_collapse,
-    labeled_radio, labeled_input_group,
+    labeled_radio, labeled_input_group, spec_strip, section_header,
 )
 
 def tab4_layout():
     return dbc.Container(
         [
+            spec_strip(
+                "T- / S- / X-Learner",
+                "5-fold cross-fitting",
+                "500-permutation AUUC null",
+                "Honest CATEs",
+            ),
             dbc.Row(
                 [
                     dbc.Col(
@@ -90,83 +96,71 @@ def tab4_layout():
             kpi_graph_row("uplift-kpi-cards", "uplift-cate-hist"),
             graph_row_ids("uplift-feat-imp", "uplift-decile-chart", locked=True),
             graph_row_ids("uplift-qini", ("uplift-segment-compare", 6, True)),
-            dbc.Card(
-                dbc.CardBody(
-                    [
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        html.Div(
-                                            "Targeting policy",
-                                            style={
-                                                **SECTION_HEADER_STYLE,
-                                                "borderBottom": "none",
-                                                "paddingBottom": 0,
-                                                "marginBottom": "0.3rem",
-                                                "display": "block",
-                                            },
-                                        ),
-                                        html.Div(
-                                            "Combine the uplift ranking with send cost and gross margin "
-                                            "to find the percentage of the list worth mailing. The optimal "
-                                            "point maximises net incremental contribution.",
-                                            className="small text-muted mb-3",
-                                        ),
-                                        dbc.Row(
-                                            [
-                                                dbc.Col(
-                                                    labeled_input_group(
-                                                        "Send cost per email",
-                                                        [
-                                                            dbc.InputGroupText("$", className="dashboard-input-group-text"),
-                                                            dbc.Input(
-                                                                id="policy-cost",
-                                                                type="number",
-                                                                min=0,
-                                                                step=0.01,
-                                                                value=0.05,
-                                                                debounce=True,
-                                                                className="dashboard-input",
-                                                            ),
-                                                        ],
-                                                    ),
-                                                    md=6,
+            html.Div(
+                [
+                    section_header("Targeting policy"),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    html.Div(
+                                        "Combine the uplift ranking with send cost and gross margin "
+                                        "to find the percentage of the list worth mailing. The optimal "
+                                        "point maximises net incremental contribution.",
+                                        className="small text-muted mb-3",
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            dbc.Col(
+                                                labeled_input_group(
+                                                    "Send cost per email",
+                                                    [
+                                                        dbc.InputGroupText("$", className="dashboard-input-group-text"),
+                                                        dbc.Input(
+                                                            id="policy-cost",
+                                                            type="number",
+                                                            min=0,
+                                                            step=0.01,
+                                                            value=0.05,
+                                                            debounce=True,
+                                                            className="dashboard-input",
+                                                        ),
+                                                    ],
                                                 ),
-                                                dbc.Col(
-                                                    labeled_input_group(
-                                                        "Gross margin on incremental spend",
-                                                        [
-                                                            dbc.Input(
-                                                                id="policy-margin",
-                                                                type="number",
-                                                                min=0,
-                                                                max=1,
-                                                                step=0.05,
-                                                                value=0.40,
-                                                                debounce=True,
-                                                                className="dashboard-input",
-                                                            ),
-                                                            dbc.InputGroupText("(0-1)", className="dashboard-input-group-text"),
-                                                        ],
-                                                    ),
-                                                    md=6,
+                                                md=12,
+                                            ),
+                                            dbc.Col(
+                                                labeled_input_group(
+                                                    "Gross margin on incremental spend",
+                                                    [
+                                                        dbc.Input(
+                                                            id="policy-margin",
+                                                            type="number",
+                                                            min=0,
+                                                            max=1,
+                                                            step=0.05,
+                                                            value=0.40,
+                                                            debounce=True,
+                                                            className="dashboard-input",
+                                                        ),
+                                                        dbc.InputGroupText("(0-1)", className="dashboard-input-group-text"),
+                                                    ],
                                                 ),
-                                            ],
-                                            className="g-2",
-                                        ),
-                                    ],
-                                    md=4,
-                                ),
-                                dbc.Col(html.Div(id="policy-kpi-cards", className="kpi-stack"), md=8),
-                            ],
-                            className="g-3 mb-3",
-                        ),
-                        graph("policy-curve"),
-                    ]
-                ),
-                style=CARD_STYLE,
-                className="dashboard-card mb-4",
+                                                md=12,
+                                            ),
+                                        ],
+                                        className="g-2",
+                                    ),
+                                ],
+                                md=4,
+                            ),
+                            dbc.Col(html.Div(id="policy-kpi-cards", className="kpi-stack"), md=8),
+                        ],
+                        className="g-3 mb-3",
+                    ),
+                    graph("policy-curve"),
+                ],
+                className="mb-4",
             ),
             methodology_collapse(
                 "tab4",
