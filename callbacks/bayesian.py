@@ -13,7 +13,7 @@ def update_bayesian(pair_key, rope_val):
     b = BAYESIAN[pair_key]
     delta = b["delta_samples"]
 
-    hdi_str = f"95% HDI: ${b['hdi_lo']:.2f} - ${b['hdi_hi']:.2f}"
+    hdi_str = f"95% HDI: ${b['hdi_lo']:.2f} – ${b['hdi_hi']:.2f}"
     p_pos = b["p_positive"]
     arm_color = MENS_COLOUR if pair_key.startswith("mens") else WOMENS_COLOUR
 
@@ -44,7 +44,7 @@ def update_bayesian(pair_key, rope_val):
             ),
             kpi_card(
                 f"${b['mean_a']:.2f}",
-                f"Mean spend - {b['arm_a_label']}",
+                f"Mean spend, {b['arm_a_label']}",
                 accent=arm_color,
                 info=(
                     "The model's estimate of the average per-customer spend for this arm, "
@@ -54,7 +54,7 @@ def update_bayesian(pair_key, rope_val):
             ),
             kpi_card(
                 f"${b['mean_b']:.2f}",
-                f"Mean spend - {b['arm_b_label']}",
+                f"Mean spend, {b['arm_b_label']}",
                 accent=CTRL_COLOUR,
                 info=(
                     "The model's estimate of the average per-customer spend for this arm, "
@@ -200,12 +200,12 @@ def update_ppc_figure(pair_key):
         rows=3,
         cols=2,
         subplot_titles=(
-            f"Full spend · {lab_a}",
-            f"Full spend · {lab_b}",
-            f"Amount given spend > 0 · {lab_a}",
-            f"Amount given spend > 0 · {lab_b}",
-            f"Conversion rate · {lab_a}",
-            f"Conversion rate · {lab_b}",
+            f"Full spend - {lab_a}",
+            f"Full spend - {lab_b}",
+            f"Amount given spend > 0 - {lab_a}",
+            f"Amount given spend > 0 - {lab_b}",
+            f"Conversion rate - {lab_a}",
+            f"Conversion rate - {lab_b}",
         ),
         vertical_spacing=0.11,
         horizontal_spacing=0.08,
@@ -277,15 +277,15 @@ def update_ppc_figure(pair_key):
         MENS_COLOUR, ACCENT,
     )
     _add_hist_pair(
-        1, 2, obs_sb, ppc_sb, f"Observed · {lab_b}", f"Model (PPC) · {lab_b}",
+        1, 2, obs_sb, ppc_sb, f"Observed - {lab_b}", f"Model (PPC) - {lab_b}",
         WOMENS_COLOUR, ACCENT,
     )
     _add_hist_pair(
-        2, 1, obs_pa, ppc_pa, f"Observed · {lab_a}", f"Model (PPC) · {lab_a}",
+        2, 1, obs_pa, ppc_pa, f"Observed - {lab_a}", f"Model (PPC) - {lab_a}",
         MENS_COLOUR, ACCENT,
     )
     _add_hist_pair(
-        2, 2, obs_pb, ppc_pb, f"Observed · {lab_b}", f"Model (PPC) · {lab_b}",
+        2, 2, obs_pb, ppc_pb, f"Observed - {lab_b}", f"Model (PPC) - {lab_b}",
         WOMENS_COLOUR, ACCENT,
     )
 

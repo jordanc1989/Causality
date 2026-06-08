@@ -4,8 +4,8 @@ from dash import html
 def psm_intro_copy():
     return [
         html.P([
-            "This is a randomised experiment, so matching isn't the right tool here - "
-            "random assignment already balances the arms. The tab runs the workflow you'd "
+            "This is a randomised experiment, so matching isn't the right tool here. "
+            "Random assignment already balances the arms. The tab runs the workflow you'd "
             "use on ",
             html.Em("observational"),
             " data (opt-ins, triggered sends, organic signups) and sets the result next to "

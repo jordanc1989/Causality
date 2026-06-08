@@ -234,7 +234,7 @@ def tab1_layout():
                                 " (Men's) and ",
                                 html.Strong(f"${mde_womens:.2f}"),
                                 f" (Women's) at 80% power, two-sided α = 5%. The observed lifts "
-                                f"(${lift_mens:.2f} and ${lift_womens:.2f}) clear those floors - "
+                                f"(${lift_mens:.2f} and ${lift_womens:.2f}) clear those floors, "
                                 "which is why the intervals above exclude zero.",
                             ],
                             className="small text-muted",

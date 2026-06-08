@@ -9,7 +9,7 @@ def tab6_layout():
         [
             spec_strip(
                 "Cross-method roll-up",
-                "Overview · Bayesian · OLS · Uplift",
+                "Overview, Bayesian, OLS, Uplift",
                 "PSM omitted (randomised data)",
             ),
             dbc.Row(
@@ -116,8 +116,8 @@ def tab6_layout():
                                     dbc.AccordionItem(
                                         [
                                             html.P(
-                                                "Estimates the lift for each individual customer "
-                                                ". Best for ranking, so you can "
+                                                "Estimates the lift for each individual customer. "
+                                                "Best for ranking, so you can "
                                                 "target the most responsive shoppers. Individual "
                                                 "estimates are noisier than the overall average, so "
                                                 "treat them as directional."

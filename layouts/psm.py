@@ -50,7 +50,7 @@ def tab2_layout():
                         [
                             html.Strong("Pedagogical framing. "),
                             "On a randomised experiment, propensity matching isn't a separate "
-                            "estimator - it produces a noisier version of the simple "
+                            "estimator. It produces a noisier version of the simple "
                             "difference-in-means and discards observations along the way. "
                             "This tab is included to show ",
                             html.Em("how the workflow would look on observational data"),

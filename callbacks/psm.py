@@ -37,7 +37,7 @@ def update_psm(arm):
         )
     else:
         dist_str = "Matching statistics unavailable"
-    cs_str = f"{p['cs_lower']:.3f} - {p['cs_upper']:.3f}"
+    cs_str = f"{p['cs_lower']:.3f} – {p['cs_upper']:.3f}"
     pct_label = f"{pct_mt:.1f}% matched"
 
     kpis = html.Div(
@@ -241,7 +241,7 @@ def update_psm(arm):
                 text=[f"${att_pt:.2f}"],
                 textposition="top center",
                 hovertemplate=(
-                    f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f} - ${boot_hi:.2f}<extra></extra>"
+                    f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f} – ${boot_hi:.2f}<extra></extra>"
                 ),
                 name="Rematch bootstrap (sensitivity)",
             )
