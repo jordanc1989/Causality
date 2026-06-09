@@ -12,9 +12,7 @@ def tab4_layout(**_kwargs):
         [
             spec_strip(
                 "T- / S- / X-Learner",
-                "5-fold cross-fitting",
-                "500-permutation AUUC null",
-                "Honest CATEs",
+                "5-fold cross-fitting"
             ),
             dbc.Row(
                 [
