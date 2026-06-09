@@ -11,7 +11,7 @@ def tab4_layout(**_kwargs):
     return dbc.Container(
         [
             spec_strip(
-                "T- / S- / X-Learner",
+                "S- / X-Learner",
                 "5-fold cross-fitting"
             ),
             dbc.Row(
@@ -33,7 +33,6 @@ def tab4_layout(**_kwargs):
                             "Model:",
                             "uplift-model-selector",
                             [
-                                {"label": "T-Learner", "value": "t"},
                                 {"label": "S-Learner", "value": "s"},
                                 {"label": "X-Learner", "value": "x"},
                             ],
@@ -62,14 +61,6 @@ def tab4_layout(**_kwargs):
                                     "Start with this, it's a good first view for targeting because it learns "
                                     "from both the mailed and control groups then blends "
                                     "the evidence into a steadier customer ranking.",
-                                ],
-                                className="small text-muted mb-1",
-                            ),
-                            html.P(
-                                [
-                                    html.Strong("T-Learner:"),
-                                    "Use as a direct comparison. It builds one model for mailed customers and another for control, "
-                                    "so it's easy to reason about but can be noisier customer by customer.",
                                 ],
                                 className="small text-muted mb-1",
                             ),
@@ -169,21 +160,19 @@ def tab4_layout(**_kwargs):
                         "email, based on what we know about them. That estimate is called CATE."
                     ),
                     html.P(
-                        "The T-Learner fits two separate models, one on the email group and one "
-                        "on control, and then subtracts their predictions. The S-Learner fits a "
-                        "single model with treatment as an input feature, and reads off the "
-                        "difference between predictions with treatment on and off. The X-Learner "
-                        "(Künzel et al. 2019) extends the T-Learner: it imputes the missing "
-                        "counterfactual outcome for each customer, regresses those imputed "
-                        "treatment effects on covariates, and combines the two arms with a "
-                        "propensity-weighted average. X-Learner handles arm imbalance better "
-                        "than T- or S-Learners when treatment groups are uneven. Here the groups "
-                        "are balanced, so use it as a strong default view rather than a final "
-                        "answer. The three often disagree on individual customers, which is "
-                        "itself a useful signal."
+                        "The S-Learner fits a single model with treatment as an input feature, "
+                        "and reads off the difference between predictions with treatment on and "
+                        "off. The X-Learner (Künzel et al. 2019) instead fits a separate outcome "
+                        "model per arm, imputes the missing counterfactual outcome for each "
+                        "customer, regresses those imputed treatment effects on covariates, and "
+                        "combines the two arms with a propensity-weighted average. X-Learner "
+                        "handles arm imbalance better than the S-Learner when treatment groups "
+                        "are uneven. Here the groups are balanced, so use it as a strong default "
+                        "view rather than a final answer. The two often disagree on individual "
+                        "customers, which is itself a useful signal."
                     ),
                     html.P(
-                        "All three models use 5-fold cross-fitting and the same tuned random "
+                        "Both models use 5-fold cross-fitting and the same tuned random "
                         "forest base learner (depth 8, leaf size 50, feature subsampling). The "
                         "tuning is deliberate: spend is ~99% zeros with a right-skewed positive "
                         "tail, and the default forest will memorise individual converters. "
@@ -237,7 +226,7 @@ def tab4_layout(**_kwargs):
                         "A known quirk of the S-Learner: when outcome noise is large relative to "
                         "the treatment signal, as it is here, the model shrinks individual CATE "
                         "estimates toward zero. That's why the S-Learner's average CATE is "
-                        "typically smaller in magnitude than the T-Learner's."
+                        "typically smaller in magnitude than the X-Learner's."
                     ),
                     html.P(
                         "Because assignment was random, these models focus on ranking and on which "

@@ -753,22 +753,6 @@ def _predict_x_learner(fit, X_test_df):
     ].predict(X_test_df)
 
 
-def _fit_t_learner(X_train_df, y_train, t_train):
-    """T-Learner: separate outcome models for the treated and control arms."""
-    treated = t_train == 1
-    control = t_train == 0
-    mu1 = _make_rf()
-    mu1.fit(X_train_df.loc[treated], y_train[treated])
-    mu0 = _make_rf()
-    mu0.fit(X_train_df.loc[control], y_train[control])
-    return {"mu0": mu0, "mu1": mu1}
-
-
-def _predict_t_learner(fit, X_test_df):
-    """CATE = μ̂₁(x) - μ̂₀(x)."""
-    return fit["mu1"].predict(X_test_df) - fit["mu0"].predict(X_test_df)
-
-
 def _solo_design(X, t):
     """
     Treatment-interaction design for the S-Learner: ``[X, t, t * X]``.
@@ -820,7 +804,7 @@ def _avg_cate_ci(cate, n_boot=1000, seed=RANDOM_SEED):
 
 def _run_uplift_arm(df, arm):
     """
-    Run T-Learner, S-Learner, and X-Learner for one arm vs control.
+    Run S-Learner and X-Learner for one arm vs control.
 
     Uses 5-fold *stratified* cross-fitting on the treatment indicator so every
     fold has both arms represented, which matters for small-sample fold fits.
@@ -848,11 +832,9 @@ def _run_uplift_arm(df, arm):
     treatment = sub[arm_col].values
 
     kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
-    cate_t = np.zeros(len(sub))
     cate_s = np.zeros(len(sub))
     cate_x = np.zeros(len(sub))
     perm_imp_accum = {
-        "t": np.zeros(len(COVARIATES)),
         "s": np.zeros(len(COVARIATES)),
         "x": np.zeros(len(COVARIATES)),
     }
@@ -876,14 +858,6 @@ def _run_uplift_arm(df, arm):
                     cate_perm = predict_fn(X_perm)
                     shifts[r] = float(np.mean(np.abs(cate_perm - baseline_pred)))
                 perm_imp_accum[model_key][j] += shifts.mean()
-
-        # T-Learner
-        t_fit = _fit_t_learner(X_train_df, y_train, t_train)
-        cate_t_fold = _predict_t_learner(t_fit, X_test_df)
-        cate_t[test_idx] = cate_t_fold
-        _accumulate_importance(
-            "t", lambda X_perm: _predict_t_learner(t_fit, X_perm), cate_t_fold
-        )
 
         # S-Learner
         s_fit = _fit_s_learner(X_train_df, y_train, t_train)
@@ -912,7 +886,6 @@ def _run_uplift_arm(df, arm):
         key: _normalise_importance(vals) for key, vals in feat_imp_diff.items()
     }
 
-    sub["cate_t"] = cate_t
     sub["cate_s"] = cate_s
     sub["cate_x"] = cate_x
 
@@ -952,26 +925,21 @@ def _run_uplift_arm(df, arm):
             })
         return rows
 
-    sub_sorted_t = sub.sort_values("cate_t", ascending=False)
     sub_sorted_s = sub.sort_values("cate_s", ascending=False)
     sub_sorted_x = sub.sort_values("cate_x", ascending=False)
 
-    decile_lift = _decile_lift(sub_sorted_t)
     decile_lift_s = _decile_lift(sub_sorted_s)
     decile_lift_x = _decile_lift(sub_sorted_x)
 
-    qini_x, qini_y = _qini_curve_continuous(sub_sorted_t, arm_col)
     qini_x_s, qini_y_s = _qini_curve_continuous(sub_sorted_s, arm_col)
     qini_x_x, qini_y_x = _qini_curve_continuous(sub_sorted_x, arm_col)
 
     # Bootstrap CIs on the average CATE (estimation-conditional lower bound).
-    avg_cate_t_lo, avg_cate_t_hi = _avg_cate_ci(cate_t)
     avg_cate_s_lo, avg_cate_s_hi = _avg_cate_ci(cate_s)
     avg_cate_x_lo, avg_cate_x_hi = _avg_cate_ci(cate_x)
 
     # Permutation p-values for AUUC. 500 shuffles per method; cheap because
     # we hold the predicted ranking fixed and only relabel treatment.
-    _, qini_p_t, _ = _permutation_p_auuc(sub_sorted_t, arm_col, n_perm=500)
     _, qini_p_s, _ = _permutation_p_auuc(sub_sorted_s, arm_col, n_perm=500)
     _, qini_p_x, _ = _permutation_p_auuc(sub_sorted_x, arm_col, n_perm=500)
 
@@ -989,40 +957,26 @@ def _run_uplift_arm(df, arm):
 
     return {
         "arm": arm,
-        "cate_t": cate_t,
         "cate_s": cate_s,
         "cate_x": cate_x,
-        "feat_imp": dict(zip(COVARIATES, feat_imp_norm["t"])),
-        "feat_imp_t": dict(zip(COVARIATES, feat_imp_norm["t"])),
         "feat_imp_s": dict(zip(COVARIATES, feat_imp_norm["s"])),
         "feat_imp_x": dict(zip(COVARIATES, feat_imp_norm["x"])),
-        "feat_imp_label": "Heterogeneity importance (CATE permutation)",
-        "feat_imp_label_t": "Heterogeneity importance (T-Learner CATE permutation)",
         "feat_imp_label_s": "Heterogeneity importance (S-Learner CATE permutation)",
         "feat_imp_label_x": "Heterogeneity importance (X-Learner CATE permutation)",
-        "decile_lift": decile_lift,
         "decile_lift_s": decile_lift_s,
         "decile_lift_x": decile_lift_x,
-        "qini_x": qini_x,
-        "qini_y": qini_y,
         "qini_x_s": qini_x_s,
         "qini_y_s": qini_y_s,
         "qini_x_x": qini_x_x,
         "qini_y_x": qini_y_x,
-        "qini_auc_t": _qini_auc(qini_x, qini_y),
         "qini_auc_s": _qini_auc(qini_x_s, qini_y_s),
         "qini_auc_x": _qini_auc(qini_x_x, qini_y_x),
-        "qini_excess_auc_t": _qini_auc(qini_x, qini_y, subtract_baseline=True),
         "qini_excess_auc_s": _qini_auc(qini_x_s, qini_y_s, subtract_baseline=True),
         "qini_excess_auc_x": _qini_auc(qini_x_x, qini_y_x, subtract_baseline=True),
-        "qini_p_t": qini_p_t,
         "qini_p_s": qini_p_s,
         "qini_p_x": qini_p_x,
-        "avg_cate_t": float(np.mean(cate_t)),
         "avg_cate_s": float(np.mean(cate_s)),
         "avg_cate_x": float(np.mean(cate_x)),
-        "avg_cate_t_lo": avg_cate_t_lo,
-        "avg_cate_t_hi": avg_cate_t_hi,
         "avg_cate_s_lo": avg_cate_s_lo,
         "avg_cate_s_hi": avg_cate_s_hi,
         "avg_cate_x_lo": avg_cate_x_lo,

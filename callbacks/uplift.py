@@ -8,14 +8,8 @@ from dashboard.data import UPLIFT
 from layouts.components import kpi_card
 
 # Per-model cached results are stored under a `{base}_{model}` key in UPLIFT[arm]
-# (e.g. cate_t / cate_s / cate_x). Keep the UI label and cached result keys together.
+# (e.g. cate_s / cate_x). Keep the UI label and cached result keys together.
 MODEL_KEYS = {
-    "t": dict(
-        label="T-Learner", cate="cate_t", avg="avg_cate_t",
-        decile="decile_lift", qini_x="qini_x", qini_y="qini_y",
-        auc="qini_auc_t", excess="qini_excess_auc_t", p="qini_p_t",
-        feat_imp="feat_imp_t",
-    ),
     "s": dict(
         label="S-Learner", cate="cate_s", avg="avg_cate_s",
         decile="decile_lift_s", qini_x="qini_x_s", qini_y="qini_y_s",
@@ -116,7 +110,7 @@ def update_uplift(arm, model):
     )
 
     feat_imp = dict(
-        sorted(u.get(keys["feat_imp"], u["feat_imp"]).items(), key=lambda x: x[1])
+        sorted(u[keys["feat_imp"]].items(), key=lambda x: x[1])
     )
     feat_labels = [COVARIATE_LABELS.get(k, k) for k in feat_imp.keys()]
     fi_fig = go.Figure(
@@ -141,9 +135,9 @@ def update_uplift(arm, model):
         margin=dict(t=50, b=30, l=170),
     )
 
-    dec_df = pd.DataFrame(u.get(keys["decile"], u["decile_lift"]))
-    qini_xd = u.get(keys["qini_x"], u["qini_x"])
-    qini_yd = u.get(keys["qini_y"], u["qini_y"])
+    dec_df = pd.DataFrame(u[keys["decile"]])
+    qini_xd = u[keys["qini_x"]]
+    qini_yd = u[keys["qini_y"]]
     overall_ate = dec_df["lift"].mean()
 
     has_ci = "ci_lo" in dec_df.columns and "ci_hi" in dec_df.columns
@@ -338,8 +332,8 @@ def update_policy(arm, model, cost_per_email, margin):
     color = MENS_COLOUR if arm == "mens" else WOMENS_COLOUR
     keys = MODEL_KEYS[model]
 
-    qini_xd = np.asarray(u.get(keys["qini_x"], u["qini_x"]), dtype=float)
-    qini_yd = np.asarray(u.get(keys["qini_y"], u["qini_y"]), dtype=float)
+    qini_xd = np.asarray(u[keys["qini_x"]], dtype=float)
+    qini_yd = np.asarray(u[keys["qini_y"]], dtype=float)
     n_total = len(u[keys["cate"]])
 
     if len(qini_xd) < 2:

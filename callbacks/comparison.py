@@ -31,7 +31,6 @@ def _build_comparison_df():
         arm_label = ARM_META[arm][0]
         u = UPLIFT[arm]
         for method, est_key, lo_key, hi_key in [
-            ("T-Learner (avg CATE)", "avg_cate_t", "avg_cate_t_lo", "avg_cate_t_hi"),
             ("S-Learner (avg CATE)", "avg_cate_s", "avg_cate_s_lo", "avg_cate_s_hi"),
             ("X-Learner (avg CATE)", "avg_cate_x", "avg_cate_x_lo", "avg_cate_x_hi"),
         ]:
@@ -106,7 +105,6 @@ def update_comparison(noise_eps):
     # automargin handles whatever remains.
     short_label_map = {
         "Bayesian A/B (posterior mean)": "Bayesian A/B",
-        "T-Learner (avg CATE)": "T-Learner",
         "S-Learner (avg CATE)": "S-Learner",
         "X-Learner (avg CATE)": "X-Learner",
         "OLS (avg marginal effect, HC3)": "OLS (HC3)",
