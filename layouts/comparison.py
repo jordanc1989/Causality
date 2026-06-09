@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from layouts.components import graph_row_ids, section_col, spec_strip
 
-def tab6_layout():
+def tab6_layout(**_kwargs):
     return dbc.Container(
         [
             spec_strip(

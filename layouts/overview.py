@@ -12,7 +12,7 @@ from layouts.components import (
 from figures.overview import _fig_spend_box, _fig_covariate_balance
 import causal_utils as cu
 
-def tab1_layout():
+def tab1_layout(**_kwargs):
     seg_counts = DF["segment"].value_counts()
     n_mens = seg_counts.get("Mens E-Mail", 0)
     n_womens = seg_counts.get("Womens E-Mail", 0)

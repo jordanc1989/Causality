@@ -9,7 +9,7 @@ from layouts.components import (
 from callbacks.ols import build_ols_figures
 
 
-def tab5_layout():
+def tab5_layout(**_kwargs):
     # OLS outputs depend only on cached `OLS` + `DF`, not on any user input,
     # so build the figures here and embed them rather than going through a
     # callback. Layout is lazily rendered when the user navigates to /ols.

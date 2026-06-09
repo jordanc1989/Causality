@@ -7,7 +7,7 @@ from layouts.components import (
     labeled_radio, labeled_input_group, spec_strip, section_header,
 )
 
-def tab4_layout():
+def tab4_layout(**_kwargs):
     return dbc.Container(
         [
             spec_strip(

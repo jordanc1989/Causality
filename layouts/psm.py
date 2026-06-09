@@ -7,7 +7,7 @@ from layouts.components import (
 )
 from content.methodology import psm_intro_copy
 
-def tab2_layout():
+def tab2_layout(**_kwargs):
     return dbc.Container(
         [
             spec_strip(

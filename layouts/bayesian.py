@@ -7,7 +7,7 @@ from layouts.components import (
     spec_strip,
 )
 
-def tab3_layout():
+def tab3_layout(**_kwargs):
     return dbc.Container(
         [
             spec_strip(
