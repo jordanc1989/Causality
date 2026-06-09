@@ -43,20 +43,6 @@ def tab1_layout(**_kwargs):
     mens_lo, mens_hi = _ci95(spend_mens, spend_control)
     wom_lo, wom_hi = _ci95(spend_womens, spend_control)
 
-    # Minimum detectable effect at 80% power, two-sided α = 0.05. Uses pooled SE
-    # of the difference of means: z_{α/2} + z_β = 1.96 + 0.84 = 2.80. The MDE
-    # is the smallest per-recipient lift the experiment could reliably detect.
-    # Worth surfacing because it sets the floor for how to interpret a null
-    # result and contextualises the observed effects.
-    def _mde_80(treated, control):
-        se = float(np.sqrt(
-            treated.var(ddof=1) / len(treated)
-            + control.var(ddof=1) / len(control)
-        ))
-        return 2.80 * se
-
-    mde_mens = _mde_80(spend_mens, spend_control)
-    mde_womens = _mde_80(spend_womens, spend_control)
     mens_sig = mens_lo > 0
     wom_sig = wom_lo > 0
     proj_mens = lift_mens * n_mens
@@ -129,7 +115,6 @@ def tab1_layout(**_kwargs):
                 ("Customers", f"{len(DF):,}"),
                 "3 arms",
                 "14-day spend window",
-                "Hillstrom (2008)",
             ),
             page_lede(
                 headline=headline,
@@ -221,24 +206,7 @@ def tab1_layout(**_kwargs):
                             "customers respond most, and whether different methods agree.",
                             className="small text-muted mb-0",
                         ),
-                        md=6,
-                    ),
-                    dbc.Col(
-                        html.P(
-                            [
-                                html.Strong("Detection sensitivity. "),
-                                f"With ~{n_mens // 1000}k recipients per arm, the experiment can "
-                                "reliably detect a per-recipient lift of ",
-                                html.Strong(f"${mde_mens:.2f}"),
-                                " (Men's) and ",
-                                html.Strong(f"${mde_womens:.2f}"),
-                                f" (Women's) at 80% power, two-sided α = 5%. The observed lifts "
-                                f"(${lift_mens:.2f} and ${lift_womens:.2f}) clear those floors, "
-                                "which is why the intervals above exclude zero.",
-                            ],
-                            className="small text-muted",
-                        ),
-                        md=6,
+                        md=12,
                     ),
                 ],
                 className="mb-4 g-4 align-items-start",
