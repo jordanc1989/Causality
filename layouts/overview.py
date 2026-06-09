@@ -132,7 +132,6 @@ def tab1_layout(**_kwargs):
                 "Hillstrom (2008)",
             ),
             page_lede(
-                kicker="Headline finding",
                 headline=headline,
                 caveat=None,
             ),

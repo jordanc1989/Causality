@@ -148,11 +148,10 @@ body {
 
 .dashboard-app .masthead-dateline .sep {
   display: inline-block;
-  width: 3px;
-  height: 3px;
+  width: 1px;
+  height: 0.85em;
   margin: 0 0.55rem;
   background: var(--border-strong);
-  border-radius: 50%;
   vertical-align: middle;
 }
 
@@ -521,10 +520,10 @@ body {
 
 .dashboard-app .overview-context .sep {
   display: inline-block;
-  width: 3px;
-  height: 3px;
+  width: 1px;
+  height: 0.85em;
   background: var(--border-strong);
-  border-radius: 50%;
+  vertical-align: middle;
 }
 
 /* Segment stat blocks: rule-separated columns */
@@ -745,10 +744,9 @@ body {
 
 .dashboard-app .spec-strip .sep {
   display: inline-block;
-  width: 3px;
-  height: 3px;
+  width: 1px;
+  height: 0.85em;
   background: var(--border-strong);
-  border-radius: 50%;
 }
 
 /* Accordion chevron: replace bootstrap's blue SVG with a typographic + / − */

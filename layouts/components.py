@@ -38,16 +38,16 @@ def masthead_dateline(source, updated=None):
     return html.Div(parts, className="masthead-dateline")
 
 
-def page_lede(kicker, headline, caveat=None):
-    """The page's lede block: small mono kicker, serif headline, optional caveat.
+def page_lede(headline, kicker=None, caveat=None):
+    """The page's lede block: optional mono kicker, serif headline, optional caveat.
 
     Replaces the inline `borderLeft` accent motif. The headline carries
     its own weight; no extra rule needed beside it.
     """
-    children = [
-        html.Div(kicker, className="page-lede__kicker"),
-        html.H2(headline, className="page-lede__headline"),
-    ]
+    children = []
+    if kicker:
+        children.append(html.Div(kicker, className="page-lede__kicker"))
+    children.append(html.H2(headline, className="page-lede__headline"))
     if caveat:
         children.append(html.P(caveat, className="page-lede__caveat"))
     return html.Div(children, className="page-lede")
