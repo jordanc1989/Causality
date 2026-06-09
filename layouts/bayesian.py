@@ -104,13 +104,12 @@ def tab3_layout(**_kwargs):
                             [
                                 html.P(
                                     [
-                                        html.Strong("What this shows. "),
+                                        html.Strong("What this shows: "),
                                         "Three stacked checks per arm that compare the model's simulated data "
                                         "against the real data. The first row covers the full spend distribution "
                                         "including the spike at $0. The second row focuses on the size of "
                                         "purchases among customers who did spend. The third row checks the "
-                                        "conversion rate at the actual arm size. ",
-                                        html.Strong("What to look for. "),
+                                        "conversion rate at the actual arm size. "
                                         "The simulated and observed distributions should sit roughly on top of "
                                         "each other. Small spikes in the observed data come from real catalogue "
                                         "price points, so judge the fit on the overall shape rather than every "
