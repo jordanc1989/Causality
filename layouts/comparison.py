@@ -14,11 +14,8 @@ def tab6_layout(**_kwargs):
                         html.P(
                             [
                                 "Each row is one method's estimate of the average lift in spend "
-                                "per recipient, with its confidence range. The Overview, Bayesian "
-                                "and OLS rows are the headline numbers because they "
-                                "use the random assignment directly. PSM is left out of this comparison "
-                                "because it is included as a teaching example, not as a headline method "
-                                "for this randomised dataset.",
+                                "per recipient, with its confidence range. PSM is left out of this comparison "
+                                "because it's only included as a teaching example (as this is a randomised experiment).",
                             ],
                             className="text-muted small mb-2",
                         ),
@@ -91,7 +88,7 @@ def tab6_layout(**_kwargs):
                                                 "The PSM tab pairs each email recipient with a lookalike "
                                                 "control customer. That's useful as a demo of what you'd do "
                                                 "without random assignment, but this dataset was randomised, "
-                                                "so PSM is intentionally omitted from the headline comparison."
+                                                "so PSM is intentionally omitted."
                                             ),
                                         ],
                                         title="Why PSM is omitted"

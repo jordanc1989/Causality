@@ -146,8 +146,7 @@ def tab3_layout(**_kwargs):
                         "the spike at zero. The model splits the problem in two instead. A "
                         "Bernoulli decides whether the customer spends at all. A LogNormal "
                         "decides how much they spend if they do. The expected per-customer spend "
-                        "is the product of those two pieces, and delta is the difference between "
-                        "the two arms."
+                        "is the product of those two pieces."
                     ),
                     html.P(
                         [
@@ -156,9 +155,9 @@ def tab3_layout(**_kwargs):
                             "the pooled positive-spend distribution, which makes them weakly "
                             "informative but ",
                             html.Strong("data-derived"),
-                            ". With about 21,000 positive observations per arm the data dominates "
+                            ". With about 21k positive observations per arm the data dominates "
                             "the priors, so this choice has very little influence on the result. "
-                            "Sampling uses PyMC's nutpie NUTS sampler, 2,000 draws across 2 chains, "
+                            "Sampling uses PyMC's nutpie NUTS sampler, 2k draws across 2 chains "
                             "on the full arm data."
                         ]
                     ),
@@ -177,7 +176,7 @@ def tab3_layout(**_kwargs):
                         "The posterior predictive check simulates customers from the fitted model "
                         "and compares the simulated distribution to the real one. A good fit shows "
                         "the two distributions sitting on top of each other across the zero spike, "
-                        "the positive tail, and the conversion rate."
+                        "the positive tail and the conversion rate."
                     ),
                 ],
             ),
