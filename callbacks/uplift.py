@@ -39,19 +39,27 @@ def update_uplift(arm, model):
     cate = u[keys["cate"]]
     model_label = keys["label"]
 
+    avg_lo = u.get(f"avg_cate_{model}_lo")
+    avg_hi = u.get(f"avg_cate_{model}_hi")
+    if avg_lo is not None and avg_hi is not None and np.isfinite(avg_lo) and np.isfinite(avg_hi):
+        avg_delta = f"95% CI ${avg_lo:.2f} – ${avg_hi:.2f}"
+    else:
+        avg_delta = f"{arm_label} vs Control"
+
     kpis = html.Div(
         [
             kpi_card(
                 f"${np.mean(cate):.2f}",
                 f"Avg CATE ({model_label})",
-                f"{arm_label} vs Control",
+                avg_delta,
                 np.mean(cate) > 0,
                 color=color,
                 accent=color,
                 info=(
-                    "The average predicted lift in spend per customer. This should be close to the "
-                    "overall lift on the other tabs. A big gap usually means heavy tails or a model "
-                    "quirk."
+                    "The average predicted lift in spend per customer, with a 95% bootstrap "
+                    "interval. This should be close to the overall lift on the other tabs. The "
+                    "interval is estimation-conditional, so read it as a lower bound on the true "
+                    "uncertainty."
                 ),
                 info_id="uplift-kpi-avg-info",
             ),

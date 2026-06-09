@@ -24,36 +24,26 @@ def _build_comparison_df():
             }
         )
 
+    def _round_or_none(value):
+        return round(value, 2) if value is not None and pd.notna(value) else None
+
     for arm in ["mens", "womens"]:
         arm_label = ARM_META[arm][0]
         u = UPLIFT[arm]
-        rows.append(
-            {
-                "Method": "T-Learner (avg CATE)",
-                "Arm": arm_label,
-                "Estimate ($)": round(u["avg_cate_t"], 2),
-                "Interval Lower ($)": None,
-                "Interval Upper ($)": None,
-            }
-        )
-        rows.append(
-            {
-                "Method": "S-Learner (avg CATE)",
-                "Arm": arm_label,
-                "Estimate ($)": round(u["avg_cate_s"], 2),
-                "Interval Lower ($)": None,
-                "Interval Upper ($)": None,
-            }
-        )
-        rows.append(
-            {
-                "Method": "X-Learner (avg CATE)",
-                "Arm": arm_label,
-                "Estimate ($)": round(u.get("avg_cate_x", float("nan")), 2),
-                "Interval Lower ($)": None,
-                "Interval Upper ($)": None,
-            }
-        )
+        for method, est_key, lo_key, hi_key in [
+            ("T-Learner (avg CATE)", "avg_cate_t", "avg_cate_t_lo", "avg_cate_t_hi"),
+            ("S-Learner (avg CATE)", "avg_cate_s", "avg_cate_s_lo", "avg_cate_s_hi"),
+            ("X-Learner (avg CATE)", "avg_cate_x", "avg_cate_x_lo", "avg_cate_x_hi"),
+        ]:
+            rows.append(
+                {
+                    "Method": method,
+                    "Arm": arm_label,
+                    "Estimate ($)": round(u.get(est_key, float("nan")), 2),
+                    "Interval Lower ($)": _round_or_none(u.get(lo_key)),
+                    "Interval Upper ($)": _round_or_none(u.get(hi_key)),
+                }
+            )
 
     # OLS: report the *population-weighted ATE* (average marginal effect over
     # the sample's actual covariate distribution) with its HC3 delta-method CI.

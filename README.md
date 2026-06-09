@@ -91,8 +91,7 @@ This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Space
 
 - The underlying dataset is randomized, so causal identification of average effects comes from random assignment.
 - Covariate-adjusted analyses are included for precision and interpretability; propensity matching is included as a pedagogical workflow.
-- Uplift metrics are useful for ranking policy decisions but should ideally be reported with uncertainty intervals when used for high-stakes targeting.
-- Subgroup interaction findings are exploratory unless multiplicity is explicitly controlled.
+- Average CATE is reported with a bootstrap interval, though that interval is estimation-conditional and reads as a lower bound on the true uncertainty for high-stakes targeting.
 - Propensity matching (PSM) is included as a demo workflow for non-randomised data, and isn't used as a headline estimate for this dashboard.
 
 ## Results Snapshot

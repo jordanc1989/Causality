@@ -21,10 +21,7 @@ def build_ols_figures():
     plot_df = coef_df[coef_df["term"].isin(keep_terms)].copy()
     plot_df = plot_df.sort_values("coef")
 
-    # Holm-Bonferroni step-down adjustment across all displayed terms. We
-    # colour only terms that survive the family-wise α=0.05 threshold, so a
-    # quick scan can't read incidental sub-0.05 p-values as confirmatory
-    # findings when ~14 coefficients are being inspected.
+    # Holm-Bonferroni step-down adjustment across all displayed terms. 
     alpha = 0.05
     pvals = plot_df["pvalue"].values.astype(float)
     order = np.argsort(pvals)
@@ -74,8 +71,6 @@ def build_ols_figures():
         template=PLOTLY_TEMPLATE,
         title=(
             f"OLS Coefficients (n={OLS['n_obs']:,}, R²={OLS['r_squared']:.4f})"
-            "<br><sup>Coloured terms survive Holm-Bonferroni α=0.05 across all "
-            "displayed coefficients</sup>"
         ),
         xaxis_title="Effect on Spend ($)",
         xaxis_fixedrange=True,
@@ -210,7 +205,4 @@ def build_ols_figures():
 
 
 def register_ols_callbacks(app):
-    # OLS figures are baked into the layout itself (see layouts/ols.py); the
-    # methodology-collapse toggle is wired centrally in callbacks/__init__.py.
-    # Nothing else to register here.
     pass

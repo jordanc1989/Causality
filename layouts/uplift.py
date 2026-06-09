@@ -60,26 +60,26 @@ def tab4_layout():
                             ),
                             html.P(
                                 [
-                                    html.Strong("Start by checking X-Learner. "),
-                                    "It is a good first view for targeting because it learns "
-                                    "from both the mailed and control groups, then blends "
+                                    html.Strong("X-Learner:"),
+                                    "Start with this, it's a good first view for targeting because it learns "
+                                    "from both the mailed and control groups then blends "
                                     "the evidence into a steadier customer ranking.",
                                 ],
                                 className="small text-muted mb-1",
                             ),
                             html.P(
                                 [
-                                    html.Strong("Use T-Learner as a direct comparison. "),
-                                    "It builds one model for mailed customers and another for control, "
+                                    html.Strong("T-Learner:"),
+                                    "Use as a direct comparison. It builds one model for mailed customers and another for control, "
                                     "so it's easy to reason about but can be noisier customer by customer.",
                                 ],
                                 className="small text-muted mb-1",
                             ),
                             html.P(
                                 [
-                                    html.Strong("Use S-Learner as a conservative check. "),
-                                    "It can pull individual uplift estimates toward zero when the signal "
-                                    "is faint, so treat it as a sanity check.",
+                                    html.Strong("S-Learner:"),
+                                    "Use as a conservative check. It can pull individual uplift estimates toward zero when the signal "
+                                    "is faint so treat as a sanity check.",
                                 ],
                                 className="small text-muted mb-0",
                             ),
@@ -223,7 +223,8 @@ def tab4_layout():
                             " uncertainty in the decile boundaries themselves. Those boundaries "
                             "depend on the predicted CATE, which is itself noisy. A fully honest "
                             "CI would bootstrap the entire fit → rank → decile loop. Read these "
-                            "intervals as a lower bound on the true uncertainty."
+                            "intervals, and the average-CATE interval on the KPI card, as a lower "
+                            "bound on the true uncertainty."
                         ]
                     ),
                     html.P(

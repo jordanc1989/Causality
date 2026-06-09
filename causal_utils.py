@@ -11,14 +11,13 @@ import warnings
 import numpy as np
 import pandas as pd
 
-# Narrow suppression: PyMC/ArviZ emit deprecation chatter on import: scikit-uplift
-# emits a FutureWarning about pandas groupby. Keep everything else visible.
+# Narrow suppression: PyMC / ArviZ emit deprecation chatter on import. Keep
+# everything else visible.
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-warnings.filterwarnings("ignore", category=FutureWarning, module="sklift")
 
 CACHE_DIR = ".cache"
 CACHE_FILE = os.path.join(CACHE_DIR, "results.pkl")
-CACHE_SCHEMA_VERSION = 2
+CACHE_SCHEMA_VERSION = 3
 RANDOM_SEED = 10
 
 # Set to False to force a full recompute (and overwrite the pickle) the next
@@ -365,105 +364,41 @@ ARM_PAIRS = {
     "mens_vs_womens": ("Mens E-Mail", "Womens E-Mail")
 }
 
-# Posterior mimic (hurdle): cheap simulated datasets for PPC plots (not pickled huge).
+# Posterior-predictive draws are thinned to this many posterior samples before
+# the display payload is built, so the pickle stays small.
 _PPC_N_DRAWS = 400
-_PPC_N_FAKE_CUSTOMERS = 250
 
 
-def _simulate_hurdle_ppc_arrays(idata, n_arm_a, n_arm_b, seed=RANDOM_SEED):
+def _native_ppc_pack(draws_a, draws_b, cap=8000, seed=RANDOM_SEED):
     """
-    Simulate hurdle data at sampled posterior draws.
+    Build the small PPC display payload from native posterior-predictive draws.
 
-    * Spend histograms use a capped synthetic cohort each draw (cheap visuals).
-    * Conversion-rate PPC mirrors each arm's **observed** cohort sizes so dispersion
-      matches multinomial-binomial Monte Carlo variance at empirical n.
+    ``draws_a`` / ``draws_b`` are the simulated spend arrays for the two hurdle
+    likelihoods, each shaped (n_draws, n_customers). For each arm we keep:
+
+    * per-draw conversion rate (mean of spend > 0 at the arm's real n, so the
+      dispersion matches binomial Monte Carlo variance at empirical n),
+    * a capped sample of the full simulated spend (zeros + positive tail),
+    * a capped sample of the positive amounts.
+
+    Only these summaries are returned, so the pickle stays small even though the
+    simulated arrays span every customer.
     """
     rng = np.random.default_rng(seed)
+    out = {}
 
-    def _flat(var):
-        return np.asarray(idata.posterior[var].values).reshape(-1)
+    def _sample(arr, n_cap):
+        if len(arr) <= n_cap:
+            return arr
+        return rng.choice(arr, size=n_cap, replace=False)
 
-    p_a = _flat("p_a")
-    p_b = _flat("p_b")
-    mu_a = _flat("mu_log_a")
-    mu_b = _flat("mu_log_b")
-    sig_a = _flat("sigma_log_a")
-    sig_b = _flat("sigma_log_b")
-
-    nd = len(p_a)
-    n_pick = min(_PPC_N_DRAWS, nd)
-    ix = rng.choice(nd, size=n_pick, replace=False)
-
-    pa, pb = p_a[ix], p_b[ix]
-    ma, mb = mu_a[ix], mu_b[ix]
-    sa, sb = sig_a[ix], sig_b[ix]
-    nk = len(ix)
-
-    # Full-sample conversion mimic per draw (same row counts as each arm model)
-    n_a = max(0, int(n_arm_a))
-    n_b = max(0, int(n_arm_b))
-    ppc_conv_rep_mean_a = (
-        np.zeros(nk, dtype=np.float64)
-        if n_a == 0
-        else ((rng.random((nk, n_a)) < pa[:, None]).mean(axis=1))
-    )
-    ppc_conv_rep_mean_b = (
-        np.zeros(nk, dtype=np.float64)
-        if n_b == 0
-        else ((rng.random((nk, n_b)) < pb[:, None]).mean(axis=1))
-    )
-
-    # Subsample synthetic customers for histogram payload only
-    ua = rng.random((nk, _PPC_N_FAKE_CUSTOMERS))
-    ub = rng.random((nk, _PPC_N_FAKE_CUSTOMERS))
-    conv_a = (ua < pa[:, None]).astype(np.float64)
-    conv_b = (ub < pb[:, None]).astype(np.float64)
-
-    amt_a = rng.lognormal(
-        mean=ma[:, None],
-        sigma=sa[:, None],
-        size=(nk, _PPC_N_FAKE_CUSTOMERS),
-    )
-    amt_b = rng.lognormal(
-        mean=mb[:, None],
-        sigma=sb[:, None],
-        size=(nk, _PPC_N_FAKE_CUSTOMERS),
-    )
-
-    spend_a = conv_a * amt_a
-    spend_b = conv_b * amt_b
-
-    ppc_flat_a = spend_a.ravel()
-    ppc_flat_b = spend_b.ravel()
-    ppc_amount_pos_a = amt_a.ravel()[conv_a.ravel() > 0.5]
-    ppc_amount_pos_b = amt_b.ravel()[conv_b.ravel() > 0.5]
-
-    ppc_rep_mean_spend_a = spend_a.mean(axis=1)
-    ppc_rep_mean_spend_b = spend_b.mean(axis=1)
-
-    def _hist_sample(flat, cap=8000):
-        n = len(flat)
-        if n <= cap:
-            return flat
-        return rng.choice(flat, size=cap, replace=False)
-
-    ppc_spend_a_display = _hist_sample(ppc_flat_a)
-    ppc_spend_b_display = _hist_sample(ppc_flat_b)
-
-    out = {
-        "ppc_n_draws": int(n_pick),
-        "ppc_n_fake_per_draw": _PPC_N_FAKE_CUSTOMERS,
-        "ppc_conv_n_a": int(n_a),
-        "ppc_conv_n_b": int(n_b),
-        "ppc_conv_rep_mean_a": ppc_conv_rep_mean_a,
-        "ppc_conv_rep_mean_b": ppc_conv_rep_mean_b,
-        "ppc_rep_mean_spend_a": ppc_rep_mean_spend_a,
-        "ppc_rep_mean_spend_b": ppc_rep_mean_spend_b,
-        "ppc_amount_pos_a": ppc_amount_pos_a,
-        "ppc_amount_pos_b": ppc_amount_pos_b,
-        "ppc_spend_display_a": ppc_spend_a_display,
-        "ppc_spend_display_b": ppc_spend_b_display,
-    }
+    for arm, draws in (("a", draws_a), ("b", draws_b)):
+        draws = np.asarray(draws).reshape(-1, np.asarray(draws).shape[-1])
+        flat = draws.ravel()
+        pos = flat[flat > 0.0]
+        out[f"ppc_conv_rep_mean_{arm}"] = (draws > 0.0).mean(axis=1)
+        out[f"ppc_spend_display_{arm}"] = _sample(flat, cap)
+        out[f"ppc_amount_pos_{arm}"] = _sample(pos, cap)
     return out
 
 
@@ -473,19 +408,17 @@ def _run_bayesian_pair(df, pair_key):
 
     Spend is ~99% zeros with a right-skewed positive tail. A plain Normal
     likelihood is a severe misspecification (it assigns mass to negative
-    spend and the sigma term is uninterpretable). We instead decompose:
+    spend and the sigma term is uninterpretable). Each arm is modelled with a
+    native hurdle:
 
-        spend = conversion * amount_given_conversion
+        spend ~ HurdleLogNormal(psi, mu, sigma)
 
-    with:
-        conversion  ~ Bernoulli(p)           # models whether the customer spends
-        amount      ~ LogNormal(mu, sigma)   # models how much, given spend > 0
-
-    The per-customer expected spend is E[spend] = p * exp(mu + sigma**2/2),
-    and `delta` is the difference between the two arms' expected spend.
-    This is the target of interest for the A/B comparison and is on the
-    same dollar scale as the raw arm means, so it is directly comparable
-    to PSM's ATT and OLS's main effect.
+    where psi = P(spend > 0) and the positive amounts follow LogNormal(mu,
+    sigma). The per-customer expected spend is E[spend] = psi * exp(mu +
+    sigma**2/2), and `delta` is the difference between the two arms' expected
+    spend. This is the target of interest for the A/B comparison and is on the
+    same dollar scale as the raw arm means, so it is directly comparable to
+    PSM's ATT and OLS's main effect.
 
     Runs on the full arm data (no subsampling) via the nutpie NUTS
     sampler, should be quick.
@@ -510,33 +443,32 @@ def _run_bayesian_pair(df, pair_key):
     log_sd_prior = float(np.std(log_pooled))
 
     with pm.Model():
-        # Conversion probability (Beta(1,1) = uniform)
-        p_a = pm.Beta("p_a", alpha=1.0, beta=1.0)
-        p_b = pm.Beta("p_b", alpha=1.0, beta=1.0)
-        pm.Bernoulli("obs_conv_a", p=p_a, observed=a_converted)
-        pm.Bernoulli("obs_conv_b", p=p_b, observed=b_converted)
+        # psi = P(spend > 0); Beta(1,1) = uniform prior on the hurdle.
+        psi_a = pm.Beta("psi_a", alpha=1.0, beta=1.0)
+        psi_b = pm.Beta("psi_b", alpha=1.0, beta=1.0)
 
-        # Log-amount among converters
+        # Log-amount among converters (weakly informative, data-derived).
         mu_log_a = pm.Normal("mu_log_a", mu=log_mu_prior, sigma=log_sd_prior * 2)
         mu_log_b = pm.Normal("mu_log_b", mu=log_mu_prior, sigma=log_sd_prior * 2)
         sigma_log_a = pm.HalfNormal("sigma_log_a", sigma=log_sd_prior)
         sigma_log_b = pm.HalfNormal("sigma_log_b", sigma=log_sd_prior)
 
-        pm.LogNormal(
-            "obs_amount_a", mu=mu_log_a, sigma=sigma_log_a, observed=a_pos
+        # Native hurdle on the full spend vector (zero spike + positive tail).
+        pm.HurdleLogNormal(
+            "obs_a", psi=psi_a, mu=mu_log_a, sigma=sigma_log_a, observed=a_spend
         )
-        pm.LogNormal(
-            "obs_amount_b", mu=mu_log_b, sigma=sigma_log_b, observed=b_pos
+        pm.HurdleLogNormal(
+            "obs_b", psi=psi_b, mu=mu_log_b, sigma=sigma_log_b, observed=b_spend
         )
 
-        # Expected per-customer spend: E[spend] = P(convert) * E[amount | convert]
+        # Expected per-customer spend: E[spend] = psi * E[amount | spend > 0]
         exp_spend_a = pm.Deterministic(
             "exp_spend_a",
-            p_a * pm.math.exp(mu_log_a + 0.5 * sigma_log_a**2),
+            psi_a * pm.math.exp(mu_log_a + 0.5 * sigma_log_a**2),
         )
         exp_spend_b = pm.Deterministic(
             "exp_spend_b",
-            p_b * pm.math.exp(mu_log_b + 0.5 * sigma_log_b**2),
+            psi_b * pm.math.exp(mu_log_b + 0.5 * sigma_log_b**2),
         )
         pm.Deterministic("delta", exp_spend_a - exp_spend_b)
 
@@ -550,10 +482,38 @@ def _run_bayesian_pair(df, pair_key):
             return_inferencedata=True,
         )
 
+        # Native posterior predictive, thinned so the display payload stays small.
+        # The two hurdle likelihoods have different arm sizes, so they are
+        # sampled one at a time: a single combined call makes PyTensor try to
+        # inline-rewrite both diracdelta components together and fail on the
+        # shape mismatch.
+        ppc_pack = None
+        try:
+            n_chains = int(idata.posterior.sizes["chain"])
+            n_draws = int(idata.posterior.sizes["draw"])
+            per_chain_keep = max(1, _PPC_N_DRAWS // max(1, n_chains))
+            step = max(1, n_draws // per_chain_keep)
+            idata_thin = idata.sel(draw=slice(None, None, step))
+
+            def _ppc_draws(var):
+                pp = pm.sample_posterior_predictive(
+                    idata_thin,
+                    var_names=[var],
+                    random_seed=RANDOM_SEED + 11,
+                    progressbar=False,
+                )
+                return np.asarray(pp.posterior_predictive[var].values)
+
+            ppc_pack = _native_ppc_pack(
+                _ppc_draws("obs_a"), _ppc_draws("obs_b"), seed=RANDOM_SEED + 11
+            )
+        except Exception:
+            ppc_pack = None
+
     delta_samples = idata.posterior["delta"].values.flatten()
     hdi = az.hdi(idata, var_names=["delta"], prob=0.95)["delta"].values
 
-    report_vars = ["delta", "exp_spend_a", "exp_spend_b", "p_a", "p_b",
+    report_vars = ["delta", "exp_spend_a", "exp_spend_b", "psi_a", "psi_b",
                    "mu_log_a", "mu_log_b", "sigma_log_a", "sigma_log_b"]
     diagnostics = az.summary(idata, var_names=report_vars, round_to=3)
     rhat_delta = float(diagnostics.loc["delta", "r_hat"])
@@ -575,18 +535,6 @@ def _run_bayesian_pair(df, pair_key):
             )
 
     delta_chains = idata.posterior["delta"].values  # (chains, draws)
-
-    # Hurdle-consistent PPC: simulated full spend (zeros + positive tail)
-    ppc_pack = None
-    try:
-        ppc_pack = _simulate_hurdle_ppc_arrays(
-            idata,
-            len(a_converted),
-            len(b_converted),
-            seed=RANDOM_SEED + 11,
-        )
-    except Exception:
-        ppc_pack = None
 
     return {
         "pair_key": pair_key,
@@ -805,9 +753,69 @@ def _predict_x_learner(fit, X_test_df):
     ].predict(X_test_df)
 
 
-def _x_learner_predict(X_train_df, y_train, t_train, X_test_df):
-    """X-Learner CATE for one train/test split."""
-    return _predict_x_learner(_fit_x_learner(X_train_df, y_train, t_train), X_test_df)
+def _fit_t_learner(X_train_df, y_train, t_train):
+    """T-Learner: separate outcome models for the treated and control arms."""
+    treated = t_train == 1
+    control = t_train == 0
+    mu1 = _make_rf()
+    mu1.fit(X_train_df.loc[treated], y_train[treated])
+    mu0 = _make_rf()
+    mu0.fit(X_train_df.loc[control], y_train[control])
+    return {"mu0": mu0, "mu1": mu1}
+
+
+def _predict_t_learner(fit, X_test_df):
+    """CATE = μ̂₁(x) - μ̂₀(x)."""
+    return fit["mu1"].predict(X_test_df) - fit["mu0"].predict(X_test_df)
+
+
+def _solo_design(X, t):
+    """
+    Treatment-interaction design for the S-Learner: ``[X, t, t * X]``.
+
+    A single learner on this design lets the treatment effect vary with the
+    covariates (the interaction block), matching the behaviour of the previous
+    scikit-uplift ``SoloModel(method="treatment_interaction")``.
+    """
+    X = np.asarray(X, dtype=float)
+    t = np.asarray(t, dtype=float).reshape(-1, 1)
+    return np.hstack([X, t, X * t])
+
+
+def _fit_s_learner(X_train_df, y_train, t_train):
+    """S-Learner: one model on the treatment-interaction design."""
+    model = _make_rf()
+    model.fit(_solo_design(X_train_df.values, t_train), y_train)
+    return {"model": model}
+
+
+def _predict_s_learner(fit, X_test_df):
+    """CATE = f(x, t=1) - f(x, t=0) on the interaction design."""
+    X = X_test_df.values
+    n = len(X)
+    pred_t = fit["model"].predict(_solo_design(X, np.ones(n)))
+    pred_c = fit["model"].predict(_solo_design(X, np.zeros(n)))
+    return pred_t - pred_c
+
+
+def _avg_cate_ci(cate, n_boot=1000, seed=RANDOM_SEED):
+    """
+    Percentile bootstrap CI for the average CATE.
+
+    Resamples customers with replacement and recomputes the mean of the
+    cross-fit CATE. Like the decile-lift CIs, this captures the sampling
+    variability of the average given the fitted CATE surface; it does not
+    propagate model-refit uncertainty, so read it as a lower bound.
+    """
+    cate = np.asarray(cate, dtype=float)
+    n = len(cate)
+    if n == 0:
+        return float("nan"), float("nan")
+    rng = np.random.default_rng(seed)
+    means = np.array(
+        [cate[rng.integers(0, n, size=n)].mean() for _ in range(n_boot)]
+    )
+    return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
 def _run_uplift_arm(df, arm):
@@ -829,7 +837,6 @@ def _run_uplift_arm(df, arm):
     Permutation is repeated `n_perm_repeats` times per (fold, feature) to
     reduce shuffle noise.
     """
-    from sklift.models import TwoModels, SoloModel
     from sklearn.model_selection import StratifiedKFold
 
     arm_col = f"is_{arm}"
@@ -871,25 +878,20 @@ def _run_uplift_arm(df, arm):
                 perm_imp_accum[model_key][j] += shifts.mean()
 
         # T-Learner
-        t_model = TwoModels(
-            estimator_trmnt=_make_rf(),
-            estimator_ctrl=_make_rf(),
-            method="vanilla",
-        )
-        t_model.fit(X_train_df, y_train, t_train)
-        cate_t_fold = t_model.predict(X_test_df)
+        t_fit = _fit_t_learner(X_train_df, y_train, t_train)
+        cate_t_fold = _predict_t_learner(t_fit, X_test_df)
         cate_t[test_idx] = cate_t_fold
-        _accumulate_importance("t", t_model.predict, cate_t_fold)
+        _accumulate_importance(
+            "t", lambda X_perm: _predict_t_learner(t_fit, X_perm), cate_t_fold
+        )
 
         # S-Learner
-        s_model = SoloModel(
-            estimator=_make_rf(),
-            method="treatment_interaction",
-        )
-        s_model.fit(X_train_df, y_train, t_train)
-        cate_s_fold = s_model.predict(X_test_df)
+        s_fit = _fit_s_learner(X_train_df, y_train, t_train)
+        cate_s_fold = _predict_s_learner(s_fit, X_test_df)
         cate_s[test_idx] = cate_s_fold
-        _accumulate_importance("s", s_model.predict, cate_s_fold)
+        _accumulate_importance(
+            "s", lambda X_perm: _predict_s_learner(s_fit, X_perm), cate_s_fold
+        )
 
         # X-Learner
         x_fit = _fit_x_learner(X_train_df, y_train, t_train)
@@ -962,6 +964,11 @@ def _run_uplift_arm(df, arm):
     qini_x_s, qini_y_s = _qini_curve_continuous(sub_sorted_s, arm_col)
     qini_x_x, qini_y_x = _qini_curve_continuous(sub_sorted_x, arm_col)
 
+    # Bootstrap CIs on the average CATE (estimation-conditional lower bound).
+    avg_cate_t_lo, avg_cate_t_hi = _avg_cate_ci(cate_t)
+    avg_cate_s_lo, avg_cate_s_hi = _avg_cate_ci(cate_s)
+    avg_cate_x_lo, avg_cate_x_hi = _avg_cate_ci(cate_x)
+
     # Permutation p-values for AUUC. 500 shuffles per method; cheap because
     # we hold the predicted ranking fixed and only relabel treatment.
     _, qini_p_t, _ = _permutation_p_auuc(sub_sorted_t, arm_col, n_perm=500)
@@ -1014,6 +1021,12 @@ def _run_uplift_arm(df, arm):
         "avg_cate_t": float(np.mean(cate_t)),
         "avg_cate_s": float(np.mean(cate_s)),
         "avg_cate_x": float(np.mean(cate_x)),
+        "avg_cate_t_lo": avg_cate_t_lo,
+        "avg_cate_t_hi": avg_cate_t_hi,
+        "avg_cate_s_lo": avg_cate_s_lo,
+        "avg_cate_s_hi": avg_cate_s_hi,
+        "avg_cate_x_lo": avg_cate_x_lo,
+        "avg_cate_x_hi": avg_cate_x_hi,
     }
 
 
