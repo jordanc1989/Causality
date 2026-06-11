@@ -11,8 +11,8 @@ def tab3_layout(**_kwargs):
     return dbc.Container(
         [
             spec_strip(
-                "Hurdle model: Bernoulli × LogNormal",
-                "2,000 draws × 2 chains",
+                "Hurdle model: Bernoulli x LogNormal",
+                "2k draws x 2 chains",
                 "Full arm data (no subsampling)",
             ),
             dbc.Row(

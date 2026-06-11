@@ -88,7 +88,7 @@ def _build_tab1():
         ci_id = f"hl-ci-{label.lower().replace(' ', '-').replace(chr(39), '')}"
         tooltip_text = (
             "Per-recipient lift multiplied by the number of recipients in this arm. "
-            "The range is a 95% confidence interval from a 2,000-resample bootstrap."
+            "The range is a 95% confidence interval from a 2k resample bootstrap."
         )
         meta = html.Span(
             [
@@ -141,7 +141,7 @@ def _build_tab1():
             ),
             html.P(
                 "Per-recipient lift scaled to the full arm. Ranges are 95% bootstrap "
-                "intervals (2,000 resamples). The later sections re-test the same lift "
+                "intervals (2k resamples). The later sections re-test the same lift "
                 "with matching, Bayesian and uplift methods.",
                 className="text-muted small mb-5",
             ),
