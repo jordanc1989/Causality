@@ -170,14 +170,13 @@ def tab4_layout(**_kwargs):
                     html.P(
                         "The S-Learner fits a single model with treatment as an input feature, "
                         "and reads off the difference between predictions with treatment on and "
-                        "off. The X-Learner (Künzel et al. 2019) instead fits a separate outcome "
+                        "off. The X-Learner (Künzel et al. 2019) fits a separate outcome "
                         "model per arm, imputes the missing counterfactual outcome for each "
-                        "customer, regresses those imputed treatment effects on covariates, and "
+                        "customer, regresses those imputed treatment effects on covariates and "
                         "combines the two arms with a propensity-weighted average. X-Learner "
-                        "handles arm imbalance better than the S-Learner when treatment groups "
-                        "are uneven. Here the groups are balanced, so use it as a strong default "
-                        "view rather than a final answer. The two often disagree on individual "
-                        "customers, which is itself a useful signal."
+                        "handles arm imbalance better than S-Learner when treatment groups "
+                        "are uneven. Here the groups are balanced, so we're using it as a stronger default "
+                        "view rather than a final answer."
                     ),
                     html.P(
                         "Both models use 5-fold cross-fitting and the same tuned random "

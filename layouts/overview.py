@@ -94,7 +94,7 @@ def _build_tab1():
             [
                 html.Span("95% CI", className="label"),
                 html.Span(
-                    f"{money(proj_lo, 0)} – {money(proj_hi, 0)}",
+                    f"{money(proj_lo, 0)} - {money(proj_hi, 0)}",
                     id=ci_id,
                     className="info-term",
                 ),

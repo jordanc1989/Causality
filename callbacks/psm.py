@@ -20,7 +20,7 @@ def update_psm(arm):
     att_ok = bool(np.isfinite(att_pt))
     ci_ok = bool(np.isfinite(ci_lo) and np.isfinite(ci_hi))
     ci_str = (
-        f"95% CI: ${ci_lo:.2f} – ${ci_hi:.2f} (matched-pair SE)"
+        f"95% CI: ${ci_lo:.2f} - ${ci_hi:.2f} (matched-pair SE)"
         if ci_ok
         else "95% CI unavailable"
     )
@@ -37,7 +37,7 @@ def update_psm(arm):
         )
     else:
         dist_str = "Matching statistics unavailable"
-    cs_str = f"{p['cs_lower']:.3f} – {p['cs_upper']:.3f}"
+    cs_str = f"{p['cs_lower']:.3f} - {p['cs_upper']:.3f}"
     pct_label = f"{pct_mt:.1f}% matched"
 
     kpis = html.Div(
@@ -219,7 +219,7 @@ def update_psm(arm):
                 textposition="middle right",
                 hovertemplate=(
                     "ATT: $%{y:.2f}"
-                    + (f"<br>95% CI: ${pair_lo:.2f} – ${pair_hi:.2f}" if has_pair else "")
+                    + (f"<br>95% CI: ${pair_lo:.2f} - ${pair_hi:.2f}" if has_pair else "")
                     + "<extra></extra>"
                 ),
                 name="Matched-pair SE",
@@ -248,7 +248,7 @@ def update_psm(arm):
                 # edge, so a right-side label clips off the canvas.
                 textposition="middle left",
                 hovertemplate=(
-                    f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f} – ${boot_hi:.2f}<extra></extra>"
+                    f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f} - ${boot_hi:.2f}<extra></extra>"
                 ),
                 name="Rematch bootstrap (sensitivity)",
             )

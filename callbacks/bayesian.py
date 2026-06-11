@@ -17,7 +17,7 @@ def update_bayesian(pair_key, rope_val):
     b = BAYESIAN[pair_key]
     delta = b["delta_samples"]
 
-    hdi_str = f"95% HDI: ${b['hdi_lo']:.2f} – ${b['hdi_hi']:.2f}"
+    hdi_str = f"95% HDI: ${b['hdi_lo']:.2f} - ${b['hdi_hi']:.2f}"
     p_pos = b["p_positive"]
     # Three-way read: near 0% is strong evidence of a *negative* effect, not
     # uncertainty, so it must not share the inconclusive WARNING colour.
@@ -253,8 +253,7 @@ def update_ppc_figure(pair_key):
     # Clip the spend / amount x-axes to the 99th percentile of observed positive
     # spend. The raw positive-spend distribution has a long right tail that
     # squashes the bulk of the data into a thin spike at the left, so the
-    # row-1 zero spike + row-2 mass become unreadable. Clipping gives the user
-    # a view of the body and the model-vs-observed fit there.
+    # row-1 zero spike + row-2 mass become unreadable. 
     _pos_pool = np.concatenate([
         a for a in (obs_pa, obs_pb) if a is not None and len(a) > 0
     ]) if any(a is not None and len(a) > 0 for a in (obs_pa, obs_pb)) else None

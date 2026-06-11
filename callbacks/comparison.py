@@ -141,7 +141,7 @@ def update_comparison(noise_eps):
             method_name = row["Method"]
             interval_name = row["Interval type"]
             hover_tail = (
-                f"{interval_name}: ${row['Interval Lower ($)']:.2f} – "
+                f"{interval_name}: ${row['Interval Lower ($)']:.2f} - "
                 f"${row['Interval Upper ($)']:.2f}"
                 if has_interval
                 else "No interval available"

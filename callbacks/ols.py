@@ -60,7 +60,7 @@ def build_ols_figures():
             hovertemplate=(
                 "<b>%{y}</b><br>"
                 "Coef: $%{x:.2f}<br>"
-                "95% CI: $%{customdata[0]:.2f} – $%{customdata[1]:.2f}<br>"
+                "95% CI: $%{customdata[0]:.2f} - $%{customdata[1]:.2f}<br>"
                 "p-value: %{customdata[2]:.3f}"
                 "<extra></extra>"
             ),
