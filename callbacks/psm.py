@@ -149,8 +149,7 @@ def update_psm(arm):
             x=smd_before,
             y=cov_labels,
             mode="markers",
-            # Short legend labels: the long parenthetical versions clip at the
-            # card edge. The hover keeps the detail.
+            # Long legend labels clip at the card edge; hovers carry the detail.
             name="Before matching",
             marker=dict(color=DANGER, size=10, symbol="circle"),
             hovertemplate="%{y}<br>SMD: %{x:.3f}<extra>Before: all treated vs controls</extra>",
@@ -231,8 +230,6 @@ def update_psm(arm):
                 x=["ATT (rematch-bootstrap band)"],
                 y=[att_pt],
                 mode="markers+text",
-                # MUTED, not BORDER: the hairline beige is near-invisible on
-                # the white card, and this band is half the chart's point.
                 marker=dict(color=MUTED, size=14),
                 error_y=dict(
                     type="data",
@@ -244,8 +241,8 @@ def update_psm(arm):
                     width=8,
                 ),
                 text=[f"${att_pt:.2f}"],
-                # Left of the marker: this category sits at the right plot
-                # edge, so a right-side label clips off the canvas.
+                # This category sits at the right plot edge; a right-side
+                # label clips.
                 textposition="middle left",
                 hovertemplate=(
                     f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f} - ${boot_hi:.2f}<extra></extra>"

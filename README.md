@@ -96,10 +96,10 @@ This repo includes a [`Dockerfile`](Dockerfile) configured for the [Docker Space
 
 ## Results Snapshot
 
-- Agreement and disagreement across methods for Mens vs Control and Womens vs Control.
-- Posterior probability and HDI width in Bayesian A/B (effect magnitude + uncertainty).
-- Whether uplift curves and decile lift indicate actionable ranking value beyond random targeting.
-- Consistency between OLS interaction patterns and uplift heterogeneity signals.
+- Men's email lifts two-week spend by about **$0.77 per recipient** (95% CI $0.50 to $1.05); Women's by about **$0.42** ($0.17 to $0.67).
+- The methods agree: Bayesian, OLS and both uplift learners all land between $0.74 and $0.79 (Men's) and $0.42 and $0.45 (Women's).
+- The lift is a conversion effect. The emails roughly double the share of customers who buy (1.25% / 0.88% vs 0.57% in control) while spend per buyer stays around $114.
+- Both uplift rankings beat random targeting (permutation p < 0.002), and the policy view turns the ranking plus a send cost and margin into an optimal mailing share.
 
 ## Project Structure
 

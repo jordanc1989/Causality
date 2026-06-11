@@ -199,8 +199,8 @@ def update_uplift(arm, model):
             hovertemplate="Decile %{x}<br>Actual lift: $%{y:.2f}<extra></extra>",
         )
     )
-    # The line's label lives in the subtitle: an outside-right annotation
-    # clips at the plot edge, and inside placements collide with the bars.
+    # The line's label is in the subtitle; annotations here clip at the plot
+    # edge or collide with the bars.
     decile_fig.add_hline(
         y=mean_decile_lift,
         line_dash="dash",
@@ -341,8 +341,7 @@ def update_policy(arm, model, cost_per_email, margin):
     Cost defaults to $0.05 / send and margin defaults to 0.40. Both are
     user-tunable from the layout's input controls.
     """
-    # Dash returns None for cleared number inputs; restore the layout defaults
-    # rather than treating a cleared cost as "sends are free".
+    # None = cleared input; restore the layout defaults.
     cost_per_email = 0.05 if cost_per_email is None else max(0.0, float(cost_per_email))
     margin = 0.40 if margin is None else float(margin)
     margin = max(0.0, min(1.0, margin))
@@ -496,8 +495,7 @@ def update_policy(arm, model, cost_per_email, margin):
             line_dash="dash",
             line_width=1.5,
             annotation_text=f"Optimal: top {p_opt:.0%}",
-            # Flip the label inside the plot when the optimum sits near 100%,
-            # otherwise it clips off the right edge of the canvas.
+            # Near 100% a right-side label clips off the canvas.
             annotation_position="top right" if p_opt < 0.8 else "top left",
             annotation_font_color=SUCCESS,
         )
@@ -510,8 +508,8 @@ def update_policy(arm, model, cost_per_email, margin):
         margin=dict(t=50, b=80),
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
     )
-    # The verdict lives in the page, not as a figure annotation: paper-coord
-    # annotations below the legend get clipped off the canvas.
+    # Page content rather than a figure annotation: anything placed below the
+    # legend gets clipped off the canvas.
     verdict_note = html.Div(
         verdict,
         className="small",

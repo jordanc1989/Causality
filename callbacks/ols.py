@@ -179,8 +179,7 @@ def build_ols_figures():
             )
         )
 
-    # FIGURE_MARGIN_WIDE: the standard 30px bottom margin makes the "Channel"
-    # axis title collide with the "Phone" tick label.
+    # Wide bottom margin so the x-axis title clears the tick labels.
     mens_heat = make_heatmap("me_mens")
     mens_heat.update_layout(
         template=PLOTLY_TEMPLATE,

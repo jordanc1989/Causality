@@ -219,8 +219,9 @@ def tab4_layout(**_kwargs):
                             "fixed decile. That captures within-decile sampling noise but ",
                             html.Em("not"),
                             " uncertainty in the decile boundaries themselves. Those boundaries "
-                            "depend on the predicted CATE, which is itself noisy. A fully honest "
-                            "CI would bootstrap the entire fit → rank → decile loop. Read these "
+                            "depend on the predicted CATE, which is itself noisy. A CI that "
+                            "carried all of it would bootstrap the entire fit → rank → decile "
+                            "loop. Read these "
                             "intervals, and the average-CATE interval on the KPI card, as a lower "
                             "bound on the true uncertainty."
                         ]
@@ -229,9 +230,9 @@ def tab4_layout(**_kwargs):
                         "Feature importance is recomputed for the selected learner by shuffling "
                         "one feature at a time and checking how much that learner's predicted "
                         "CATE moves. A feature that drives real heterogeneity shifts the "
-                        "prediction a lot. A feature that doesn't matter barely moves it. This "
-                        "is more honest than the default random-forest importance, which gets "
-                        "fooled by continuous features and high-cardinality categoricals."
+                        "prediction a lot. A feature that doesn't matter barely moves it. It's "
+                        "also harder to fool than the default random-forest importance, which "
+                        "inflates continuous features and high-cardinality categoricals."
                     ),
                     html.P(
                         "A known quirk of the S-Learner: when outcome noise is large relative to "

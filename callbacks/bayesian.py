@@ -9,18 +9,15 @@ from dashboard.data import BAYESIAN
 from layouts.components import kpi_card
 
 def update_bayesian(pair_key, rope_val):
-    # Dash returns None for cleared number inputs. Fall back to the layout
-    # default ($1) rather than 0: a zero ROPE makes P(|δ| > $0) read 100% and
-    # the verdict declare strong evidence, the opposite of what an empty
-    # input should imply.
+    # None = cleared input; restore the layout default. A zero ROPE reads as
+    # 100% outside and claims strong evidence.
     rope_val = 1.0 if rope_val is None else max(0.0, float(rope_val))
     b = BAYESIAN[pair_key]
     delta = b["delta_samples"]
 
     hdi_str = f"95% HDI: ${b['hdi_lo']:.2f} - ${b['hdi_hi']:.2f}"
     p_pos = b["p_positive"]
-    # Three-way read: near 0% is strong evidence of a *negative* effect, not
-    # uncertainty, so it must not share the inconclusive WARNING colour.
+    # Near 0% is strong evidence of a negative effect, not uncertainty.
     p_pos_color = SUCCESS if p_pos > 0.95 else DANGER if p_pos < 0.05 else WARNING
     arm_color = MENS_COLOUR if pair_key.startswith("mens") else WOMENS_COLOUR
 
@@ -73,8 +70,7 @@ def update_bayesian(pair_key, rope_val):
         ]
     )
 
-    # Smooth KDE rather than a raw 120-bin histogram: the posterior itself is
-    # smooth, and the binned outline reads as sampler noise it doesn't have.
+    # A binned outline reads as sampler noise the posterior doesn't have.
     from scipy.stats import gaussian_kde
 
     grid = np.linspace(float(delta.min()), float(delta.max()), 400)
@@ -132,8 +128,7 @@ def update_bayesian(pair_key, rope_val):
         line_dash="dash",
         line_color=MUTED,
         annotation_text="95% HDI upper",
-        # Inside the plot: outside-right clips at the canvas edge because the
-        # upper HDI line sits near the end of the x-range.
+        # An outside-right label clips at the canvas edge.
         annotation_position="top left",
         annotation_font_color=MUTED
     )
@@ -198,8 +193,6 @@ def update_ppc_figure(pair_key):
     b = BAYESIAN[pair_key]
     lab_a = b["arm_a_label"]
     lab_b = b["arm_b_label"]
-    # Observed data is coloured by its *actual* arm (control = warm gray, not
-    # the Women's plum) so the panels agree with the rest of the dashboard.
     arm_colours = {
         "Mens E-Mail": MENS_COLOUR,
         "Womens E-Mail": WOMENS_COLOUR,
