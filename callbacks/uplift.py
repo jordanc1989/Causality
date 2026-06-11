@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from dash import html, Output, Input
+from causal_utils import AUUC_N_PERM
 from dashboard.theme import *
 from dashboard.data import UPLIFT
 from layouts.components import kpi_card
@@ -253,7 +254,16 @@ def update_uplift(arm, model):
     qini_p = u.get(keys["p"])
     qini_auc = u.get(keys["auc"], 0.0)
     qini_excess = u.get(keys["excess"], 0.0)
-    p_str = f" | permutation p = {qini_p:.3f}" if qini_p is not None else ""
+    # The permutation test can't resolve below 1/(n_perm + 1), so a value at
+    # that floor means "no permutation reached the observed AUUC" - report it
+    # as an upper bound, not an exact p.
+    p_floor = 1.0 / (AUUC_N_PERM + 1)
+    if qini_p is None:
+        p_str = ""
+    elif qini_p <= p_floor:
+        p_str = f" | permutation p < {p_floor:.3f}"
+    else:
+        p_str = f" | permutation p = {qini_p:.3f}"
     qini_note = (
         f"AUUC ${qini_auc:,.0f} | excess vs random ${qini_excess:,.0f}{p_str}"
     )

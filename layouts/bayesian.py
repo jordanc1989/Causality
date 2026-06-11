@@ -154,8 +154,13 @@ def tab3_layout(**_kwargs):
                             "the pooled positive-spend distribution, which makes them weakly "
                             "informative but ",
                             html.Strong("data-derived"),
-                            ". With about 21k positive observations per arm the data dominates "
-                            "the priors, so this choice has very little influence on the result. "
+                            ". The conversion part of the model is informed by all ~21k "
+                            "customers per arm, but the spend-amount part rests only on the "
+                            "customers who actually spent - roughly 120-270 per arm - so the "
+                            "amount priors are not simply washed out by the data. Keeping them "
+                            "weak and centred on the pooled positive spend keeps their "
+                            "influence small; the posterior predictive check below is the "
+                            "evidence that the fitted amounts track the data. "
                             "Sampling uses PyMC's nutpie NUTS sampler, 2k draws across 2 chains "
                             "on the full arm data."
                         ]

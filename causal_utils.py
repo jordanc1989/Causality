@@ -583,8 +583,14 @@ def run_bayesian_ab(df):
 # ---------------------------------------------------------------------------
 
 
+# Shuffles for the AUUC permutation test. The smallest reportable p-value is
+# 1 / (AUUC_N_PERM + 1); display code uses this to report floor values as
+# "p < ..." rather than an exact p.
+AUUC_N_PERM = 500
+
+
 def _permutation_p_auuc(
-    sub_sorted, arm_col, n_perm=500, seed=RANDOM_SEED, scale_to_audience=True
+    sub_sorted, arm_col, n_perm=AUUC_N_PERM, seed=RANDOM_SEED, scale_to_audience=True
 ):
     """
     Permutation p-value for Qini AUUC > 0 with fixed CATE ranking.
@@ -940,8 +946,8 @@ def _run_uplift_arm(df, arm):
 
     # Permutation p-values for AUUC. 500 shuffles per method; cheap because
     # we hold the predicted ranking fixed and only relabel treatment.
-    _, qini_p_s, _ = _permutation_p_auuc(sub_sorted_s, arm_col, n_perm=500)
-    _, qini_p_x, _ = _permutation_p_auuc(sub_sorted_x, arm_col, n_perm=500)
+    _, qini_p_s, _ = _permutation_p_auuc(sub_sorted_s, arm_col)
+    _, qini_p_x, _ = _permutation_p_auuc(sub_sorted_x, arm_col)
 
     # AUUC-like area under the cumulative incremental gain curve. With
     # subtract_baseline=True, reports only the excess area above the
