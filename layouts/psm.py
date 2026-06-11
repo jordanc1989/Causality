@@ -74,9 +74,12 @@ def tab2_layout(**_kwargs):
                     ),
                     html.P(
                         "The main ATT band uses a simple matched-pair standard error for the retained "
-                        "pairs. The bootstrap band beside it refits the propensity model and rematches "
-                        "200 times on resampled data. Read that second band as a stress test on the "
-                        "matching choices, not as an exact nearest-neighbour matching interval."
+                        "pairs. Matching is done with replacement, so one control customer can serve "
+                        "as the lookalike for several recipients; the matched-pair SE treats pairs as "
+                        "independent, which makes it slightly optimistic. The bootstrap band beside it "
+                        "refits the propensity model and rematches 200 times on resampled data. Read "
+                        "that second band as a stress test on the matching choices, not as an exact "
+                        "nearest-neighbour matching interval."
                     ),
                     html.P(
                         [

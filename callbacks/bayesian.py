@@ -9,12 +9,19 @@ from dashboard.data import BAYESIAN
 from layouts.components import kpi_card
 
 def update_bayesian(pair_key, rope_val):
-    rope_val = rope_val if rope_val is not None else 0  # Dash returns None for empty number inputs
+    # Dash returns None for cleared number inputs. Fall back to the layout
+    # default ($1) rather than 0: a zero ROPE makes P(|δ| > $0) read 100% and
+    # the verdict declare strong evidence, the opposite of what an empty
+    # input should imply.
+    rope_val = 1.0 if rope_val is None else max(0.0, float(rope_val))
     b = BAYESIAN[pair_key]
     delta = b["delta_samples"]
 
     hdi_str = f"95% HDI: ${b['hdi_lo']:.2f} – ${b['hdi_hi']:.2f}"
     p_pos = b["p_positive"]
+    # Three-way read: near 0% is strong evidence of a *negative* effect, not
+    # uncertainty, so it must not share the inconclusive WARNING colour.
+    p_pos_color = SUCCESS if p_pos > 0.95 else DANGER if p_pos < 0.05 else WARNING
     arm_color = MENS_COLOUR if pair_key.startswith("mens") else WOMENS_COLOUR
 
     kpis = html.Div(
@@ -33,12 +40,13 @@ def update_bayesian(pair_key, rope_val):
             kpi_card(
                 f"{p_pos:.1%}",
                 "P(effect > 0)",
-                color=SUCCESS if p_pos > 0.9 else WARNING,
-                accent=SUCCESS if p_pos > 0.9 else WARNING,
+                color=p_pos_color,
+                accent=p_pos_color,
                 info=(
                     "Under the model, the probability that the per-customer effect is "
-                    "positive. Above 95% is strong evidence of a lift. Near 50% means "
-                    "the data can't tell which way the effect points."
+                    "positive. Above 95% is strong evidence of a lift; below 5% is "
+                    "equally strong evidence the effect runs the other way. Near 50% "
+                    "means the data can't tell which way the effect points."
                 ),
                 info_id="bayes-kpi-ppos-info",
             ),

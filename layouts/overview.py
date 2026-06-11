@@ -1,4 +1,6 @@
 
+from functools import lru_cache
+
 import numpy as np
 from dash import html
 import dash_bootstrap_components as dbc
@@ -13,6 +15,14 @@ from figures.overview import _fig_spend_box, _fig_covariate_balance
 import causal_utils as cu
 
 def tab1_layout(**_kwargs):
+    # Dash Pages calls the layout function on every request, but everything on
+    # this page derives from the static cached DF. Build once and reuse so the
+    # 2,000-resample bootstrap CIs don't rerun per page view.
+    return _build_tab1()
+
+
+@lru_cache(maxsize=1)
+def _build_tab1():
     seg_counts = DF["segment"].value_counts()
     n_mens = seg_counts.get("Mens E-Mail", 0)
     n_womens = seg_counts.get("Womens E-Mail", 0)
@@ -52,25 +62,21 @@ def tab1_layout(**_kwargs):
 
     if mens_sig and wom_sig:
         headline = "Both campaigns produced a lift in spend that's very unlikely to be chance."
-        headline_color = SUCCESS
     elif wom_sig and not mens_sig:
         headline = (
             "The Women's campaign produced a clear lift in spend. "
             "The Men's result is too close to call."
         )
-        headline_color = SUCCESS
     elif mens_sig and not wom_sig:
         headline = (
             "The Men's campaign produced a clear lift in spend. "
             "The Women's result is too close to call."
         )
-        headline_color = SUCCESS
     else:
         headline = (
             "Neither campaign's effect is large enough to separate from chance on the raw "
             "averages. The later tabs use stronger methods to check the same question."
         )
-        headline_color = WARNING
 
     rev_pct_mens = (lift_mens / avg_control * 100) if avg_control else None
     rev_pct_womens = (lift_womens / avg_control * 100) if avg_control else None

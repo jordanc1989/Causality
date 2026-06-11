@@ -25,6 +25,11 @@ MODEL_KEYS = {
 }
 MODEL_LABEL = {key: meta["label"] for key, meta in MODEL_KEYS.items()}
 
+# The audience-scaled Qini value is extremely noisy over the first ~2% of the
+# ranking (it rests on a handful of treated customers), so the policy optimiser
+# never recommends a targeting share below this floor.
+MIN_TARGET_SHARE = 0.02
+
 
 def update_uplift(arm, model):
     u = UPLIFT[arm]
@@ -138,7 +143,7 @@ def update_uplift(arm, model):
     dec_df = pd.DataFrame(u[keys["decile"]])
     qini_xd = u[keys["qini_x"]]
     qini_yd = u[keys["qini_y"]]
-    overall_ate = dec_df["lift"].mean()
+    mean_decile_lift = dec_df["lift"].mean()
 
     has_ci = "ci_lo" in dec_df.columns and "ci_hi" in dec_df.columns
     decile_fig = go.Figure()
@@ -194,11 +199,11 @@ def update_uplift(arm, model):
         )
     )
     decile_fig.add_hline(
-        y=overall_ate,
+        y=mean_decile_lift,
         line_dash="dash",
         line_color=WARNING,
         line_width=1.5,
-        annotation_text=f"Avg lift ${overall_ate:.2f}",
+        annotation_text=f"Mean decile lift ${mean_decile_lift:.2f}",
         annotation_position="right",
         annotation_font_color=WARNING
     )
@@ -324,7 +329,9 @@ def update_policy(arm, model, cost_per_email, margin):
     Cost defaults to $0.05 / send and margin defaults to 0.40. Both are
     user-tunable from the layout's input controls.
     """
-    cost_per_email = 0.0 if cost_per_email is None else float(cost_per_email)
+    # Dash returns None for cleared number inputs; restore the layout defaults
+    # rather than treating a cleared cost as "sends are free".
+    cost_per_email = 0.05 if cost_per_email is None else max(0.0, float(cost_per_email))
     margin = 0.40 if margin is None else float(margin)
     margin = max(0.0, min(1.0, margin))
     u = UPLIFT[arm]
@@ -348,9 +355,17 @@ def update_policy(arm, model, cost_per_email, margin):
     total_cost = cost_per_email * n_targeted
     net_contribution = gross_contribution - total_cost
 
-    # Optimal policy: pick p* where net_contribution is maximised. Guard the
-    # all-negative case by always also reporting "target nobody = $0".
-    idx_opt = int(np.argmax(net_contribution))
+    # Optimal policy: pick p* where net_contribution is maximised, ignoring
+    # shares below MIN_TARGET_SHARE where the audience-scaled curve is too
+    # noisy to trust (a low send cost can otherwise put the "optimum" on a
+    # spurious early spike). Guard the all-negative case by always also
+    # reporting "target nobody = $0".
+    eligible = qini_xd >= MIN_TARGET_SHARE
+    if eligible.any():
+        eligible_idx = np.flatnonzero(eligible)
+        idx_opt = int(eligible_idx[np.argmax(net_contribution[eligible])])
+    else:
+        idx_opt = int(np.argmax(net_contribution))
     p_opt = float(qini_xd[idx_opt])
     net_opt = float(net_contribution[idx_opt])
     n_opt = int(round(qini_xd[idx_opt] * n_total))
@@ -358,11 +373,16 @@ def update_policy(arm, model, cost_per_email, margin):
     cost_opt = float(total_cost[idx_opt])
     margin_per_targeted = (gross_contribution[idx_opt] / max(n_opt, 1)) if n_opt > 0 else 0.0
 
-    # If targeting nobody is the best choice (e.g. cost > gross), surface that.
+    # If targeting nobody is the best choice (e.g. cost > gross), surface that
+    # and zero out the per-optimum figures so the KPI cards don't show the
+    # gross/cost/margin of the optimum we just rejected.
     if net_opt <= 0:
         p_opt = 0.0
         net_opt = 0.0
         n_opt = 0
+        rev_opt = 0.0
+        cost_opt = 0.0
+        margin_per_targeted = 0.0
         verdict = "Do not target. At this cost and margin, no portion of the list returns a positive net contribution."
         verdict_color = WARNING
     elif p_opt >= 0.999:
@@ -386,7 +406,9 @@ def update_policy(arm, model, cost_per_email, margin):
                 info=(
                     "The fraction of the ranked list to mail that maximises net "
                     "incremental contribution. Above this fraction, additional sends cost "
-                    "more than the incremental margin they bring in."
+                    "more than the incremental margin they bring in. Shares below 2% of "
+                    "the list are never recommended: estimates there rest on too few "
+                    "customers to be reliable."
                 ),
                 info_id="policy-kpi-opt-info",
             ),
@@ -451,7 +473,8 @@ def update_policy(arm, model, cost_per_email, margin):
             mode="lines",
             line=dict(color=DANGER, width=1, dash="dot"),
             name="Send cost",
-            hovertemplate="Target top %{x:.0%}<br>Cost: −$%{y:,.0f}<extra></extra>",
+            customdata=total_cost,
+            hovertemplate="Target top %{x:.0%}<br>Cost: $%{customdata:,.0f}<extra></extra>",
         )
     )
     if 0 < p_opt < 1:

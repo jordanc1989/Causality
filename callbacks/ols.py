@@ -70,7 +70,9 @@ def build_ols_figures():
     coef_fig.update_layout(
         template=PLOTLY_TEMPLATE,
         title=(
-            f"OLS Coefficients (n={OLS['n_obs']:,}, R²={OLS['r_squared']:.4f})"
+            f"OLS Coefficients (n={OLS['n_obs']:,}, R²={OLS['r_squared']:.4f})<br>"
+            "<sup>Colour marks Holm-adjusted significance (α = 0.05); error bars "
+            "are unadjusted 95% CIs, so the two can disagree near the cutoff.</sup>"
         ),
         xaxis_title="Effect on Spend ($)",
         xaxis_fixedrange=True,

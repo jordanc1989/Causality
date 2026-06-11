@@ -7,11 +7,25 @@ Dash Pages handles URL → layout routing automatically; this file just defines
 the chrome and the page-link list driven by `dash.page_registry`.
 """
 
+import datetime
+import os
+
 import dash
 import dash_bootstrap_components as dbc
 from dash import html
+from causal_utils import CACHE_FILE
 from dashboard.theme import BG
 from layouts.components import masthead_dateline
+
+
+def _cache_updated_label():
+    """Month/year of the precomputed results pickle, or None if it's missing
+    (the dateline simply omits the 'Updated' slug in that case)."""
+    try:
+        ts = os.path.getmtime(CACHE_FILE)
+    except OSError:
+        return None
+    return datetime.date.fromtimestamp(ts).strftime("%B %Y")
 
 
 def _page_nav_links():
@@ -42,7 +56,7 @@ def build_layout():
                 ),
                 masthead_dateline(
                     "Hillstrom (2008) MineThatData email analytics challenge",
-                    updated="May 2026",
+                    updated=_cache_updated_label(),
                 ),
             ],
             className="masthead-inner",

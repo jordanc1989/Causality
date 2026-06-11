@@ -1,5 +1,5 @@
 
-from dash import html
+from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from layouts.components import (
@@ -58,7 +58,7 @@ def tab4_layout(**_kwargs):
                             html.P(
                                 [
                                     html.Strong("X-Learner:"),
-                                    "Start with this, it's a good first view for targeting because it learns "
+                                    " Start with this, it's a good first view for targeting because it learns "
                                     "from both the mailed and control groups then blends "
                                     "the evidence into a steadier customer ranking.",
                                 ],
@@ -67,7 +67,7 @@ def tab4_layout(**_kwargs):
                             html.P(
                                 [
                                     html.Strong("S-Learner:"),
-                                    "Use as a conservative check. It can pull individual uplift estimates toward zero when the signal "
+                                    " Use as a conservative check. It can pull individual uplift estimates toward zero when the signal "
                                     "is faint so treat as a sanity check.",
                                 ],
                                 className="small text-muted mb-0",
@@ -143,11 +143,18 @@ def tab4_layout(**_kwargs):
                                 ],
                                 md=4,
                             ),
-                            dbc.Col(html.Div(id="policy-kpi-cards", className="kpi-stack"), md=8),
+                            dbc.Col(
+                                dcc.Loading(
+                                    html.Div(id="policy-kpi-cards", className="kpi-stack"),
+                                    type="circle",
+                                    color=ACCENT,
+                                ),
+                                md=8,
+                            ),
                         ],
                         className="g-3 mb-3",
                     ),
-                    graph("policy-curve"),
+                    dcc.Loading(graph("policy-curve"), type="circle", color=ACCENT),
                 ],
                 className="mb-4",
             ),
@@ -184,9 +191,13 @@ def tab4_layout(**_kwargs):
                         "The Qini curve shows how much extra revenue you'd capture if you mailed "
                         "customers in order of predicted uplift, starting with the most promising. "
                         "The dashed diagonal is what random targeting would deliver. The area "
-                        "above it is the value the ranking adds. The decile chart bucketed view "
-                        "carries error bars from a within-decile bootstrap. A model with real "
-                        "targeting value should show higher lift in the top deciles than the bottom."
+                        "above it is the value the ranking adds. The far left of the curve (the "
+                        "first percent or two of the list) rests on very few treated customers, "
+                        "so spikes there are noise rather than signal; the targeting-policy "
+                        "optimiser below ignores shares under 2% for the same reason. The decile "
+                        "chart bucketed view carries error bars from a within-decile bootstrap. "
+                        "A model with real targeting value should show higher lift in the top "
+                        "deciles than the bottom."
                     ),
                     html.P(
                         [

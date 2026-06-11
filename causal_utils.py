@@ -1158,7 +1158,7 @@ def build_cache():
     print("[Cache] Running Bayesian A/B (PyMC, 3 arm pairs)...")
     bayesian = run_bayesian_ab(df)
 
-    print("[Cache] Running Uplift models (T/S/X-Learners w/ 2 arms)...")
+    print("[Cache] Running Uplift models (S/X-Learners w/ 2 arms)...")
     uplift = run_uplift(df)
 
     print("[Cache] Running Multi-Arm OLS...")

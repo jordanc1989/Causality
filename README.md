@@ -32,7 +32,7 @@ This dashboard puts both views side-by-side so the methodological choices and an
 | 1 | Overview | Dataset summary, arm balance, headline effects |
 | 2 | Bayesian A/B (PyMC hurdle model) | Probabilistic effect estimation with posterior uncertainty |
 | 3 | Multi-Arm OLS with interactions | Precision-adjusted average effects and subgroup patterns |
-| 4 | Uplift / HTE (T, S and X-Learner) | Ranking customers by estimated incremental value, X-learner is default |
+| 4 | Uplift / HTE (S- and X-Learner) | Ranking customers by estimated incremental value, X-learner is default |
 | 5 | PSM (propensity matching + caliper) | Pedagogical: the workflow you'd use on observational data, run on this RCT for comparison |
 | 6 | Method Comparison | Side-by-side estimate reconciliation and takeaway |
 
