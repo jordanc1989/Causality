@@ -42,7 +42,7 @@ def update_uplift(arm, model):
     avg_lo = u.get(f"avg_cate_{model}_lo")
     avg_hi = u.get(f"avg_cate_{model}_hi")
     if avg_lo is not None and avg_hi is not None and np.isfinite(avg_lo) and np.isfinite(avg_hi):
-        avg_delta = f"95% CI ${avg_lo:.2f} – ${avg_hi:.2f}"
+        avg_delta = f"95% CI ${avg_lo:.2f} - ${avg_hi:.2f}"
     else:
         avg_delta = f"{arm_label} vs Control"
 
@@ -158,7 +158,7 @@ def update_uplift(arm, model):
             hovertemplate=(
                 "Decile %{x}<br>Actual lift: $%{y:.2f}"
                 + (
-                    "<br>95% CI: $%{customdata[0]:.2f} – $%{customdata[1]:.2f}"
+                    "<br>95% CI: $%{customdata[0]:.2f} - $%{customdata[1]:.2f}"
                     if has_ci
                     else ""
                 )
@@ -403,7 +403,7 @@ def update_policy(arm, model, cost_per_email, margin):
     else:
         verdict = (
             f"Target the top {p_opt:.0%} of the {arm_label} list (ranked by {keys['label']} uplift). "
-            f"Net contribution peaks at ${net_opt:,.0f}; mailing more dilutes margin, mailing less leaves money on the table."
+            f"Net contribution peaks at ${net_opt:,.0f}."
         )
         verdict_color = SUCCESS
 
@@ -427,7 +427,7 @@ def update_policy(arm, model, cost_per_email, margin):
             kpi_card(
                 f"${net_opt:,.0f}",
                 "Net incremental contribution",
-                f"Gross ${margin * rev_opt:,.0f} − cost ${cost_opt:,.0f}",
+                f"Gross ${margin * rev_opt:,.0f} - cost ${cost_opt:,.0f}",
                 accent=color,
                 info=(
                     "Gross incremental margin from the targeted segment minus the cost of sending. "
@@ -474,7 +474,7 @@ def update_policy(arm, model, cost_per_email, margin):
             y=gross_contribution,
             mode="lines",
             line=dict(color=MUTED, width=1, dash="dot"),
-            name=f"Gross margin (×{margin:.0%})",
+            name=f"Gross margin (x{margin:.0%})",
             hovertemplate="Target top %{x:.0%}<br>Gross margin: $%{y:,.0f}<extra></extra>",
         )
     )
