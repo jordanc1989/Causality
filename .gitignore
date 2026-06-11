@@ -6,3 +6,4 @@ __pycache__
 .vscode/
 .ruff_cache/
 .claude/
+DEMO_NOTES.md

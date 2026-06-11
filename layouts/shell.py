@@ -57,6 +57,11 @@ def build_layout():
                 masthead_dateline(
                     "Hillstrom (2008) MineThatData email analytics challenge",
                     updated=_cache_updated_label(),
+                    source_href=(
+                        "https://blog.minethatdata.com/2008/03/"
+                        "minethatdata-e-mail-analytics-and-data.html"
+                    ),
+                    code_href="https://github.com/jordanc1989/Causality",
                 ),
             ],
             className="masthead-inner",

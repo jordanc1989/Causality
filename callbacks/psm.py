@@ -149,9 +149,11 @@ def update_psm(arm):
             x=smd_before,
             y=cov_labels,
             mode="markers",
-            name="Before (all treated vs controls)",
+            # Short legend labels: the long parenthetical versions clip at the
+            # card edge. The hover keeps the detail.
+            name="Before matching",
             marker=dict(color=DANGER, size=10, symbol="circle"),
-            hovertemplate="%{y}<br>SMD: %{x:.3f}<extra>Before matching</extra>",
+            hovertemplate="%{y}<br>SMD: %{x:.3f}<extra>Before: all treated vs controls</extra>",
         )
     )
     love_fig.add_trace(
@@ -159,9 +161,9 @@ def update_psm(arm):
             x=smd_after_plot,
             y=cov_labels,
             mode="markers",
-            name="After (retained cohort vs matched ctrl)",
+            name="After matching (caliper)",
             marker=dict(color=SUCCESS, size=10, symbol="diamond"),
-            hovertemplate="%{y}<br>SMD: %{x:.3f}<extra>After caliper NN</extra>",
+            hovertemplate="%{y}<br>SMD: %{x:.3f}<extra>After: retained cohort vs matched controls</extra>",
         )
     )
     love_fig.add_vline(
@@ -213,7 +215,8 @@ def update_psm(arm):
                     else None
                 ),
                 text=[f"${att_pt:.2f}"],
-                textposition="top center",
+                # Right of the marker so the label doesn't sit on the error bar.
+                textposition="middle right",
                 hovertemplate=(
                     "ATT: $%{y:.2f}"
                     + (f"<br>95% CI: ${pair_lo:.2f} – ${pair_hi:.2f}" if has_pair else "")
@@ -228,18 +231,22 @@ def update_psm(arm):
                 x=["ATT (rematch-bootstrap band)"],
                 y=[att_pt],
                 mode="markers+text",
-                marker=dict(color=BORDER, size=14),
+                # MUTED, not BORDER: the hairline beige is near-invisible on
+                # the white card, and this band is half the chart's point.
+                marker=dict(color=MUTED, size=14),
                 error_y=dict(
                     type="data",
                     symmetric=False,
                     array=[boot_hi - att_pt],
                     arrayminus=[att_pt - boot_lo],
-                    color=BORDER,
+                    color=MUTED,
                     thickness=2,
                     width=8,
                 ),
                 text=[f"${att_pt:.2f}"],
-                textposition="top center",
+                # Left of the marker: this category sits at the right plot
+                # edge, so a right-side label clips off the canvas.
+                textposition="middle left",
                 hovertemplate=(
                     f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f} – ${boot_hi:.2f}<extra></extra>"
                 ),

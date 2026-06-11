@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from layouts.components import (
     graph, section_col, section_header, methodology_collapse, collapsible_panel,
-    spec_strip,
+    spec_strip, loading,
 )
 
 def tab3_layout(**_kwargs):
@@ -29,6 +29,8 @@ def tab3_layout(**_kwargs):
                             value="mens_vs_control",
                             inline=True,
                             className="segmented-control mt-2",
+                            persistence=True,
+                            persistence_type="session",
                         ),
                     ),
                 ],
@@ -38,7 +40,7 @@ def tab3_layout(**_kwargs):
                 [
                     section_col(
                         "Posterior summary",
-                        html.Div(id="bayes-kpi-cards", className="kpi-stack mt-2"),
+                        loading(html.Div(id="bayes-kpi-cards", className="kpi-stack mt-2")),
                         md=4,
                     ),
                     section_col(
@@ -72,6 +74,8 @@ def tab3_layout(**_kwargs):
                                                 value=1,
                                                 debounce=False,
                                                 className="dashboard-input",
+                                                persistence=True,
+                                                persistence_type="session",
                                             ),
                                             dbc.InputGroupText("per customer", className="dashboard-input-group-text"),
                                         ],

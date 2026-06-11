@@ -179,6 +179,8 @@ def build_ols_figures():
             )
         )
 
+    # FIGURE_MARGIN_WIDE: the standard 30px bottom margin makes the "Channel"
+    # axis title collide with the "Phone" tick label.
     mens_heat = make_heatmap("me_mens")
     mens_heat.update_layout(
         template=PLOTLY_TEMPLATE,
@@ -188,7 +190,7 @@ def build_ols_figures():
         xaxis_fixedrange=True,
         yaxis_fixedrange=True,
         dragmode=False,
-        margin=FIGURE_MARGIN
+        margin=FIGURE_MARGIN_WIDE
     )
 
     womens_heat = make_heatmap("me_womens")
@@ -200,7 +202,7 @@ def build_ols_figures():
         xaxis_fixedrange=True,
         yaxis_fixedrange=True,
         dragmode=False,
-        margin=FIGURE_MARGIN
+        margin=FIGURE_MARGIN_WIDE
     )
 
     return coef_fig, table, mens_heat, womens_heat

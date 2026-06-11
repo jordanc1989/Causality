@@ -26,7 +26,21 @@ def tab6_layout(**_kwargs):
             ),
             graph_row_ids(
                 "forest-plot-mens", "forest-plot-womens",
-                className="mb-4", locked=True,
+                className="mb-2", locked=True,
+            ),
+            dbc.Row(
+                dbc.Col(
+                    html.P(
+                        "Both panels share one x-axis scale. Where no error bar is "
+                        "visible (the S- and X-Learner), the interval is only a few "
+                        "cents wide - an estimation-conditional bootstrap that "
+                        "understates the full uncertainty, not a sign of higher "
+                        "precision. The Interval type column above says which kind "
+                        "each row carries.",
+                        className="small text-muted mb-0",
+                    ),
+                ),
+                className="mb-4",
             ),
             dbc.Row(
                 [
@@ -56,6 +70,8 @@ def tab6_layout(**_kwargs):
                                         value=0.10,
                                         debounce=True,
                                         className="dashboard-input",
+                                        persistence=True,
+                                        persistence_type="session",
                                     ),
                                     dbc.InputGroupText(
                                         "treated as zero",

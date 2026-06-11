@@ -73,23 +73,27 @@ def update_bayesian(pair_key, rope_val):
         ]
     )
 
-    counts, bin_edges = np.histogram(delta, bins=120, density=True)
-    bin_centres = (bin_edges[:-1] + bin_edges[1:]) / 2
+    # Smooth KDE rather than a raw 120-bin histogram: the posterior itself is
+    # smooth, and the binned outline reads as sampler noise it doesn't have.
+    from scipy.stats import gaussian_kde
+
+    grid = np.linspace(float(delta.min()), float(delta.max()), 400)
+    density = gaussian_kde(delta)(grid)
 
     posterior_fig = go.Figure()
 
-    rope_mask = (bin_centres >= -rope_val) & (bin_centres <= rope_val)
+    rope_mask = (grid >= -rope_val) & (grid <= rope_val)
     if rope_mask.any():
         posterior_fig.add_trace(
             go.Scatter(
                 x=np.concatenate(
                     [
-                        [bin_centres[rope_mask][0]],
-                        bin_centres[rope_mask],
-                        [bin_centres[rope_mask][-1]],
+                        [grid[rope_mask][0]],
+                        grid[rope_mask],
+                        [grid[rope_mask][-1]],
                     ]
                 ),
-                y=np.concatenate([[0], counts[rope_mask], [0]]),
+                y=np.concatenate([[0], density[rope_mask], [0]]),
                 fill="toself",
                 fillcolor=hex_to_rgba(WARNING, 0.18),
                 line=dict(color="rgba(0,0,0,0)"),
@@ -104,8 +108,8 @@ def update_bayesian(pair_key, rope_val):
 
     posterior_fig.add_trace(
         go.Scatter(
-            x=bin_centres,
-            y=counts,
+            x=grid,
+            y=density,
             mode="lines",
             fill="tozeroy",
             fillcolor=fill_rgba,
@@ -128,7 +132,9 @@ def update_bayesian(pair_key, rope_val):
         line_dash="dash",
         line_color=MUTED,
         annotation_text="95% HDI upper",
-        annotation_position="top right",
+        # Inside the plot: outside-right clips at the canvas edge because the
+        # upper HDI line sits near the end of the x-range.
+        annotation_position="top left",
         annotation_font_color=MUTED
     )
     posterior_fig.add_vline(
@@ -192,6 +198,15 @@ def update_ppc_figure(pair_key):
     b = BAYESIAN[pair_key]
     lab_a = b["arm_a_label"]
     lab_b = b["arm_b_label"]
+    # Observed data is coloured by its *actual* arm (control = warm gray, not
+    # the Women's plum) so the panels agree with the rest of the dashboard.
+    arm_colours = {
+        "Mens E-Mail": MENS_COLOUR,
+        "Womens E-Mail": WOMENS_COLOUR,
+        "No E-Mail": CTRL_COLOUR,
+    }
+    colour_a = arm_colours.get(lab_a, MENS_COLOUR)
+    colour_b = arm_colours.get(lab_b, CTRL_COLOUR)
     pack = b.get("ppc_pack")
 
     if pack is None:
@@ -259,7 +274,9 @@ def update_ppc_figure(pair_key):
                 marker_color=color_o,
                 opacity=0.42,
                 nbinsx=70,
-                showlegend=(row == 1 and col == 1),
+                # One legend entry per arm's observed colour (row 1 has both
+                # columns), so every swatch matches what's on screen.
+                showlegend=(row == 1),
             ),
             row=row,
             col=col,
@@ -278,23 +295,24 @@ def update_ppc_figure(pair_key):
             col=col,
         )
 
-    # Observed is coloured by arm; the model (PPC) is the accent everywhere, so a
-    # single two-entry legend reads correctly across all panels.
+    # Observed is coloured by its arm; the model (PPC) is the accent
+    # everywhere, so the legend is three entries: one per observed arm plus
+    # the model.
     _add_hist_pair(
-        1, 1, obs_sa, ppc_sa, "Observed", "Model (PPC)",
-        MENS_COLOUR, ACCENT,
+        1, 1, obs_sa, ppc_sa, f"Observed - {lab_a}", "Model (PPC)",
+        colour_a, ACCENT,
     )
     _add_hist_pair(
-        1, 2, obs_sb, ppc_sb, f"Observed - {lab_b}", f"Model (PPC) - {lab_b}",
-        WOMENS_COLOUR, ACCENT,
+        1, 2, obs_sb, ppc_sb, f"Observed - {lab_b}", "Model (PPC)",
+        colour_b, ACCENT,
     )
     _add_hist_pair(
-        2, 1, obs_pa, ppc_pa, f"Observed - {lab_a}", f"Model (PPC) - {lab_a}",
-        MENS_COLOUR, ACCENT,
+        2, 1, obs_pa, ppc_pa, f"Observed - {lab_a}", "Model (PPC)",
+        colour_a, ACCENT,
     )
     _add_hist_pair(
-        2, 2, obs_pb, ppc_pb, f"Observed - {lab_b}", f"Model (PPC) - {lab_b}",
-        WOMENS_COLOUR, ACCENT,
+        2, 2, obs_pb, ppc_pb, f"Observed - {lab_b}", "Model (PPC)",
+        colour_b, ACCENT,
     )
 
     if pcrma is not None and len(pcrma):

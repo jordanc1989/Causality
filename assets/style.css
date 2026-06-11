@@ -155,6 +155,18 @@ body {
   vertical-align: middle;
 }
 
+.dashboard-app .masthead-dateline .dateline-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 2px;
+}
+
+.dashboard-app .masthead-dateline .dateline-link:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
 /* Section navigation - understated serif text links with an accent underline.
    The nav is sticky to the viewport so it stays available on long pages while
    the masthead nameplate scrolls away. */

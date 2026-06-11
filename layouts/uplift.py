@@ -1,10 +1,10 @@
 
-from dash import dcc, html
+from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from layouts.components import (
     graph, graph_row_ids, kpi_graph_row, methodology_collapse,
-    labeled_radio, labeled_input_group, spec_strip, section_header,
+    labeled_radio, labeled_input_group, spec_strip, section_header, loading,
 )
 
 def tab4_layout(**_kwargs):
@@ -113,6 +113,8 @@ def tab4_layout(**_kwargs):
                                                             value=0.05,
                                                             debounce=True,
                                                             className="dashboard-input",
+                                                            persistence=True,
+                                                            persistence_type="session",
                                                         ),
                                                     ],
                                                 ),
@@ -131,6 +133,8 @@ def tab4_layout(**_kwargs):
                                                             value=0.40,
                                                             debounce=True,
                                                             className="dashboard-input",
+                                                            persistence=True,
+                                                            persistence_type="session",
                                                         ),
                                                         dbc.InputGroupText("(0-1)", className="dashboard-input-group-text"),
                                                     ],
@@ -144,17 +148,14 @@ def tab4_layout(**_kwargs):
                                 md=4,
                             ),
                             dbc.Col(
-                                dcc.Loading(
-                                    html.Div(id="policy-kpi-cards", className="kpi-stack"),
-                                    type="circle",
-                                    color=ACCENT,
-                                ),
+                                loading(html.Div(id="policy-kpi-cards", className="kpi-stack")),
                                 md=8,
                             ),
                         ],
                         className="g-3 mb-3",
                     ),
-                    dcc.Loading(graph("policy-curve"), type="circle", color=ACCENT),
+                    graph("policy-curve"),
+                    html.Div(id="policy-verdict"),
                 ],
                 className="mb-4",
             ),

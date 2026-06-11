@@ -199,18 +199,20 @@ def update_uplift(arm, model):
             hovertemplate="Decile %{x}<br>Actual lift: $%{y:.2f}<extra></extra>",
         )
     )
+    # The line's label lives in the subtitle: an outside-right annotation
+    # clips at the plot edge, and inside placements collide with the bars.
     decile_fig.add_hline(
         y=mean_decile_lift,
         line_dash="dash",
         line_color=WARNING,
         line_width=1.5,
-        annotation_text=f"Mean decile lift ${mean_decile_lift:.2f}",
-        annotation_position="right",
-        annotation_font_color=WARNING
     )
     decile_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"Actual Spend Lift by {model_label} Uplift Decile",
+        title=(
+            f"Actual Spend Lift by {model_label} Uplift Decile<br>"
+            f"<sup>Dashed line: mean decile lift ${mean_decile_lift:.2f}</sup>"
+        ),
         xaxis=dict(
             title="Decile (1 = highest predicted uplift)",
             tickmode="linear",
@@ -356,7 +358,7 @@ def update_policy(arm, model, cost_per_email, margin):
     if len(qini_xd) < 2:
         empty = go.Figure()
         empty.update_layout(template=PLOTLY_TEMPLATE, title="Policy curve unavailable")
-        return html.Div("Policy curve unavailable."), empty
+        return html.Div("Policy curve unavailable."), empty, html.Div()
 
     # The Qini curve is scaled to the full ranked audience, so gross revenue
     # and send cost are both expressed for the same targeted customer count.
@@ -494,7 +496,9 @@ def update_policy(arm, model, cost_per_email, margin):
             line_dash="dash",
             line_width=1.5,
             annotation_text=f"Optimal: top {p_opt:.0%}",
-            annotation_position="top right",
+            # Flip the label inside the plot when the optimum sits near 100%,
+            # otherwise it clips off the right edge of the canvas.
+            annotation_position="top right" if p_opt < 0.8 else "top left",
             annotation_font_color=SUCCESS,
         )
     fig.add_hline(y=0, line_color=BORDER, line_width=1)
@@ -505,20 +509,15 @@ def update_policy(arm, model, cost_per_email, margin):
         yaxis_title="Net incremental contribution ($)",
         margin=dict(t=50, b=80),
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
-        annotations=[
-            dict(
-                x=0.5,
-                y=-0.42,
-                xref="paper",
-                yref="paper",
-                text=verdict,
-                showarrow=False,
-                font=dict(size=11, color=verdict_color),
-                xanchor="center",
-            )
-        ],
     )
-    return kpis, fig
+    # The verdict lives in the page, not as a figure annotation: paper-coord
+    # annotations below the legend get clipped off the canvas.
+    verdict_note = html.Div(
+        verdict,
+        className="small",
+        style={"color": verdict_color, "fontStyle": "italic", "marginTop": "0.4rem"},
+    )
+    return kpis, fig, verdict_note
 
 
 def register_uplift_callbacks(app):
@@ -536,6 +535,7 @@ def register_uplift_callbacks(app):
     app.callback(
         Output("policy-kpi-cards", "children"),
         Output("policy-curve", "figure"),
+        Output("policy-verdict", "children"),
         Input("uplift-arm-selector", "value"),
         Input("uplift-model-selector", "value"),
         Input("policy-cost", "value"),

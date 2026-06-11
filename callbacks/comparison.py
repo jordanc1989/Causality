@@ -21,6 +21,7 @@ def _build_comparison_df():
                 "Estimate ($)": round(float(np.mean(b["delta_samples"])), 2),
                 "Interval Lower ($)": round(b["hdi_lo"], 2),
                 "Interval Upper ($)": round(b["hdi_hi"], 2),
+                "Interval type": "95% HDI",
             }
         )
 
@@ -41,6 +42,9 @@ def _build_comparison_df():
                     "Estimate ($)": round(u.get(est_key, float("nan")), 2),
                     "Interval Lower ($)": _round_or_none(u.get(lo_key)),
                     "Interval Upper ($)": _round_or_none(u.get(hi_key)),
+                    # Bootstrap of the cross-fit CATE only: captures sampling
+                    # noise given the fitted model, not model-refit uncertainty.
+                    "Interval type": "95% bootstrap (estimation-conditional)",
                 }
             )
 
@@ -60,6 +64,7 @@ def _build_comparison_df():
                 "Estimate ($)": round(OLS.get(ate_key, 0.0), 2),
                 "Interval Lower ($)": round(OLS.get(lo_key, 0.0), 2),
                 "Interval Upper ($)": round(OLS.get(hi_key, 0.0), 2),
+                "Interval type": "95% CI (HC3, delta method)",
             }
         )
 
@@ -110,6 +115,18 @@ def update_comparison(noise_eps):
         "OLS (avg marginal effect, HC3)": "OLS (HC3)",
     }
 
+    # One x-range shared by both forest plots. Independent autoscaling would
+    # stretch the narrower arm's intervals to look as wide as the other's,
+    # which defeats the side-by-side comparison.
+    bound_cols = ["Estimate ($)", "Interval Lower ($)", "Interval Upper ($)"]
+    bounds = pd.concat(
+        [pd.to_numeric(comp_df[c], errors="coerce") for c in bound_cols]
+    ).dropna()
+    range_lo = min(0.0, float(bounds.min())) if len(bounds) else 0.0
+    range_hi = max(0.0, float(bounds.max())) if len(bounds) else 1.0
+    pad = 0.06 * (range_hi - range_lo if range_hi > range_lo else 1.0)
+    shared_range = [range_lo - pad, range_hi + pad]
+
     def forest_plot(arm_label, color):
         sub = comp_df[comp_df["Arm"] == arm_label].copy()
         sub["short"] = sub["Method"].map(lambda m: short_label_map.get(m, m))
@@ -122,9 +139,7 @@ def update_comparison(noise_eps):
                 row["Interval Upper ($)"]
             )
             method_name = row["Method"]
-            interval_name = (
-                "95% HDI" if method_name.startswith("Bayesian") else "95% CI"
-            )
+            interval_name = row["Interval type"]
             hover_tail = (
                 f"{interval_name}: ${row['Interval Lower ($)']:.2f} – "
                 f"${row['Interval Upper ($)']:.2f}"
@@ -169,9 +184,12 @@ def update_comparison(noise_eps):
         fig.update_layout(
             template=PLOTLY_TEMPLATE,
             title=f"Forest Plot - {arm_label}",
-            xaxis_title="Effect on Spend ($)",
+            xaxis=dict(
+                title="Effect on Spend ($)",
+                range=shared_range,
+                fixedrange=True,
+            ),
             yaxis=dict(automargin=True, fixedrange=True),
-            xaxis_fixedrange=True,
             dragmode=False,
             margin=dict(t=50, b=30, l=20, r=20),
             height=350,

@@ -2,10 +2,17 @@
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dashboard.theme import (
-    SUCCESS, DANGER, MUTED, TEXT,
+    SUCCESS, DANGER, MUTED, TEXT, ACCENT,
     KPI_LABEL_STYLE, KPI_VALUE_STYLE, KPI_DELTA_STYLE,
     SECTION_HEADER_STYLE, GRAPH_CONFIG, LOCKED_GRAPH_CONFIG,
 )
+
+
+def loading(children):
+    """House spinner for callback-fed content. `delay_show` keeps fast
+    in-page updates from flickering the overlay; the spinner only appears
+    when a real wait (page navigation, slow client) is happening."""
+    return dcc.Loading(children, type="circle", color=ACCENT, delay_show=300)
 
 
 def spec_strip(*items):
@@ -30,11 +37,37 @@ def spec_strip(*items):
     return html.Div(children, className="spec-strip")
 
 
-def masthead_dateline(source, updated=None):
-    """Source attribution slug for the masthead. FT/NYT-style trailing line."""
-    parts = [html.Span(["Source: ", html.Strong(source)])]
+def masthead_dateline(source, updated=None, source_href=None, code_href=None):
+    """Source attribution slug for the masthead. FT/NYT-style trailing line.
+
+    `source_href` links the source name to the dataset's origin; `code_href`
+    appends a "Code on GitHub" slug. Both open in a new tab.
+    """
+    source_node = html.Strong(source)
+    if source_href:
+        source_node = html.A(
+            source_node,
+            href=source_href,
+            target="_blank",
+            rel="noopener",
+            className="dateline-link",
+        )
+    parts = [html.Span(["Source: ", source_node])]
     if updated:
         parts.extend([html.Span(className="sep"), html.Span(f"Updated {updated}")])
+    if code_href:
+        parts.extend(
+            [
+                html.Span(className="sep"),
+                html.A(
+                    "Code on GitHub",
+                    href=code_href,
+                    target="_blank",
+                    rel="noopener",
+                    className="dateline-link",
+                ),
+            ]
+        )
     return html.Div(parts, className="masthead-dateline")
 
 
@@ -245,8 +278,13 @@ def graph(graph_id, figure=None, locked=False, **kwargs):
     config = LOCKED_GRAPH_CONFIG if locked else GRAPH_CONFIG
     props = {"id": graph_id, "config": config, **kwargs}
     if figure is not None:
+        # Static figure embedded at layout build time - never enters a
+        # loading state, so no spinner wrapper.
         props["figure"] = figure
-    return dcc.Graph(**props)
+        return dcc.Graph(**props)
+    # Callback-fed: wrap in a spinner so navigating to the page shows a
+    # loading state instead of a flash of empty axes.
+    return loading(dcc.Graph(**props))
 
 def graph_col(graph_id, md=6, figure=None, locked=False, **kwargs):
     return dbc.Col(graph(graph_id, figure=figure, locked=locked, **kwargs), md=md)
@@ -267,7 +305,10 @@ def graph_row_ids(*items, className="mb-3", locked=False):
 
 def kpi_graph_row(kpi_id, graph_id, graph_md=8):
     return graph_row(
-        dbc.Col(html.Div(id=kpi_id, className="kpi-stack"), md=12 - graph_md),
+        dbc.Col(
+            loading(html.Div(id=kpi_id, className="kpi-stack")),
+            md=12 - graph_md,
+        ),
         graph_col(graph_id, md=graph_md),
     )
 
@@ -275,7 +316,12 @@ def labeled_radio(label, id, options, value, className="dashboard-radio-group mb
     return html.Div(
         [
             html.Label(label, className="small text-muted"),
-            dbc.RadioItems(id=id, options=options, value=value, inline=inline, className=className),
+            dbc.RadioItems(
+                id=id, options=options, value=value, inline=inline, className=className,
+                # Survive Dash Pages re-mounting the layout on tab switches;
+                # session scope so a fresh browser tab starts at the defaults.
+                persistence=True, persistence_type="session",
+            ),
         ]
     )
 
