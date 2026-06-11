@@ -88,7 +88,7 @@ def update_uplift(arm, model):
     )
 
     p1, p99 = np.percentile(cate, 1), np.percentile(cate, 99)
-    # Display only; full CATE is used for all analysis.
+    # Display only, full CATE is used for all analysis.
     cate_clipped = cate[(cate >= p1) & (cate <= p99)]
     pct_shown = len(cate_clipped) / len(cate) * 100
 
@@ -199,7 +199,7 @@ def update_uplift(arm, model):
             hovertemplate="Decile %{x}<br>Actual lift: $%{y:.2f}<extra></extra>",
         )
     )
-    # The line's label is in the subtitle; annotations here clip at the plot
+    # The line's label is in the subtitle, annotations here clip at the plot
     # edge or collide with the bars.
     decile_fig.add_hline(
         y=mean_decile_lift,
@@ -341,7 +341,6 @@ def update_policy(arm, model, cost_per_email, margin):
     Cost defaults to $0.05 / send and margin defaults to 0.40. Both are
     user-tunable from the layout's input controls.
     """
-    # None = cleared input; restore the layout defaults.
     cost_per_email = 0.05 if cost_per_email is None else max(0.0, float(cost_per_email))
     margin = 0.40 if margin is None else float(margin)
     margin = max(0.0, min(1.0, margin))

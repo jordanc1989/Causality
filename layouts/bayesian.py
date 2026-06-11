@@ -153,18 +153,19 @@ def tab3_layout(**_kwargs):
                     ),
                     html.P(
                         [
-                            "Priors. Beta(1, 1) (uniform) on conversion probability. The Normal "
-                            "on log-mean and HalfNormal on log-sigma are centred and scaled on "
-                            "the pooled positive-spend distribution, which makes them weakly "
-                            "informative but ",
-                            html.Strong("data-derived"),
-                            ". The conversion part of the model is informed by all ~21k "
+                            "Priors are the model's starting assumptions, set before it sees "
+                            "each arm's data. For whether a customer spends at all, the model "
+                            "starts neutral: every conversion rate from 0% to 100% is treated "
+                            "as equally plausible (a uniform Beta(1, 1) prior). For how much "
+                            "spenders spend, the starting values are centred on the typical "
+                            "spend of everyone who spent anything, regardless of arm (a Normal "
+                            "prior on the log-mean, a HalfNormal on the log-spread). "
+                            "The conversion part of the model is informed by all ~21k "
                             "customers per arm, but the spend-amount part rests only on the "
-                            "customers who actually spent - roughly 120-270 per arm - so the "
+                            "customers who actually spent (roughly 120-270 per arm) so the "
                             "amount priors are not simply washed out by the data. Keeping them "
                             "weak and centred on the pooled positive spend keeps their "
-                            "influence small; the posterior predictive check below is the "
-                            "evidence that the fitted amounts track the data. "
+                            "influence small. "
                             "Sampling uses PyMC's nutpie NUTS sampler, 2k draws across 2 chains "
                             "on the full arm data."
                         ]

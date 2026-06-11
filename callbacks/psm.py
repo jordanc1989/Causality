@@ -149,7 +149,7 @@ def update_psm(arm):
             x=smd_before,
             y=cov_labels,
             mode="markers",
-            # Long legend labels clip at the card edge; hovers carry the detail.
+            # Long legend labels clip at the card edge, hovers carry the detail.
             name="Before matching",
             marker=dict(color=DANGER, size=10, symbol="circle"),
             hovertemplate="%{y}<br>SMD: %{x:.3f}<extra>Before: all treated vs controls</extra>",
@@ -241,8 +241,6 @@ def update_psm(arm):
                     width=8,
                 ),
                 text=[f"${att_pt:.2f}"],
-                # This category sits at the right plot edge; a right-side
-                # label clips.
                 textposition="middle left",
                 hovertemplate=(
                     f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f} - ${boot_hi:.2f}<extra></extra>"

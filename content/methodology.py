@@ -13,14 +13,14 @@ def psm_intro_copy():
         ], className="mb-2 small"),
         html.P([
             "Each recipient is paired with the control customer whose pre-treatment profile "
-            "is closest on the modelled probability of being treated; a recipient with no "
+            "is closest on the modelled probability of being treated - a recipient with no "
             "close match is dropped rather than forced into a poor pair. Because assignment "
             "really was random, almost everyone pairs cleanly and the matched ATT lands "
             "close to the simple difference-in-means."
         ], className="mb-2 small"),
         html.P([
             "The Love plot shows whether the arms look alike on each covariate, before and "
-            "after matching. On observational data a big shift toward zero is the win; here "
+            "after matching. Here "
             "the ",
             html.Em("before"),
             " plot is already balanced, so matching barely moves it. The ATT chart shows "

@@ -3,7 +3,7 @@ section nav. The nav is rendered as a sibling of the masthead - not inside it -
 so it can be `position: sticky` to the viewport while the nameplate scrolls
 away on long pages.
 
-Dash Pages handles URL → layout routing automatically; this file just defines
+Dash Pages handles URL -> layout routing automatically, this file just defines
 the chrome and the page-link list driven by `dash.page_registry`.
 """
 

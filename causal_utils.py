@@ -443,7 +443,7 @@ def _run_bayesian_pair(df, pair_key):
     log_sd_prior = float(np.std(log_pooled))
 
     with pm.Model():
-        # psi = P(spend > 0); Beta(1,1) = uniform prior on the hurdle.
+        # psi = P(spend > 0). Beta(1,1) = uniform prior on the hurdle.
         psi_a = pm.Beta("psi_a", alpha=1.0, beta=1.0)
         psi_b = pm.Beta("psi_b", alpha=1.0, beta=1.0)
 
@@ -794,8 +794,7 @@ def _avg_cate_ci(cate, n_boot=1000, seed=RANDOM_SEED):
 
     Resamples customers with replacement and recomputes the mean of the
     cross-fit CATE. Like the decile-lift CIs, this captures the sampling
-    variability of the average given the fitted CATE surface; it does not
-    propagate model-refit uncertainty, so read it as a lower bound.
+    variability of the average given the fitted CATE surface.
     """
     cate = np.asarray(cate, dtype=float)
     n = len(cate)
@@ -944,7 +943,7 @@ def _run_uplift_arm(df, arm):
     avg_cate_s_lo, avg_cate_s_hi = _avg_cate_ci(cate_s)
     avg_cate_x_lo, avg_cate_x_hi = _avg_cate_ci(cate_x)
 
-    # Permutation p-values for AUUC. 500 shuffles per method; cheap because
+    # Permutation p-values for AUUC. 500 shuffles per method, cheap because
     # we hold the predicted ranking fixed and only relabel treatment.
     _, qini_p_s, _ = _permutation_p_auuc(sub_sorted_s, arm_col)
     _, qini_p_x, _ = _permutation_p_auuc(sub_sorted_x, arm_col)
@@ -1201,7 +1200,7 @@ def load_or_build_cache():
         else:
             if results.get("schema_version") == CACHE_SCHEMA_VERSION:
                 return results
-            print("[Cache] Existing cache schema is stale; rebuilding...")
+            print("[Cache] Existing cache schema is stale. Rebuilding...")
     if not USE_CACHE:
         print("[Cache] USE_CACHE=False - forcing rebuild (this will take several minutes)...")
     else:

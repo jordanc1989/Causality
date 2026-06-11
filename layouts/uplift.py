@@ -67,7 +67,7 @@ def tab4_layout(**_kwargs):
                             html.P(
                                 [
                                     html.Strong("S-Learner:"),
-                                    " Use as a conservative check. It can pull individual uplift estimates toward zero when the signal "
+                                    " Use as a conservative check. It can pull individual uplift estimates towards zero when the signal "
                                     "is faint so treat as a sanity check.",
                                 ],
                                 className="small text-muted mb-0",
@@ -176,7 +176,7 @@ def tab4_layout(**_kwargs):
                         "combines the two arms with a propensity-weighted average. X-Learner "
                         "handles arm imbalance better than S-Learner when treatment groups "
                         "are uneven. Here the groups are balanced, so we're using it as a stronger default "
-                        "view rather than a final answer."
+                        "view as opposed to a final answer."
                     ),
                     html.P(
                         "Both models use 5-fold cross-fitting and the same tuned random "
@@ -193,7 +193,7 @@ def tab4_layout(**_kwargs):
                         "The dashed diagonal is what random targeting would deliver. The area "
                         "above it is the value the ranking adds. The far left of the curve (the "
                         "first percent or two of the list) rests on very few treated customers, "
-                        "so spikes there are noise rather than signal; the targeting-policy "
+                        "so spikes there are noise rather than signal. The targeting-policy "
                         "optimiser below ignores shares under 2% for the same reason. The decile "
                         "chart bucketed view carries error bars from a within-decile bootstrap. "
                         "A model with real targeting value should show higher lift in the top "
@@ -213,20 +213,6 @@ def tab4_layout(**_kwargs):
                         ]
                     ),
                     html.P(
-                        [
-                            html.Strong("Decile CI caveat. "),
-                            "The error bars come from resampling treated and control within each "
-                            "fixed decile. That captures within-decile sampling noise but ",
-                            html.Em("not"),
-                            " uncertainty in the decile boundaries themselves. Those boundaries "
-                            "depend on the predicted CATE, which is itself noisy. A CI that "
-                            "carried all of it would bootstrap the entire fit → rank → decile "
-                            "loop. Read these "
-                            "intervals, and the average-CATE interval on the KPI card, as a lower "
-                            "bound on the true uncertainty."
-                        ]
-                    ),
-                    html.P(
                         "Feature importance is recomputed for the selected learner by shuffling "
                         "one feature at a time and checking how much that learner's predicted "
                         "CATE moves. A feature that drives real heterogeneity shifts the "
@@ -237,7 +223,7 @@ def tab4_layout(**_kwargs):
                     html.P(
                         "A known quirk of the S-Learner: when outcome noise is large relative to "
                         "the treatment signal, as it is here, the model shrinks individual CATE "
-                        "estimates toward zero. That's why the S-Learner's average CATE is "
+                        "estimates towards zero. That's why the S-Learner's average CATE is "
                         "typically smaller in magnitude than the X-Learner's."
                     ),
                     html.P(

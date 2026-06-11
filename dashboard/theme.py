@@ -7,8 +7,7 @@ GOOGLE_FONTS = (
 )
 
 # Light editorial palette: warm off-white paper, near-black ink, one restrained
-# forest-green accent. Names are kept stable so imports across callbacks/figures
-# don't break; only the values change.
+# forest-green accent. 
 BG = "#FAF8F4"          # warm off-white "paper"
 BG_STRONG = "#F4F1EA"   # subtle warm panel (masthead / control strips)
 SURFACE = "#FFFFFF"
@@ -105,7 +104,7 @@ LOCKED_GRAPH_CONFIG = {
 FIGURE_MARGIN = dict(t=50, b=30)       # standard
 FIGURE_MARGIN_WIDE = dict(t=50, b=70)  # room for bottom legend
 
-# Cards are no longer filled-and-bordered boxes; they read as quiet surfaces
+# Cards are no longer filled-and-bordered boxes, they read as quiet surfaces
 # separated from the paper by a single hairline. The left-accent-border motif
 # is gone.
 CARD_STYLE = {

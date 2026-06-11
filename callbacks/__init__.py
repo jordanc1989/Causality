@@ -33,10 +33,6 @@ def register_callbacks(app):
     register_uplift_callbacks(app)
     register_ols_callbacks(app)
     register_comparison_callbacks(app)
-
-    # Methodology collapses on the per-page tabs. tab1 (Overview) has no
-    # methodology collapse; tab6 (Comparison) doesn't either, verified by
-    # grep against the layouts.
     _register_collapse_toggles(
         app,
         [

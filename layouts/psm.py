@@ -61,7 +61,7 @@ def tab2_layout(**_kwargs):
                         [
                             html.Strong("How the matching works. "),
                             "A logistic regression on nine pre-treatment attributes (recency, history, "
-                            "the two catalogue-interest flags, two zip-type flags, two channel flags, and "
+                            "the two catalogue-interest flags, two postcode-type flags, two channel flags, and "
                             "the new-customer flag) produces a ",
                             html.Em("propensity score"),
                             " for each customer. That score is the modelled probability that the customer "
@@ -75,7 +75,7 @@ def tab2_layout(**_kwargs):
                     html.P(
                         "The main ATT band uses a simple matched-pair standard error for the retained "
                         "pairs. Matching is done with replacement, so one control customer can serve "
-                        "as the lookalike for several recipients; the matched-pair SE treats pairs as "
+                        "as the lookalike for several recipients. The matched-pair SE treats pairs as "
                         "independent, which makes it slightly optimistic. The bootstrap band beside it "
                         "refits the propensity model and rematches 200 times on resampled data. Read "
                         "that second band as a stress test on the matching choices, not as an exact "

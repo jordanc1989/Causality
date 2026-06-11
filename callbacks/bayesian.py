@@ -41,7 +41,7 @@ def update_bayesian(pair_key, rope_val):
                 accent=p_pos_color,
                 info=(
                     "Under the model, the probability that the per-customer effect is "
-                    "positive. Above 95% is strong evidence of a lift; below 5% is "
+                    "positive. Above 95% is strong evidence of a lift, below 5% is "
                     "equally strong evidence the effect runs the other way. Near 50% "
                     "means the data can't tell which way the effect points."
                 ),
@@ -226,7 +226,7 @@ def update_ppc_figure(pair_key):
         vertical_spacing=0.11,
         horizontal_spacing=0.08,
     )
-    # Subplot titles render as annotations; quieten them so they don't fight the
+    # Subplot titles render as annotations, quieten them so they don't fight the
     # data or the figure title. (Set before traces/vlines add their own.)
     fig.update_annotations(font=dict(family=SERIF, size=12.5, color=MUTED))
 
@@ -287,7 +287,7 @@ def update_ppc_figure(pair_key):
             col=col,
         )
 
-    # Observed is coloured by its arm; the model (PPC) is the accent
+    # Observed is coloured by its arm, the model (PPC) is the accent
     # everywhere, so the legend is three entries: one per observed arm plus
     # the model.
     _add_hist_pair(

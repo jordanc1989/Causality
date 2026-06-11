@@ -10,7 +10,7 @@ from dashboard.theme import (
 
 def loading(children):
     """House spinner for callback-fed content. `delay_show` keeps fast
-    in-page updates from flickering the overlay; the spinner only appears
+    in-page updates from flickering the overlay, the spinner only appears
     when a real wait (page navigation, slow client) is happening."""
     return dcc.Loading(children, type="circle", color=ACCENT, delay_show=300)
 
@@ -40,7 +40,7 @@ def spec_strip(*items):
 def masthead_dateline(source, updated=None, source_href=None, code_href=None):
     """Source attribution slug for the masthead. FT/NYT-style trailing line.
 
-    `source_href` links the source name to the dataset's origin; `code_href`
+    `source_href` links the source name to the dataset's origin, `code_href`
     appends a "Code on GitHub" slug. Both open in a new tab.
     """
     source_node = html.Strong(source)
@@ -75,7 +75,7 @@ def page_lede(headline, kicker=None, caveat=None):
     """The page's lede block: optional mono kicker, serif headline, optional caveat.
 
     Replaces the inline `borderLeft` accent motif. The headline carries
-    its own weight; no extra rule needed beside it.
+    its own weight, no extra rule needed beside it.
     """
     children = []
     if kicker:
@@ -125,7 +125,7 @@ def kpi_card(
 ):
     """Metric stat block with optional delta row, info tooltip, and pct-change figure.
 
-    The info affordance is a dotted underline on the label (no glyph); the
+    The info affordance is a dotted underline on the label (no glyph). The
     pct-change is restrained mono text rather than a coloured arrow.
     """
     delta_color = (
@@ -318,8 +318,6 @@ def labeled_radio(label, id, options, value, className="dashboard-radio-group mb
             html.Label(label, className="small text-muted"),
             dbc.RadioItems(
                 id=id, options=options, value=value, inline=inline, className=className,
-                # Survive Dash Pages re-mounting the layout on tab switches;
-                # session scope so a fresh browser tab starts at the defaults.
                 persistence=True, persistence_type="session",
             ),
         ]

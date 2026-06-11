@@ -142,7 +142,7 @@ def _build_tab1():
             html.P(
                 "Per-recipient lift scaled to the full arm. Ranges are 95% bootstrap "
                 "intervals (2,000 resamples). The later sections re-test the same lift "
-                "with matching, Bayesian and uplift methods.",
+                "with matching, Bayesian and uplift methods. ",
                 className="text-muted small mb-5",
             ),
             section_header("By campaign arm"),
@@ -202,8 +202,8 @@ def _build_tab1():
                         html.P(
                             "The Hillstrom dataset is a real email experiment across 64k US "
                             "retail customers: a third got a Men's catalogue email, a third a "
-                            "Women's and a third nothing (the control). Spend was recorded over the following "
-                            "two weeks, alongside a handful of customer attributes.",
+                            "Women's catalogue email, and a third received nothing (the control). Spend was recorded over the following "
+                            "two weeks, alongside a handful of customer attributes. The allocation into the three groups was randomised.",
                             className="small text-muted",
                         ),
                         html.P(
