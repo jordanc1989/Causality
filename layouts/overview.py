@@ -17,7 +17,7 @@ import causal_utils as cu
 def tab1_layout(**_kwargs):
     # Dash Pages calls the layout function on every request, but everything on
     # this page derives from the static cached DF. Build once and reuse so the
-    # 2,000-resample bootstrap CIs don't rerun per page view.
+    # 2,000 resample bootstrap CIs don't rerun per page view.
     return _build_tab1()
 
 
@@ -84,7 +84,7 @@ def _build_tab1():
     conv_pct_womens = ((conv_womens - conv_control) / conv_control * 100) if conv_control else None
 
     def _hl_col(label, color, sig, proj, proj_lo, proj_hi):
-        """Projected total-revenue extrapolation for one arm, with bootstrap CI band."""
+        """Projected total-revenue extrapolation for one arm w/ bootstrap CI band."""
         ci_id = f"hl-ci-{label.lower().replace(' ', '-').replace(chr(39), '')}"
         tooltip_text = (
             "Per-recipient lift multiplied by the number of recipients in this arm. "
@@ -141,7 +141,7 @@ def _build_tab1():
             ),
             html.P(
                 "Per-recipient lift scaled to the full arm. Ranges are 95% bootstrap "
-                "intervals (2k resamples). The later sections re-test the same lift "
+                "intervals (2,000 resamples). The later sections re-test the same lift "
                 "with matching, Bayesian and uplift methods.",
                 className="text-muted small mb-5",
             ),
@@ -202,7 +202,7 @@ def _build_tab1():
                         html.P(
                             "The Hillstrom dataset is a real email experiment across 64k US "
                             "retail customers: a third got a Men's catalogue email, a third a "
-                            "Women's, a third nothing. Spend was recorded over the following "
+                            "Women's and a third nothing (the control). Spend was recorded over the following "
                             "two weeks, alongside a handful of customer attributes.",
                             className="small text-muted",
                         ),
