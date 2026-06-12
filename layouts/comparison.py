@@ -15,7 +15,7 @@ def tab6_layout(**_kwargs):
                             [
                                 "Each row is one method's estimate of the average lift in spend "
                                 "per recipient, with its confidence range. PSM is left out of this comparison "
-                                "because it's only included as a teaching example (as this is a randomised experiment).",
+                                "because it's only included as a demonstrative example (as this is a randomised experiment).",
                             ],
                             className="text-muted small mb-2",
                         ),
@@ -31,12 +31,11 @@ def tab6_layout(**_kwargs):
             dbc.Row(
                 dbc.Col(
                     html.P(
-                        "Both panels share one x-axis scale. Where no error bar is "
-                        "visible (the S- and X-Learner), the interval is only a few "
-                        "cents wide — an estimation-conditional bootstrap that "
-                        "understates the full uncertainty, not a sign of higher "
-                        "precision. The Interval type column above says which kind "
-                        "each row carries.",
+                        "Both panels share one x-axis scale. The S- and X-Learner "
+                        "seem to have no error bars — their intervals are just too "
+                        "narrow to see. Their bootstrap "
+                        "only captures part of the uncertainty (see the † note under "
+                        "the table).",
                         className="small text-muted mb-0",
                     ),
                 ),
@@ -84,8 +83,7 @@ def tab6_layout(**_kwargs):
                             ),
                             dbc.Tooltip(
                                 "Estimates with absolute value below this threshold are "
-                                "treated as 'near zero' and excluded from the cross-method "
-                                "directional verdict, so a single noise-zone estimate "
+                                "treated as 'near zero' and excluded, so a single noisy estimate "
                                 "doesn't flip the conclusion.",
                                 target="comparison-noise-info",
                                 placement="right",
@@ -102,9 +100,9 @@ def tab6_layout(**_kwargs):
                                         [
                                             html.P(
                                                 "The PSM tab pairs each email recipient with a lookalike "
-                                                "control customer. That's useful as a demo of what you'd do "
-                                                "without random assignment, but this dataset was randomised, "
-                                                "so PSM is intentionally omitted."
+                                                "control customer. This is useful as a demo of what you'd do "
+                                                "without random assignment, but as this dataset was randomised, "
+                                                "PSM is intentionally omitted."
                                             ),
                                         ],
                                         title="Why PSM is omitted"
@@ -137,7 +135,7 @@ def tab6_layout(**_kwargs):
                                         [
                                             html.P(
                                                 "Linear regression with interaction terms. Best for a "
-                                                "clean, auditable read of the average effect and how "
+                                                "clean and explainable/auditable read of the average effect and how "
                                                 "it varies by customer type. Assumes the relationship "
                                                 "between attributes and spend is roughly linear."
                                             ),
