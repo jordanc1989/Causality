@@ -131,7 +131,7 @@ def tab6_layout(**_kwargs):
                                                 "treat them as directional."
                                             ),
                                         ],
-                                        title="Uplift (S-, X-Learner)"
+                                        title="Uplift (S/X-Learner)"
                                     ),
                                     dbc.AccordionItem(
                                         [

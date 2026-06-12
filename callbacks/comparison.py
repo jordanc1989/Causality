@@ -30,13 +30,16 @@ def _build_comparison_df():
     def _round_or_none(value):
         return round(value, 2) if value is not None and pd.notna(value) else None
 
-    for arm in ["mens", "womens"]:
-        arm_label = ARM_META[arm][0]
-        u = UPLIFT[arm]
-        for method, est_key, lo_key, hi_key in [
-            ("S-Learner (avg CATE)", "avg_cate_s", "avg_cate_s_lo", "avg_cate_s_hi"),
-            ("X-Learner (avg CATE)", "avg_cate_x", "avg_cate_x_lo", "avg_cate_x_hi"),
-        ]:
+    # Method-major order: both arms of a learner sit on adjacent rows so the
+    # Men's/Women's estimates can be compared without scanning past the other
+    # learner.
+    for method, est_key, lo_key, hi_key in [
+        ("X-Learner (avg CATE)", "avg_cate_x", "avg_cate_x_lo", "avg_cate_x_hi"),
+        ("S-Learner (avg CATE)", "avg_cate_s", "avg_cate_s_lo", "avg_cate_s_hi"),
+    ]:
+        for arm in ["mens", "womens"]:
+            arm_label = ARM_META[arm][0]
+            u = UPLIFT[arm]
             rows.append(
                 {
                     "Method": method,
@@ -299,10 +302,6 @@ def update_comparison(noise_eps):
                 ]
             ),
         ],
-        style={
-            **CARD_STYLE,
-            "borderLeft": f"3px solid {SUCCESS if ('points to' in mens_verdict and 'points to' in womens_verdict) else WARNING}"
-        },
         className="dashboard-card",
     )
 
