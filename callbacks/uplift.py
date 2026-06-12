@@ -6,6 +6,7 @@ from dash import html, Output, Input
 from causal_utils import AUUC_N_PERM
 from dashboard.theme import *
 from dashboard.data import UPLIFT
+from dashboard.format import money_range
 from layouts.components import kpi_card
 
 # Per-model cached results are stored under a `{base}_{model}` key in UPLIFT[arm]
@@ -42,7 +43,7 @@ def update_uplift(arm, model):
     avg_lo = u.get(f"avg_cate_{model}_lo")
     avg_hi = u.get(f"avg_cate_{model}_hi")
     if avg_lo is not None and avg_hi is not None and np.isfinite(avg_lo) and np.isfinite(avg_hi):
-        avg_delta = f"95% CI ${avg_lo:.2f} - ${avg_hi:.2f}"
+        avg_delta = f"95% CI {money_range(avg_lo, avg_hi)}"
     else:
         avg_delta = f"{arm_label} vs Control"
 
@@ -107,9 +108,9 @@ def update_uplift(arm, model):
     )
     hist_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"CATE Distribution - {model_label} ({arm_label})",
+        title=f"CATE distribution — {model_label} ({arm_label})",
         xaxis_title=(
-            f"Individual Uplift ($): showing p1-p99 ({pct_shown:.0f}% of customers)"
+            f"Individual uplift ($), p1–p99 ({pct_shown:.0f}% of customers)"
         ),
         yaxis_title="Count",
         margin=FIGURE_MARGIN,
@@ -158,7 +159,7 @@ def update_uplift(arm, model):
             hovertemplate=(
                 "Decile %{x}<br>Actual lift: $%{y:.2f}"
                 + (
-                    "<br>95% CI: $%{customdata[0]:.2f} - $%{customdata[1]:.2f}"
+                    "<br>95% CI: $%{customdata[0]:.2f}–$%{customdata[1]:.2f}"
                     if has_ci
                     else ""
                 )
@@ -210,7 +211,7 @@ def update_uplift(arm, model):
     decile_fig.update_layout(
         template=PLOTLY_TEMPLATE,
         title=(
-            f"Actual Spend Lift by {model_label} Uplift Decile<br>"
+            f"Actual spend lift by {model_label} uplift decile<br>"
             f"<sup>Dashed line: mean decile lift ${mean_decile_lift:.2f}</sup>"
         ),
         xaxis=dict(
@@ -220,7 +221,7 @@ def update_uplift(arm, model):
             dtick=1,
             fixedrange=True,
         ),
-        yaxis_title="Actual Spend Lift ($)",
+        yaxis_title="Actual spend lift ($)",
         yaxis_fixedrange=True,
         dragmode=False,
         margin=FIGURE_MARGIN
@@ -261,15 +262,15 @@ def update_uplift(arm, model):
     if qini_p is None:
         p_str = ""
     elif qini_p <= p_floor:
-        p_str = f" | permutation p < {p_floor:.3f}"
+        p_str = f" · permutation p < {p_floor:.3f}"
     else:
-        p_str = f" | permutation p = {qini_p:.3f}"
+        p_str = f" · permutation p = {qini_p:.3f}"
     qini_note = (
-        f"AUUC ${qini_auc:,.0f} | excess vs random ${qini_excess:,.0f}{p_str}"
+        f"AUUC ${qini_auc:,.0f} · excess vs random ${qini_excess:,.0f}{p_str}"
     )
     qini_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"Qini Curve - {model_label}",
+        title=f"Qini curve — {model_label}",
         xaxis_title="Fraction of population targeted",
         yaxis_title="Cumulative incremental spend ($)",
         margin=dict(t=72, b=70),
@@ -306,7 +307,7 @@ def update_uplift(arm, model):
     seg_fig.update_layout(
         barmode="group",
         template=PLOTLY_TEMPLATE,
-        title="Average CATE: Men's vs Women's Campaign",
+        title="Average CATE — Men's vs Women's campaign",
         yaxis_title="Avg CATE ($)",
         xaxis_fixedrange=True,
         yaxis_fixedrange=True,
@@ -498,7 +499,7 @@ def update_policy(arm, model, cost_per_email, margin):
     fig.add_hline(y=0, line_color=BORDER, line_width=1)
     fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"Targeting Policy Curve - {arm_label} ({keys['label']})",
+        title=f"Targeting policy curve — {arm_label} ({keys['label']})",
         xaxis=dict(title="Fraction of list targeted", tickformat=".0%"),
         yaxis_title="Net incremental contribution ($)",
         margin=dict(t=50, b=80),

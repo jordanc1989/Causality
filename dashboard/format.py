@@ -13,6 +13,13 @@ def money(x, precision=2):
     return f"{sign}${abs(x):,.{precision}f}"
 
 
+def money_range(lo, hi, precision=2):
+    """`(0.47, 1.03) -> '$0.47–$1.03'`. En-dashed interval, sign-preserving."""
+    if lo is None or hi is None:
+        return ""
+    return f"{money(lo, precision)}–{money(hi, precision)}"
+
+
 def money_compact(x):
     """Short-form spend used in chart annotations / tight tiles.
 

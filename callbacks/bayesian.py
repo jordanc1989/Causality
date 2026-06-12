@@ -6,6 +6,7 @@ from dash import html, Output, Input
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from dashboard.data import BAYESIAN
+from dashboard.format import money_range
 from layouts.components import kpi_card
 
 def update_bayesian(pair_key, rope_val):
@@ -14,8 +15,9 @@ def update_bayesian(pair_key, rope_val):
     rope_val = 1.0 if rope_val is None else max(0.0, float(rope_val))
     b = BAYESIAN[pair_key]
     delta = b["delta_samples"]
+    lab_a = SEGMENT_DISPLAY.get(b["arm_a_label"], b["arm_a_label"])
+    lab_b = SEGMENT_DISPLAY.get(b["arm_b_label"], b["arm_b_label"])
 
-    hdi_str = f"95% HDI: ${b['hdi_lo']:.2f} - ${b['hdi_hi']:.2f}"
     p_pos = b["p_positive"]
     # Near 0% is strong evidence of a negative effect, not uncertainty.
     p_pos_color = SUCCESS if p_pos > 0.95 else DANGER if p_pos < 0.05 else WARNING
@@ -24,8 +26,9 @@ def update_bayesian(pair_key, rope_val):
     kpis = html.Div(
         [
             kpi_card(
-                hdi_str,
-                f"Treatment effect: {b['arm_a_label']} vs {b['arm_b_label']}",
+                money_range(b["hdi_lo"], b["hdi_hi"]),
+                f"Treatment effect: {lab_a} vs {lab_b}",
+                "95% HDI",
                 accent=arm_color,
                 info=(
                     "The 95% Highest Density Interval is the narrowest range that holds 95% of "
@@ -49,7 +52,7 @@ def update_bayesian(pair_key, rope_val):
             ),
             kpi_card(
                 f"${b['mean_a']:.2f}",
-                f"Mean spend, {b['arm_a_label']}",
+                f"Mean spend, {lab_a}",
                 accent=arm_color,
                 info=(
                     "The model's estimate of the average per-customer spend for this arm, "
@@ -59,7 +62,7 @@ def update_bayesian(pair_key, rope_val):
             ),
             kpi_card(
                 f"${b['mean_b']:.2f}",
-                f"Mean spend, {b['arm_b_label']}",
+                f"Mean spend, {lab_b}",
                 accent=CTRL_COLOUR,
                 info=(
                     "The model's estimate of the average per-customer spend for this arm, "
@@ -140,8 +143,8 @@ def update_bayesian(pair_key, rope_val):
 
     posterior_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title=f"{b['arm_a_label']} vs {b['arm_b_label']}",
-        xaxis_title="Effect on Spend ($)",
+        title=f"{lab_a} vs {lab_b}",
+        xaxis_title="Effect on spend ($)",
         yaxis_title="Density",
         margin=dict(t=40, b=70),
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
@@ -190,15 +193,15 @@ def update_bayesian(pair_key, rope_val):
 
 def update_ppc_figure(pair_key):
     b = BAYESIAN[pair_key]
-    lab_a = b["arm_a_label"]
-    lab_b = b["arm_b_label"]
     arm_colours = {
         "Mens E-Mail": MENS_COLOUR,
         "Womens E-Mail": WOMENS_COLOUR,
         "No E-Mail": CTRL_COLOUR,
     }
-    colour_a = arm_colours.get(lab_a, MENS_COLOUR)
-    colour_b = arm_colours.get(lab_b, CTRL_COLOUR)
+    colour_a = arm_colours.get(b["arm_a_label"], MENS_COLOUR)
+    colour_b = arm_colours.get(b["arm_b_label"], CTRL_COLOUR)
+    lab_a = SEGMENT_DISPLAY.get(b["arm_a_label"], b["arm_a_label"])
+    lab_b = SEGMENT_DISPLAY.get(b["arm_b_label"], b["arm_b_label"])
     pack = b.get("ppc_pack")
 
     if pack is None:
@@ -215,12 +218,12 @@ def update_ppc_figure(pair_key):
         rows=3,
         cols=2,
         subplot_titles=(
-            f"Full spend - {lab_a}",
-            f"Full spend - {lab_b}",
-            f"Amount given spend > 0 - {lab_a}",
-            f"Amount given spend > 0 - {lab_b}",
-            f"Conversion rate - {lab_a}",
-            f"Conversion rate - {lab_b}",
+            f"Full spend — {lab_a}",
+            f"Full spend — {lab_b}",
+            f"Amount given spend > 0 — {lab_a}",
+            f"Amount given spend > 0 — {lab_b}",
+            f"Conversion rate — {lab_a}",
+            f"Conversion rate — {lab_b}",
         ),
         vertical_spacing=0.11,
         horizontal_spacing=0.08,
@@ -290,19 +293,19 @@ def update_ppc_figure(pair_key):
     # everywhere, so the legend is three entries: one per observed arm plus
     # the model.
     _add_hist_pair(
-        1, 1, obs_sa, ppc_sa, f"Observed - {lab_a}", "Model (PPC)",
+        1, 1, obs_sa, ppc_sa, f"Observed — {lab_a}", "Model (PPC)",
         colour_a, ACCENT,
     )
     _add_hist_pair(
-        1, 2, obs_sb, ppc_sb, f"Observed - {lab_b}", "Model (PPC)",
+        1, 2, obs_sb, ppc_sb, f"Observed — {lab_b}", "Model (PPC)",
         colour_b, ACCENT,
     )
     _add_hist_pair(
-        2, 1, obs_pa, ppc_pa, f"Observed - {lab_a}", "Model (PPC)",
+        2, 1, obs_pa, ppc_pa, f"Observed — {lab_a}", "Model (PPC)",
         colour_a, ACCENT,
     )
     _add_hist_pair(
-        2, 2, obs_pb, ppc_pb, f"Observed - {lab_b}", "Model (PPC)",
+        2, 2, obs_pb, ppc_pb, f"Observed — {lab_b}", "Model (PPC)",
         colour_b, ACCENT,
     )
 
@@ -336,7 +339,7 @@ def update_ppc_figure(pair_key):
         barmode="overlay",
         height=1000,
         title=dict(
-            text="Posterior predictive check - observed vs model-simulated data",
+            text="Posterior predictive check — observed vs model-simulated data",
             font=dict(size=14),
         ),
         margin=dict(t=58, b=92, l=54, r=36),

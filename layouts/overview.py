@@ -6,7 +6,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from dashboard.data import DF
-from dashboard.format import money
+from dashboard.format import money, money_range
 from layouts.components import (
     graph, section_col, section_header, segment_overview_card,
     spec_strip, page_lede, headline_tile,
@@ -94,7 +94,7 @@ def _build_tab1():
             [
                 html.Span("95% CI", className="label"),
                 html.Span(
-                    f"{money(proj_lo, 0)} - {money(proj_hi, 0)}",
+                    money_range(proj_lo, proj_hi, 0),
                     id=ci_id,
                     className="info-term",
                 ),

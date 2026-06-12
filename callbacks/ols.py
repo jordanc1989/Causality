@@ -3,8 +3,33 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from dash import dash_table
+from dash.dash_table.Format import Format, Scheme
 from dashboard.theme import *
 from dashboard.data import OLS, DF
+from dashboard.format import money
+
+# Human-readable labels for the regression terms. Standalone covariates reuse
+# the shared COVARIATE_LABELS; interaction components use these shorter forms
+# so a two-part "a × b" label stays scannable on the y-axis.
+_TERM_PARTS = {
+    "mens_email": "Men's Email",
+    "womens_email": "Women's Email",
+    "recency": "Recency",
+    "history": "History",
+    "mens": "Mens catalogue",
+    "womens": "Womens catalogue",
+    "zip_suburban": "Suburban",
+    "zip_rural": "Rural",
+    "channel_web": "Web",
+    "channel_multichannel": "Multichannel",
+    "newbie": "New customer",
+}
+
+
+def _term_label(term):
+    if ":" in term:
+        return " × ".join(_TERM_PARTS.get(p, p) for p in term.split(":"))
+    return COVARIATE_LABELS.get(term, _TERM_PARTS.get(term, term))
 
 
 def build_ols_figures():
@@ -45,7 +70,7 @@ def build_ols_figures():
     coef_fig.add_trace(
         go.Scatter(
             x=plot_df["coef"],
-            y=plot_df["term"],
+            y=plot_df["term"].map(_term_label),
             mode="markers",
             error_x=dict(
                 type="data",
@@ -60,7 +85,7 @@ def build_ols_figures():
             hovertemplate=(
                 "<b>%{y}</b><br>"
                 "Coef: $%{x:.2f}<br>"
-                "95% CI: $%{customdata[0]:.2f} - $%{customdata[1]:.2f}<br>"
+                "95% CI: $%{customdata[0]:.2f}–$%{customdata[1]:.2f}<br>"
                 "p-value: %{customdata[2]:.3f}"
                 "<extra></extra>"
             ),
@@ -70,15 +95,15 @@ def build_ols_figures():
     coef_fig.update_layout(
         template=PLOTLY_TEMPLATE,
         title=(
-            f"OLS Coefficients (n={OLS['n_obs']:,}, R²={OLS['r_squared']:.4f})<br>"
+            f"OLS coefficients (n={OLS['n_obs']:,}, R²={OLS['r_squared']:.4f})<br>"
             "<sup>Colour marks Holm-adjusted significance (α = 0.05), error bars "
             "are unadjusted 95% CIs, so the two can disagree near the cutoff.</sup>"
         ),
-        xaxis_title="Effect on Spend ($)",
+        xaxis_title="Effect on spend ($)",
         xaxis_fixedrange=True,
-        yaxis_fixedrange=True,
+        yaxis=dict(fixedrange=True, automargin=True),
         dragmode=False,
-        margin=dict(t=70, b=30, l=260)
+        margin=dict(t=70, b=30)
     )
 
     # Weight the zip-level marginal effects by actual population shares when collapsing to (newbie, channel). 
@@ -130,9 +155,20 @@ def build_ols_figures():
     disp_df["Men's Email ($)"] = disp_df["Men's Email ($)"].round(2)
     disp_df["Women's Email ($)"] = disp_df["Women's Email ($)"].round(2)
 
+    # Fixed two decimals so "1.40" never displays as "1.4" beside a "1.35".
     table = dash_table.DataTable(
         data=disp_df.to_dict("records"),
-        columns=[{"name": c, "id": c} for c in disp_df.columns],
+        columns=[
+            {
+                "name": c,
+                "id": c,
+                "type": "numeric",
+                "format": Format(precision=2, scheme=Scheme.fixed),
+            }
+            if c.endswith("($)")
+            else {"name": c, "id": c}
+            for c in disp_df.columns
+        ],
         style_table={"overflowX": "auto"},
         style_cell=TABLE_CELL,
         style_header=TABLE_HEADER,
@@ -169,7 +205,7 @@ def build_ols_figures():
                 zmin=zmin,
                 zmax=zmax,
                 zmid=0,
-                text=[[f"${v:.2f}" for v in row] for row in heat_pivot.values],
+                text=[[money(v) for v in row] for row in heat_pivot.values],
                 texttemplate="%{text}",
                 hovertemplate="%{y} / %{x}<br>Marginal effect: $%{z:.2f}<extra></extra>",
                 colorbar=dict(
@@ -191,7 +227,7 @@ def build_ols_figures():
         )
         return fig
 
-    mens_heat = make_heatmap("me_mens", "Men's Email: Marginal Effect ($)")
-    womens_heat = make_heatmap("me_womens", "Women's Email: Marginal Effect ($)")
+    mens_heat = make_heatmap("me_mens", "Men's Email — marginal effect ($)")
+    womens_heat = make_heatmap("me_womens", "Women's Email — marginal effect ($)")
 
     return coef_fig, table, mens_heat, womens_heat

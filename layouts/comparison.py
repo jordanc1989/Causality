@@ -33,7 +33,7 @@ def tab6_layout(**_kwargs):
                     html.P(
                         "Both panels share one x-axis scale. Where no error bar is "
                         "visible (the S- and X-Learner), the interval is only a few "
-                        "cents wide - an estimation-conditional bootstrap that "
+                        "cents wide — an estimation-conditional bootstrap that "
                         "understates the full uncertainty, not a sign of higher "
                         "precision. The Interval type column above says which kind "
                         "each row carries.",

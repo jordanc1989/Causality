@@ -27,6 +27,15 @@ ARM_META = {
     "womens": ("Women's Email", WOMENS_COLOUR),
 }
 
+# The results cache and DF store the dataset's raw segment names. Map them to
+# the editorial display names at render time so the raw spellings never reach
+# the screen.
+SEGMENT_DISPLAY = {
+    "Mens E-Mail": "Men's Email",
+    "Womens E-Mail": "Women's Email",
+    "No E-Mail": "Control",
+}
+
 
 def hex_to_rgba(hex_color, alpha=1.0):
     """`#RRGGBB` → `rgba(r,g,b,alpha)` string for Plotly fillcolor / shape fills."""

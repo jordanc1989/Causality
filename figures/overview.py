@@ -6,7 +6,7 @@ from dashboard.theme import (
     PLOTLY_TEMPLATE, MENS_COLOUR, WOMENS_COLOUR, CTRL_COLOUR,
     WARNING, BORDER, TEXT, hex_to_rgba,
 )
-from dashboard.theme import COVARIATE_LABELS
+from dashboard.theme import COVARIATE_LABELS, SEGMENT_DISPLAY
 import causal_utils as cu
 
 def _fig_spend_box():
@@ -19,12 +19,6 @@ def _fig_spend_box():
         "No E-Mail": CTRL_COLOUR
     }
 
-    seg_labels = {
-        "Mens E-Mail": "Men's Email",
-        "Womens E-Mail": "Women's Email",
-        "No E-Mail": "Control"
-    }
-
     outlier_rgba = hex_to_rgba(TEXT, 0.35)
     fig = go.Figure()
     for seg in seg_order:
@@ -35,7 +29,7 @@ def _fig_spend_box():
         fig.add_trace(
             go.Box(
                 y=vals,
-                name=seg_labels[seg],
+                name=SEGMENT_DISPLAY[seg],
                 width=0.2,
                 marker=dict(
                     color=fill,
@@ -52,7 +46,7 @@ def _fig_spend_box():
                     "<b>%{fullData.name}</b><br>"
                     "Median: $%{customdata[1]:.0f}<br>"
                     "Mean: $%{customdata[3]:.0f}<br>"
-                    "IQR: $%{customdata[0]:.0f}-$%{customdata[2]:.0f}<br>"
+                    "IQR: $%{customdata[0]:.0f}–$%{customdata[2]:.0f}<br>"
                     "<extra></extra>"
                 ),
             )
@@ -113,7 +107,7 @@ def _fig_covariate_balance():
     fig.update_layout(
         template=PLOTLY_TEMPLATE,
         margin=dict(t=30, b=60, l=160, r=40),
-        xaxis_title="Standardised Mean Difference (vs Control)",
+        xaxis_title="Standardised mean difference (vs Control)",
         legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="center", x=0.5),
         height=340
     )

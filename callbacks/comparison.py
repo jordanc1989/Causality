@@ -3,9 +3,11 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from dash import html, dash_table, Output, Input
+from dash.dash_table.Format import Format, Scheme
 import dash_bootstrap_components as dbc
 from dashboard.theme import *
 from dashboard.data import BAYESIAN, UPLIFT, OLS
+from dashboard.format import money_range
 
 def _build_comparison_df():
     """Assemble comparable point estimates and uncertainty intervals."""
@@ -42,9 +44,10 @@ def _build_comparison_df():
                     "Estimate ($)": round(u.get(est_key, float("nan")), 2),
                     "Interval Lower ($)": _round_or_none(u.get(lo_key)),
                     "Interval Upper ($)": _round_or_none(u.get(hi_key)),
-                    # Bootstrap of the cross-fit CATE only: captures sampling
-                    # noise given the fitted model, not model-refit uncertainty.
-                    "Interval type": "95% bootstrap (estimation-conditional)",
+                    # Bootstrap of the cross-fit CATE only. The dagger points
+                    # to the footnote under the table, which explains the
+                    # estimation-conditional caveat without overflowing a cell.
+                    "Interval type": "95% bootstrap†",
                 }
             )
 
@@ -77,9 +80,22 @@ def update_comparison(noise_eps):
 
     comp_df = _build_comparison_df()
 
+    # Fixed two-decimal rendering so "0.80" never displays as "0.8" next to a
+    # "0.74" in the same column. Data stays numeric for the conditional styles.
+    dollar_cols = {"Estimate ($)", "Interval Lower ($)", "Interval Upper ($)"}
     table = dash_table.DataTable(
         data=comp_df.fillna("-").to_dict("records"),
-        columns=[{"name": c, "id": c} for c in comp_df.columns],
+        columns=[
+            {
+                "name": c,
+                "id": c,
+                "type": "numeric",
+                "format": Format(precision=2, scheme=Scheme.fixed),
+            }
+            if c in dollar_cols
+            else {"name": c, "id": c}
+            for c in comp_df.columns
+        ],
         export_format="csv",
         export_headers="display",
         style_table={"overflowX": "auto"},
@@ -102,6 +118,17 @@ def update_comparison(noise_eps):
             },
             *TABLE_SELECTED,
         ],
+    )
+    table = html.Div(
+        [
+            table,
+            html.P(
+                "† Estimation-conditional: captures sampling noise given the "
+                "fitted model, not model-refit uncertainty.",
+                className="small text-muted mb-0",
+                style={"marginTop": "0.5rem"},
+            ),
+        ]
     )
 
     # Short labels for the forest-plot y-axis. The full method name (kept as
@@ -141,8 +168,8 @@ def update_comparison(noise_eps):
             method_name = row["Method"]
             interval_name = row["Interval type"]
             hover_tail = (
-                f"{interval_name}: ${row['Interval Lower ($)']:.2f} - "
-                f"${row['Interval Upper ($)']:.2f}"
+                f"{interval_name}: "
+                + money_range(row["Interval Lower ($)"], row["Interval Upper ($)"])
                 if has_interval
                 else "No interval available"
             )
@@ -183,9 +210,9 @@ def update_comparison(noise_eps):
         fig.add_vline(x=0, line_color=DANGER, line_dash="dash")
         fig.update_layout(
             template=PLOTLY_TEMPLATE,
-            title=f"Forest Plot - {arm_label}",
+            title=f"Forest plot — {arm_label}",
             xaxis=dict(
-                title="Effect on Spend ($)",
+                title="Effect on spend ($)",
                 range=shared_range,
                 fixedrange=True,
             ),
@@ -240,7 +267,7 @@ def update_comparison(noise_eps):
 
     takeaway = dbc.Card(
         [
-            dbc.CardHeader("Key Takeaway"),
+            dbc.CardHeader("Key takeaway"),
             dbc.CardBody(
                 [
                     html.P(
