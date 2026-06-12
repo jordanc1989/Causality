@@ -220,7 +220,7 @@ def _build_tab1():
             dbc.Row(
                 [
                     section_col(
-                        "Spend distribution by segment (among spenders)",
+                        "AOV distribution by segment (among purchasers)",
                         graph("tab1-box", figure=_fig_spend_box()),
                         md=6,
                     ),
