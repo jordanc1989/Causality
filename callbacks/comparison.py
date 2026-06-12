@@ -200,14 +200,14 @@ def update_comparison(noise_eps):
     mens_fig = forest_plot("Men's Email", MENS_COLOUR)
     womens_fig = forest_plot("Women's Email", WOMENS_COLOUR)
 
-    mens_estimates = comp_df[comp_df["Arm"] == "Men's Email"]["Estimate ($)"].values
-    womens_estimates = comp_df[comp_df["Arm"] == "Women's Email"]["Estimate ($)"].values
-    mens_valid = [float(v) for v in mens_estimates if pd.notna(v)]
-    womens_valid = [float(v) for v in womens_estimates if pd.notna(v)]
-    mens_min = min(mens_valid) if mens_valid else 0.0
-    mens_max = max(mens_valid) if mens_valid else 0.0
-    womens_min = min(womens_valid) if womens_valid else 0.0
-    womens_max = max(womens_valid) if womens_valid else 0.0
+    def _arm_estimates(arm_label):
+        vals = comp_df[comp_df["Arm"] == arm_label]["Estimate ($)"].values
+        return [float(v) for v in vals if pd.notna(v)]
+
+    mens_valid = _arm_estimates("Men's Email")
+    womens_valid = _arm_estimates("Women's Email")
+    mens_min, mens_max = min(mens_valid, default=0.0), max(mens_valid, default=0.0)
+    womens_min, womens_max = min(womens_valid, default=0.0), max(womens_valid, default=0.0)
 
     # Robust verdict: don't flip on a single near-zero estimate. The "noise
     # zone" threshold is user-controllable via the agreement-threshold input,

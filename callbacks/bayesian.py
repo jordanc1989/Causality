@@ -99,8 +99,7 @@ def update_bayesian(pair_key, rope_val):
             )
         )
 
-    line_color = MENS_COLOUR if pair_key.startswith("mens") else WOMENS_COLOUR
-    fill_rgba = hex_to_rgba(line_color, 0.15)
+    fill_rgba = hex_to_rgba(arm_color, 0.15)
 
     posterior_fig.add_trace(
         go.Scatter(
@@ -109,7 +108,7 @@ def update_bayesian(pair_key, rope_val):
             mode="lines",
             fill="tozeroy",
             fillcolor=fill_rgba,
-            line=dict(color=line_color, width=2),
+            line=dict(color=arm_color, width=2),
             name="Posterior δ",
             hovertemplate="Effect: $%{x:.2f}<extra>Posterior δ</extra>",
         )
@@ -307,53 +306,30 @@ def update_ppc_figure(pair_key):
         colour_b, ACCENT,
     )
 
-    if pcrma is not None and len(pcrma):
-        fig.add_trace(
-            go.Histogram(
-                x=pcrma,
-                nbinsx=45,
-                name="PPC draw mean conversion",
-                marker_color=ACCENT,
-                opacity=0.55,
-                showlegend=False,
-            ),
-            row=3,
-            col=1,
-        )
-    if ocra is not None and np.isfinite(ocra):
-        fig.add_vline(
-            x=ocra,
-            line_dash="dash",
-            line_color=TEXT,
-            annotation_text=f"Observed {ocra * 100:.2f}%",
-            annotation_position="bottom right",
-            row=3,
-            col=1,
-        )
-
-    if pcrmb is not None and len(pcrmb):
-        fig.add_trace(
-            go.Histogram(
-                x=pcrmb,
-                nbinsx=45,
-                name="PPC draw mean conversion",
-                marker_color=ACCENT,
-                opacity=0.55,
-                showlegend=False,
-            ),
-            row=3,
-            col=2,
-        )
-    if ocrb is not None and np.isfinite(ocrb):
-        fig.add_vline(
-            x=ocrb,
-            line_dash="dash",
-            line_color=TEXT,
-            annotation_text=f"Observed {ocrb * 100:.2f}%",
-            annotation_position="bottom right",
-            row=3,
-            col=2,
-        )
+    for col, pcrm, ocr in ((1, pcrma, ocra), (2, pcrmb, ocrb)):
+        if pcrm is not None and len(pcrm):
+            fig.add_trace(
+                go.Histogram(
+                    x=pcrm,
+                    nbinsx=45,
+                    name="PPC draw mean conversion",
+                    marker_color=ACCENT,
+                    opacity=0.55,
+                    showlegend=False,
+                ),
+                row=3,
+                col=col,
+            )
+        if ocr is not None and np.isfinite(ocr):
+            fig.add_vline(
+                x=ocr,
+                line_dash="dash",
+                line_color=TEXT,
+                annotation_text=f"Observed {ocr * 100:.2f}%",
+                annotation_position="bottom right",
+                row=3,
+                col=col,
+            )
 
     fig.update_layout(
         template=PLOTLY_TEMPLATE,
@@ -398,25 +374,11 @@ def update_diagnostics_table(pair_key):
     if not diag_table:
         return "No diagnostics available"
 
+    th_style = {"fontFamily": MONO, "fontSize": "0.75rem"}
+    td_style = {"fontFamily": MONO, "fontSize": "0.8rem"}
+
     header = html.Tr(
-        [
-            html.Th(
-                "Parameter",
-                style={"fontFamily": MONO, "fontSize": "0.75rem"},
-            ),
-            html.Th(
-                "R̂",
-                style={"fontFamily": MONO, "fontSize": "0.75rem"},
-            ),
-            html.Th(
-                "Bulk ESS",
-                style={"fontFamily": MONO, "fontSize": "0.75rem"},
-            ),
-            html.Th(
-                "Tail ESS",
-                style={"fontFamily": MONO, "fontSize": "0.75rem"},
-            ),
-        ]
+        [html.Th(col, style=th_style) for col in ("Parameter", "R̂", "Bulk ESS", "Tail ESS")]
     )
 
     rows = []
@@ -431,35 +393,10 @@ def update_diagnostics_table(pair_key):
         rows.append(
             html.Tr(
                 [
-                    html.Td(
-                        row["parameter"],
-                        style={
-                            "fontFamily": MONO,
-                            "fontSize": "0.8rem",
-                        },
-                    ),
-                    html.Td(
-                        f"{row['r_hat']:.3f}",
-                        style={
-                            "fontFamily": MONO,
-                            "fontSize": "0.8rem",
-                            "color": rhat_color,
-                        },
-                    ),
-                    html.Td(
-                        f"{row['ess_bulk']:.0f}",
-                        style={
-                            "fontFamily": MONO,
-                            "fontSize": "0.8rem",
-                        },
-                    ),
-                    html.Td(
-                        f"{row['ess_tail']:.0f}",
-                        style={
-                            "fontFamily": MONO,
-                            "fontSize": "0.8rem",
-                        },
-                    ),
+                    html.Td(row["parameter"], style=td_style),
+                    html.Td(f"{row['r_hat']:.3f}", style={**td_style, "color": rhat_color}),
+                    html.Td(f"{row['ess_bulk']:.0f}", style=td_style),
+                    html.Td(f"{row['ess_tail']:.0f}", style=td_style),
                 ]
             )
         )

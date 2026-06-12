@@ -227,9 +227,7 @@ def update_uplift(arm, model):
     )
 
     # Plotly fill colours don't accept hex+alpha directly so convert to rgba string
-    qini_fill = (
-        hex_to_rgba(color, 0.15) if color.startswith("#") else hex_to_rgba(MENS_COLOUR, 0.15)
-    )
+    qini_fill = hex_to_rgba(color, 0.15)
     qini_fig = go.Figure()
     qini_fig.add_trace(
         go.Scatter(
@@ -345,8 +343,7 @@ def update_policy(arm, model, cost_per_email, margin):
     margin = 0.40 if margin is None else float(margin)
     margin = max(0.0, min(1.0, margin))
     u = UPLIFT[arm]
-    arm_label = "Men's Email" if arm == "mens" else "Women's Email"
-    color = MENS_COLOUR if arm == "mens" else WOMENS_COLOUR
+    arm_label, color = ARM_META[arm]
     keys = MODEL_KEYS[model]
 
     qini_xd = np.asarray(u[keys["qini_x"]], dtype=float)

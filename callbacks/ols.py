@@ -156,11 +156,11 @@ def build_ols_figures():
         [1.0, "#2F6E8F"],
     ]
 
-    def make_heatmap(arm_col):
+    def make_heatmap(arm_col, title):
         heat_pivot = weighted_sub.pivot(
             index="newbie", columns="channel", values=arm_col
         )
-        return go.Figure(
+        fig = go.Figure(
             go.Heatmap(
                 z=heat_pivot.values,
                 x=heat_pivot.columns.tolist(),
@@ -178,34 +178,20 @@ def build_ols_figures():
                 ),
             )
         )
+        # Wide bottom margin so the x-axis title clears the tick labels.
+        fig.update_layout(
+            template=PLOTLY_TEMPLATE,
+            title=title,
+            xaxis_title="Channel",
+            yaxis_title="Customer type",
+            xaxis_fixedrange=True,
+            yaxis_fixedrange=True,
+            dragmode=False,
+            margin=FIGURE_MARGIN_WIDE
+        )
+        return fig
 
-    # Wide bottom margin so the x-axis title clears the tick labels.
-    mens_heat = make_heatmap("me_mens")
-    mens_heat.update_layout(
-        template=PLOTLY_TEMPLATE,
-        title="Men's Email: Marginal Effect ($)",
-        xaxis_title="Channel",
-        yaxis_title="Customer type",
-        xaxis_fixedrange=True,
-        yaxis_fixedrange=True,
-        dragmode=False,
-        margin=FIGURE_MARGIN_WIDE
-    )
-
-    womens_heat = make_heatmap("me_womens")
-    womens_heat.update_layout(
-        template=PLOTLY_TEMPLATE,
-        title="Women's Email: Marginal Effect ($)",
-        xaxis_title="Channel",
-        yaxis_title="Customer type",
-        xaxis_fixedrange=True,
-        yaxis_fixedrange=True,
-        dragmode=False,
-        margin=FIGURE_MARGIN_WIDE
-    )
+    mens_heat = make_heatmap("me_mens", "Men's Email: Marginal Effect ($)")
+    womens_heat = make_heatmap("me_womens", "Women's Email: Marginal Effect ($)")
 
     return coef_fig, table, mens_heat, womens_heat
-
-
-def register_ols_callbacks(app):
-    pass
