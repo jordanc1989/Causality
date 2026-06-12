@@ -219,7 +219,7 @@ def update_psm(arm):
                 textposition="middle right",
                 hovertemplate=(
                     "ATT: $%{y:.2f}"
-                    + (f"<br>95% CI: ${pair_lo:.2f}–${pair_hi:.2f}" if has_pair else "")
+                    + (f"<br>95% CI: ${pair_lo:.2f}-${pair_hi:.2f}" if has_pair else "")
                     + "<extra></extra>"
                 ),
                 name="Matched-pair SE",
@@ -244,7 +244,7 @@ def update_psm(arm):
                 text=[f"${att_pt:.2f}"],
                 textposition="middle left",
                 hovertemplate=(
-                    f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f}–${boot_hi:.2f}<extra></extra>"
+                    f"ATT: $%{{y:.2f}}<br>Bootstrap band: ${boot_lo:.2f}-${boot_hi:.2f}<extra></extra>"
                 ),
                 name="Rematch bootstrap (sensitivity)",
             )
