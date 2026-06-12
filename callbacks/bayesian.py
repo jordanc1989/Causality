@@ -55,7 +55,7 @@ def update_bayesian(pair_key, rope_val):
                 f"Mean spend, {lab_a}",
                 accent=arm_color,
                 info=(
-                    "The model's estimate of the average per-customer spend for this arm, "
+                    "The model's estimate of the average per-customer spend for this group, "
                     "combining the chance of any spend with the size of the spend when it happens."
                 ),
                 info_id="bayes-kpi-meana-info",
@@ -65,7 +65,7 @@ def update_bayesian(pair_key, rope_val):
                 f"Mean spend, {lab_b}",
                 accent=CTRL_COLOUR,
                 info=(
-                    "The model's estimate of the average per-customer spend for this arm, "
+                    "The model's estimate of the average per-customer spend for this group, "
                     "combining the chance of any spend with the size of the spend when it happens."
                 ),
                 info_id="bayes-kpi-meanb-info",

@@ -56,8 +56,8 @@ def tab5_layout(**_kwargs):
                         "Linear regression estimates the average effect of the email while adjusting "
                         "for a few customer attributes (recency, spend history, channel, postcode type, "
                         "and whether the customer is new). Because assignment was random to begin with, "
-                        "this adjustment isn't fixing bias. It tightens the confidence range. All three "
-                        "arms are fitted in one model using treatment indicators."
+                        "this adjustment isn't fixing bias, but tightening the confidence range. All three "
+                        "groups are fitted in one model using treatment indicators."
                     ),
                     html.P(
                         "Interaction terms let the effect of the email vary by customer type "

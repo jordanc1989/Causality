@@ -13,7 +13,7 @@ def tab3_layout(**_kwargs):
             spec_strip(
                 "Hurdle model: Bernoulli-LogNormal",
                 "2k draws / 2 chains",
-                "Full arm data (no subsampling)",
+                "Full group data (no subsampling)",
             ),
             dbc.Row(
                 [
@@ -109,11 +109,11 @@ def tab3_layout(**_kwargs):
                                 html.P(
                                     [
                                         html.Strong("What this shows: "),
-                                        "Three stacked checks per arm that compare the model's simulated data "
+                                        "Three stacked checks per group that compare the model's simulated data "
                                         "against the real data. The first row covers the full spend distribution "
                                         "including the spike around $0. The second row focuses on the size of "
                                         "purchases among customers who did spend. The third row checks the "
-                                        "conversion rate at the actual arm size. "
+                                        "conversion rate at the actual group size. "
                                         "The simulated and observed distributions should sit roughly on top of "
                                         "each other. Small spikes in the observed data come from real catalogue "
                                         "price points, so judge the fit on the overall shape rather than every "
@@ -154,20 +154,20 @@ def tab3_layout(**_kwargs):
                     html.P(
                         [
                             "Priors are the model's starting assumptions, set before it sees "
-                            "each arm's data. For whether a customer spends at all, the model "
+                            "each group's data. For whether a customer spends at all, the model "
                             "starts neutral: every conversion rate from 0% to 100% is treated "
                             "as equally plausible (a uniform Beta(1, 1) prior). For how much "
                             "spenders spend, the starting values are centred on the typical "
-                            "spend of everyone who spent anything, regardless of arm (a Normal "
+                            "spend of everyone who spent anything, regardless of group (a Normal "
                             "prior on the log-mean, a HalfNormal on the log-spread). "
                             "The conversion part of the model is informed by all ~21k "
-                            "customers per arm, but the spend-amount part rests only on the "
-                            "customers who actually spent (around 120-270 per arm) so the "
+                            "customers per group, but the spend-amount part rests only on the "
+                            "customers who actually spent (around 120-270 per group) so the "
                             "amount priors are not simply washed out by the data. Keeping them "
                             "weak and centred on the pooled positive spend keeps their "
                             "influence small. "
                             "Sampling uses PyMC's nutpie NUTS sampler, 2k draws across 2 chains "
-                            "on the full arm data."
+                            "on the full group data."
                         ]
                     ),
                     html.P(

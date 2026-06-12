@@ -19,7 +19,7 @@ def _build_comparison_df():
         rows.append(
             {
                 "Method": "Bayesian A/B (posterior mean)",
-                "Arm": arm_label,
+                "Group": arm_label,
                 "Estimate ($)": round(float(np.mean(b["delta_samples"])), 2),
                 "Interval Lower ($)": round(b["hdi_lo"], 2),
                 "Interval Upper ($)": round(b["hdi_hi"], 2),
@@ -43,7 +43,7 @@ def _build_comparison_df():
             rows.append(
                 {
                     "Method": method,
-                    "Arm": arm_label,
+                    "Group": arm_label,
                     "Estimate ($)": round(u.get(est_key, float("nan")), 2),
                     "Interval Lower ($)": _round_or_none(u.get(lo_key)),
                     "Interval Upper ($)": _round_or_none(u.get(hi_key)),
@@ -66,7 +66,7 @@ def _build_comparison_df():
         rows.append(
             {
                 "Method": "OLS (avg marginal effect, HC3)",
-                "Arm": ARM_META[arm][0],
+                "Group": ARM_META[arm][0],
                 "Estimate ($)": round(OLS.get(ate_key, 0.0), 2),
                 "Interval Lower ($)": round(OLS.get(lo_key, 0.0), 2),
                 "Interval Upper ($)": round(OLS.get(hi_key, 0.0), 2),
@@ -158,7 +158,7 @@ def update_comparison(noise_eps):
     shared_range = [range_lo - pad, range_hi + pad]
 
     def forest_plot(arm_label, color):
-        sub = comp_df[comp_df["Arm"] == arm_label].copy()
+        sub = comp_df[comp_df["Group"] == arm_label].copy()
         sub["short"] = sub["Method"].map(lambda m: short_label_map.get(m, m))
         fig = go.Figure()
         for i, row in sub.iterrows():
@@ -231,7 +231,7 @@ def update_comparison(noise_eps):
     womens_fig = forest_plot("Women's Email", WOMENS_COLOUR)
 
     def _arm_estimates(arm_label):
-        vals = comp_df[comp_df["Arm"] == arm_label]["Estimate ($)"].values
+        vals = comp_df[comp_df["Group"] == arm_label]["Estimate ($)"].values
         return [float(v) for v in vals if pd.notna(v)]
 
     mens_valid = _arm_estimates("Men's Email")

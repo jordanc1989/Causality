@@ -87,7 +87,7 @@ def _build_tab1():
         """Projected total-revenue extrapolation for one arm w/ bootstrap CI band."""
         ci_id = f"hl-ci-{label.lower().replace(' ', '-').replace(chr(39), '')}"
         tooltip_text = (
-            "Per-recipient lift multiplied by the number of recipients in this arm. "
+            "Per-recipient lift multiplied by the number of recipients in this group. "
             "The range is a 95% confidence interval from a 2k resample bootstrap."
         )
         meta = html.Span(
@@ -119,7 +119,7 @@ def _build_tab1():
         [
             spec_strip(
                 ("Customers", f"{len(DF):,}"),
-                "3 arms",
+                "3 groups",
                 "14-day spend window",
             ),
             page_lede(
@@ -140,12 +140,12 @@ def _build_tab1():
                 className="g-4 mb-2",
             ),
             html.P(
-                "Per-recipient lift scaled to the full arm. Ranges are 95% bootstrap "
+                "Per-recipient lift scaled to the full group. Ranges are 95% bootstrap "
                 "intervals (2,000 resamples). The later sections re-test the same lift "
                 "with matching, Bayesian and uplift methods. ",
                 className="text-muted small mb-5",
             ),
-            section_header("By campaign arm"),
+            section_header("By group"),
             dbc.Row(
                 [
                     dbc.Col(
@@ -228,9 +228,8 @@ def _build_tab1():
                         "Did the randomisation work?",
                         html.P(
                             [
-                                "Each dot compares the treatment and control groups on a customer attribute "
-                                "(recency, spend history, channel, etc). ",
-                                html.Strong("Dots inside the dashed band mean groups are balanced"),
+                                "Each dot compares the treatment and control groups on a customer attribute. ",
+                                "Dots inside the dashed band mean groups are balanced",
                                 ", so any difference in outcomes can be attributed to the email itself "
                                 "rather than pre-existing differences between customers. "
                                 "A randomised experiment should produce this pattern."

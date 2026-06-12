@@ -18,7 +18,7 @@ def tab4_layout(**_kwargs):
                 [
                     dbc.Col(
                         labeled_radio(
-                            "Campaign arm:",
+                            "Campaign group:",
                             "uplift-arm-selector",
                             [
                                 {"label": "Men's Email", "value": "mens"},
@@ -171,10 +171,10 @@ def tab4_layout(**_kwargs):
                         "The S-Learner fits a single model with treatment as an input feature, "
                         "and reads off the difference between predictions with treatment on and "
                         "off. The X-Learner (Künzel et al. 2019) fits a separate outcome "
-                        "model per arm, imputes the missing counterfactual outcome for each "
+                        "model per group, imputes the missing counterfactual outcome for each "
                         "customer, regresses those imputed treatment effects on covariates and "
-                        "combines the two arms with a propensity-weighted average. X-Learner "
-                        "handles arm imbalance better than S-Learner when treatment groups "
+                        "combines the two groups with a propensity-weighted average. X-Learner "
+                        "handles imbalance better than S-Learner when treatment groups "
                         "are uneven. Here the groups are balanced, so we're using it as a stronger default "
                         "view as opposed to a final answer."
                     ),

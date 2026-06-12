@@ -5,7 +5,7 @@ def psm_intro_copy():
     return [
         html.P([
             "This is a randomised experiment, so matching isn't the right tool here. "
-            "Random assignment already balances the arms. The tab runs the workflow you'd "
+            "Random assignment already balances the groups. The tab runs the workflow you'd "
             "use on ",
             html.Em("observational"),
             " data (opt-ins, triggered sends, organic signups) and sets the result next to "
@@ -19,7 +19,7 @@ def psm_intro_copy():
             "close to the simple difference-in-means."
         ], className="mb-2 small"),
         html.P([
-            "The Love plot shows whether the arms look alike on each covariate, before and "
+            "The Love plot shows whether the groups look alike on each covariate, before and "
             "after matching. Here "
             "the ",
             html.Em("before"),

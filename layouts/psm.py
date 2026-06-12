@@ -29,7 +29,7 @@ def tab2_layout(**_kwargs):
                 [
                     dbc.Col(
                         labeled_radio(
-                            "Campaign arm:",
+                            "Campaign group:",
                             "psm-arm-selector",
                             [
                                 {"label": "Men's Email vs Control", "value": "mens"},
@@ -65,7 +65,7 @@ def tab2_layout(**_kwargs):
                             "the new-customer flag) produces a ",
                             html.Em("propensity score"),
                             " for each customer. That score is the modelled probability that the customer "
-                            "would end up in the email arm given those attributes. We then pair each email "
+                            "would end up in the email group given those attributes. We then pair each email "
                             "recipient with the control customer whose score is closest to theirs. A caliper "
                             "trims any pair where the gap on the logit of the propensity score is more than "
                             "0.2 standard deviations. Unmatched recipients are dropped from the post-match "
@@ -83,7 +83,7 @@ def tab2_layout(**_kwargs):
                     ),
                     html.P(
                         [
-                            "The Love plot compares every attribute in the email arm against the control arm "
+                            "The Love plot compares every attribute in the email group against the control group "
                             "twice. Once across the full groups (before pairing) and once across just the "
                             "matched pairs (after). In an observational study, a big drop from before to "
                             "after is the headline result. On this randomised dataset, the ",
