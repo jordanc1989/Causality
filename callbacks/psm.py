@@ -33,12 +33,12 @@ def update_psm(arm):
 
     if ps_dist is not None and np.isfinite(ps_dist) and cal_w is not None:
         dist_str = (
-            f"{pct_mt:.1f}% paired · mean |Δlogit(P)| = {ps_dist:.4f} (caliper ≤ {cal_w:.4f}) · "
-            f"{n_drop:,} treated dropped"
+            f"Average match distance {ps_dist:.4f} (cutoff {cal_w:.4f}); "
+            f"{n_drop:,} recipients had no close match"
         )
     else:
         dist_str = "Matching statistics unavailable"
-    cs_str = f"{p['cs_lower']:.3f}–{p['cs_upper']:.3f}"
+    cs_str = f"{p['cs_lower']:.3f}-{p['cs_upper']:.3f}"
     pct_label = f"{pct_mt:.1f}% matched"
 
     kpis = html.Div(
@@ -252,7 +252,7 @@ def update_psm(arm):
     stats_fig.add_hline(y=0, line_color=BORDER, line_dash="dot")
     stats_fig.update_layout(
         template=PLOTLY_TEMPLATE,
-        title="ATT estimate — analytical CI vs bootstrap sensitivity band",
+        title="ATT estimate: analytical CI vs bootstrap sensitivity band",
         yaxis_title="Effect on spend ($)",
         showlegend=False,
         margin=FIGURE_MARGIN,

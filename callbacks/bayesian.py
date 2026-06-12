@@ -218,12 +218,12 @@ def update_ppc_figure(pair_key):
         rows=3,
         cols=2,
         subplot_titles=(
-            f"Full spend — {lab_a}",
-            f"Full spend — {lab_b}",
-            f"Amount given spend > 0 — {lab_a}",
-            f"Amount given spend > 0 — {lab_b}",
-            f"Conversion rate — {lab_a}",
-            f"Conversion rate — {lab_b}",
+            f"Full spend: {lab_a}",
+            f"Full spend: {lab_b}",
+            f"Amount given spend > 0: {lab_a}",
+            f"Amount given spend > 0: {lab_b}",
+            f"Conversion rate: {lab_a}",
+            f"Conversion rate: {lab_b}",
         ),
         vertical_spacing=0.11,
         horizontal_spacing=0.08,
@@ -293,19 +293,19 @@ def update_ppc_figure(pair_key):
     # everywhere, so the legend is three entries: one per observed arm plus
     # the model.
     _add_hist_pair(
-        1, 1, obs_sa, ppc_sa, f"Observed — {lab_a}", "Model (PPC)",
+        1, 1, obs_sa, ppc_sa, f"Observed: {lab_a}", "Model (PPC)",
         colour_a, ACCENT,
     )
     _add_hist_pair(
-        1, 2, obs_sb, ppc_sb, f"Observed — {lab_b}", "Model (PPC)",
+        1, 2, obs_sb, ppc_sb, f"Observed: {lab_b}", "Model (PPC)",
         colour_b, ACCENT,
     )
     _add_hist_pair(
-        2, 1, obs_pa, ppc_pa, f"Observed — {lab_a}", "Model (PPC)",
+        2, 1, obs_pa, ppc_pa, f"Observed: {lab_a}", "Model (PPC)",
         colour_a, ACCENT,
     )
     _add_hist_pair(
-        2, 2, obs_pb, ppc_pb, f"Observed — {lab_b}", "Model (PPC)",
+        2, 2, obs_pb, ppc_pb, f"Observed: {lab_b}", "Model (PPC)",
         colour_b, ACCENT,
     )
 
@@ -339,7 +339,7 @@ def update_ppc_figure(pair_key):
         barmode="overlay",
         height=1000,
         title=dict(
-            text="Posterior predictive check — observed vs model-simulated data",
+            text="Posterior predictive check: observed vs model-simulated data",
             font=dict(size=14),
         ),
         margin=dict(t=58, b=92, l=54, r=36),

@@ -44,7 +44,7 @@ def tab3_layout(**_kwargs):
                         md=4,
                     ),
                     section_col(
-                        "Posterior distribution — treatment effect δ",
+                        "Posterior distribution treatment effect δ",
                         graph("bayes-posterior-plot", className="mt-2"),
                         md=8,
                     ),

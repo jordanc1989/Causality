@@ -225,7 +225,7 @@ def build_ols_figures():
         )
         return fig
 
-    mens_heat = make_heatmap("me_mens", "Men's Email — marginal effect ($)")
-    womens_heat = make_heatmap("me_womens", "Women's Email — marginal effect ($)")
+    mens_heat = make_heatmap("me_mens", "Men's Email marginal effect ($)")
+    womens_heat = make_heatmap("me_womens", "Women's Email marginal effect ($)")
 
     return coef_fig, table, mens_heat, womens_heat

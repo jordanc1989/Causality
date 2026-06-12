@@ -213,7 +213,7 @@ def update_comparison(noise_eps):
         fig.add_vline(x=0, line_color=DANGER, line_dash="dash")
         fig.update_layout(
             template=PLOTLY_TEMPLATE,
-            title=f"Forest plot — {arm_label}",
+            title=f"Forest plot: {arm_label}",
             xaxis=dict(
                 title="Effect on spend ($)",
                 range=shared_range,

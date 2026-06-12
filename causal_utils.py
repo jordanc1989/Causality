@@ -597,9 +597,9 @@ def _permutation_p_auuc(
 
     H0: the predicted CATE ranking carries no information about the treatment
     response. Under H0, treatment labels are exchangeable across the ranked
-    list, so we shuffle them, recompute AUUC, and check how often the
+    list, so we shuffle them, recompute AUUC and check how often the
     permuted AUUC reaches the observed value. This is a refit-free
-    permutation - the model and its ranking are held fixed; only the
+    permutation. The model and its ranking are held fixed, only the
     treatment labels are reshuffled. It tests whether the *ranking* picks
     out responders, conditional on the model that produced it.
 
