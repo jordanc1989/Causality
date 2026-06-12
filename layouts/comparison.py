@@ -32,7 +32,7 @@ def tab6_layout(**_kwargs):
                 dbc.Col(
                     html.P(
                         "Both panels share one x-axis scale. The S- and X-Learner "
-                        "seem to have no error bars — their intervals are just too "
+                        "seem to have no error bars, but their intervals are just too "
                         "narrow to see. Their bootstrap "
                         "only captures part of the uncertainty (see the † note under "
                         "the table).",

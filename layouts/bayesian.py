@@ -11,8 +11,8 @@ def tab3_layout(**_kwargs):
     return dbc.Container(
         [
             spec_strip(
-                "Hurdle model: Bernoulli × LogNormal",
-                "2k draws × 2 chains",
+                "Hurdle model: Bernoulli-LogNormal",
+                "2k draws / 2 chains",
                 "Full arm data (no subsampling)",
             ),
             dbc.Row(
@@ -111,7 +111,7 @@ def tab3_layout(**_kwargs):
                                         html.Strong("What this shows: "),
                                         "Three stacked checks per arm that compare the model's simulated data "
                                         "against the real data. The first row covers the full spend distribution "
-                                        "including the spike at $0. The second row focuses on the size of "
+                                        "including the spike around $0. The second row focuses on the size of "
                                         "purchases among customers who did spend. The third row checks the "
                                         "conversion rate at the actual arm size. "
                                         "The simulated and observed distributions should sit roughly on top of "
@@ -162,7 +162,7 @@ def tab3_layout(**_kwargs):
                             "prior on the log-mean, a HalfNormal on the log-spread). "
                             "The conversion part of the model is informed by all ~21k "
                             "customers per arm, but the spend-amount part rests only on the "
-                            "customers who actually spent (roughly 120–270 per arm) so the "
+                            "customers who actually spent (around 120-270 per arm) so the "
                             "amount priors are not simply washed out by the data. Keeping them "
                             "weak and centred on the pooled positive spend keeps their "
                             "influence small. "
